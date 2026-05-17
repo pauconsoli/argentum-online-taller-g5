@@ -95,6 +95,8 @@ if(TALLER_CLIENT OR TALLER_EDITOR)
         OVERRIDE_FIND_PACKAGE
         URL https://github.com/libSDL2pp/libSDL2pp/archive/cc198c9a5657048bee67ece82de620b2d5661084.zip
     )
+    # Disable Opus support in SDL2_mixer (broken on macOS with Homebrew opusfile)
+    set(SDL2MIXER_OPUS OFF CACHE BOOL "" FORCE)
 
     FetchContent_MakeAvailable(SDL2 SDL2_image SDL2_mixer SDL2_ttf libSDL2pp)
 endif()
