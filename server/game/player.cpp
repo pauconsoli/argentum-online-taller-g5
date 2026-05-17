@@ -1,0 +1,90 @@
+#include "player.h"
+
+Player::Player(
+        uint32_t id,
+        const std::string& name,
+        PlayerRace race,
+        PlayerClass player_class,
+        int level,
+        int max_hp,
+        int max_mana,
+        int strength,
+        int agility,
+        int intelligence,
+        int constitution,
+        const Position& position):
+        Character(
+                id,
+                level,
+                max_hp,
+                max_mana,
+                strength,
+                agility,
+                intelligence,
+                constitution,
+                position),
+        name(name),
+        p_race(race),
+        p_class(player_class),
+        gold(0),
+        experience(0),
+        meditating(false) {}
+
+bool Player::can_cast_magic() const {
+    return p_class != PlayerClass::WARRIOR;
+} //si no es guerrero, puede usar magia 
+
+void Player::move(const Position& new_position) {
+    position = new_position;
+}
+
+void Player::add_gold(uint64_t amount) {
+    gold += amount;
+}
+
+bool Player::remove_gold(uint64_t amount) {
+    if (amount > gold) {
+        return false;
+    }
+
+    gold -= amount;
+    return true;
+}
+
+void Player::add_experience(uint64_t amount) {
+    experience += amount;
+}
+
+void Player::start_meditating() {
+    if (can_cast_magic()) {
+        meditating = true;
+    }
+}
+
+void Player::stop_meditating() {
+    meditating = false;
+}
+
+bool Player::is_meditating() const {
+    return meditating;
+}
+
+const std::string& Player::get_name() const {
+    return name;
+}
+
+PlayerRace Player::get_race() const {
+    return p_race;
+}
+
+PlayerClass Player::get_class() const {
+    return p_class;
+}
+
+uint64_t Player::get_gold() const {
+    return gold;
+}
+
+uint64_t Player::get_experience() const {
+    return experience;
+}
