@@ -1,0 +1,85 @@
+#include "world.h"
+#include "common/updates/move_update.h"
+
+#include <stdexcept>
+
+// TODO: más verificaciones/excepciones/logging
+
+World::World(int width, int height):
+        map(width, height) {}
+
+void World::add_player(std::unique_ptr<Player> player) {
+
+    Position pos = player->get_position(); //obtengo pos
+
+    if (is_position_occupied(pos)) {
+        return; // acá iría una excepción
+    }
+
+    positions[pos] = player.get(); //actualizo el map de posiciones para colisiones
+    players[player->get_id()] = std::move(player); //agrego el player al map de players
+}
+
+void World::remove_player(uint32_t player_id) {
+    auto it = players.find(player_id);
+    if (it != players.end()) {
+        Position pos = it->second->get_position();
+        positions.erase(pos); // elimino la posición del "espacio"
+        players.erase(it); // elimino el jugador 
+    }
+}
+
+Player* World::get_player(uint32_t player_id) {
+    auto it = players.find(player_id);
+    if (it != players.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+Position World::calculate_destination(const Position& current, Direction direction) const {
+    Position dest = current;
+    switch (direction) {
+        case Direction::UP: dest.y -= 1; break;
+        case Direction::DOWN: dest.y += 1; break;
+        case Direction::LEFT: dest.x -= 1; break;
+        case Direction::RIGHT: dest.x += 1; break;
+    }
+    return dest;
+}
+
+bool World::is_position_occupied(const Position& position) const {
+    return positions.find(position) != positions.end(); // busco la posición en el map, si no está, no hay nadie ahí
+}
+
+std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction direction) {
+
+    auto it = players.find(player_id);
+    if (it == players.end()) {
+        return nullptr;
+    }
+
+    Player* player = it->second.get();
+    Position current = player->get_position();
+    Position next = calculate_destination(current, direction);
+
+    if (!map.is_valid_position(next)) { // si la posición destino no es válida, no se mueve (ej fuera del mapa)
+        return nullptr; //update: no cambio nada
+    }
+
+    if (map.is_blocking(next)) { // si la celda destino es bloqueante, no se mueve
+        return nullptr; //update: no cambio nada
+    }
+
+    if (is_position_occupied(next)) { // si hay otro personaje en la posición destino, no se mueve
+        return nullptr; //update: no cambio nada
+    }
+
+    // si llegamos acá, la posición destino es válida, entonces se puede mover
+    positions.erase(current);
+    player->set_position(next);
+    positions[next] = player;
+
+    //update: devuelvo un update con la nueva posición del jugador
+    return std::make_unique<MovedUpdate>(player_id, next); 
+}
