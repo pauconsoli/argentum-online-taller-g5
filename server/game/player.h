@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <string>
 
-#include "character.h"
+#include "server/game/character.h"
 #include "player_class.h"
 #include "player_race.h"
 

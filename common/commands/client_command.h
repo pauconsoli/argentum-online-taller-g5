@@ -2,6 +2,7 @@
 #define CLIENT_COMMAND_H
 
 #include <cstdint>
+#include <memory>
 
 enum class CommandType : uint8_t {
     MOVE      = 0x01,
@@ -12,11 +13,12 @@ enum class CommandType : uint8_t {
     CHAT      = 0x06,
 };
 
-class World;  //  Pau deberias implementar esta clase
+class World;
+class GameUpdate;  
 
 class ClientCommand {
 public:
-    virtual void execute(World& world) = 0;
+    virtual std::unique_ptr<GameUpdate> execute(World& world) = 0;
     virtual ~ClientCommand() = default;
 };
 

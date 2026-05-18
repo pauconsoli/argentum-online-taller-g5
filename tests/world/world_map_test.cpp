@@ -2,7 +2,7 @@
 #include "server/world/world_map.h"
 #include "server/world/city.h"
 #include "server/world/dungeon.h"
-#include "server/game/position.h"
+#include "common/position.h"
 
 class WorldMapTest : public ::testing::Test {
 protected:

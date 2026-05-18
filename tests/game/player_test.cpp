@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "server/game/player.h"
-#include "server/game/position.h"
+#include "common/position.h"
 
 class PlayerTest : public ::testing::Test {
 protected:

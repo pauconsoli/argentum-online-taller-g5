@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "cell.h"
-#include "server/game/position.h"
+#include "common/position.h"
 
 class Zone;
 
@@ -26,17 +26,17 @@ private:
 public:
     WorldMap(int width, int height);
 
-    bool is_valid_position(const Position pos) const;
+    bool is_valid_position(const Position& pos) const;
 
-    bool is_blocking(const Position pos) const;
+    bool is_blocking(const Position& pos) const;
 
-    const Cell get_cell(const Position pos) const;
-    void set_cell(const Position pos, const Cell cell);
+    const Cell& get_cell(const Position& pos) const;
+    void set_cell(const Position& pos, const Cell& cell);
 
-    Zone* get_zone(const Position pos) const;
-    void set_zone(const Position pos, Zone* zone);
+    Zone* get_zone(const Position& pos) const;
+    void set_zone(const Position& pos, Zone* zone);
 
-    bool is_safe(Position pos) const;
+    bool is_safe(const Position& pos) const;
 
     int get_width() const;
     int get_height() const;

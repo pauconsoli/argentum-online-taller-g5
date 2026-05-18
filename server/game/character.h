@@ -9,7 +9,7 @@
 #include <utility>
 #include <cstdint>
 
-#include "position.h"
+#include "common/position.h"
 
 class Character {
 protected:
