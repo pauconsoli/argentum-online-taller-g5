@@ -32,15 +32,20 @@ add_library(taller_common STATIC)
 # HEY!! TODO XXX: add more subfolders here
 add_subdirectory(common/)
 
+# Define target: lib game (server-side game logic)
+add_library(taller_game STATIC)
+add_subdirectory(server/game)
 
 # set compiler warnings to the targets
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(taller_common ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+set_project_warnings(taller_game ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
 
 # Say where the headers will be found required by library target
 # Make this PUBLIC so any dependant linking lib will inherit this
 # location (so our dependants will not have to explicitly request this)
 target_include_directories(taller_common PUBLIC .)
+target_include_directories(taller_game PUBLIC .)
 
 # HEY!! TODO XXX: you need to install some runtime and dev libraries *before*
 # compiling the client/editor code.
@@ -125,8 +130,8 @@ if(TALLER_SERVER)
     # HEY!! TODO XXX: Change the name of the executable to the one you like!
     add_executable(taller_server)
 
-    # Make them depend on taller_common lib
-    add_dependencies(taller_server taller_common)
+    # Make them depend on taller_common and taller_game libs
+    add_dependencies(taller_server taller_common taller_game)
 
     # Add source files and enable warnings
     # HEY!! TODO XXX: add more subfolders here
@@ -134,8 +139,8 @@ if(TALLER_SERVER)
 
     set_project_warnings(taller_server ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
 
-    # Link the taller_common lib target
-    target_link_libraries(taller_server taller_common)
+    # Link the taller_common and taller_game lib targets
+    target_link_libraries(taller_server taller_common taller_game)
 endif()
 
 if(TALLER_EDITOR)
@@ -182,7 +187,7 @@ if(TALLER_TESTS)
 
     # HEY!! TODO XXX: I'm assuming that the code under testing is in taller_common
     # Change this if you have to.
-    add_dependencies(taller_tests taller_common)
+    add_dependencies(taller_tests taller_common taller_game)
 
     # Say where to find the xoz headers
     # HEY!! TODO XXX: add more subfolders here
@@ -206,6 +211,7 @@ if(TALLER_TESTS)
     # Change this if you have to.
     target_link_libraries(taller_tests
         taller_common
+        taller_game
         GTest::gtest_main
     )
 endif()
