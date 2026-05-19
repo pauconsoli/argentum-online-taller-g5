@@ -1,9 +1,8 @@
 #include "gtest/gtest.h"
 #include "server/game/character.h"
 #include "server/game/player.h"
-#include "server/game/position.h"
+#include "common/position.h"
 
-// Implementación concreta mínima para testear Character
 class TestCharacter : public Character {
 public:
     TestCharacter(

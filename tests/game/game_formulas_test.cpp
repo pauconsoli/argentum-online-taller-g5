@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "server/game/game_formulas.h"
 #include "server/game/player.h"
-#include "server/game/position.h"
+#include "common/position.h"
 
 class GameFormulasTest : public ::testing::Test {
 protected:

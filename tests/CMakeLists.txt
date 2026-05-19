@@ -1,10 +1,15 @@
 target_sources(taller_tests
     PRIVATE
-    # .cpp files
-    character_test.cpp
-    player_test.cpp
-    game_config_test.cpp
-    game_formulas_test.cpp
+    # .cpp files - game module
+    game/character_test.cpp
+    game/player_test.cpp
+    game/game_config_test.cpp
+    game/game_formulas_test.cpp
+    # .cpp files - world module
+    world/cell_test.cpp
+    world/zone_test.cpp
+    world/world_map_test.cpp
+    world/world_test.cpp
     PUBLIC
     # .h files
     )

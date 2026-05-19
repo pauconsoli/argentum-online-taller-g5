@@ -13,5 +13,4 @@ target_sources(taller_game
     game_formulas.h
     player_class.h
     player_race.h
-    position.h
     )
