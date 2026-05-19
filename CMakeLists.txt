@@ -21,8 +21,33 @@ option(TALLER_CLIENT "Enable / disable client program." ON)
 option(TALLER_SERVER "Enable / disable server program." ON)
 option(TALLER_EDITOR "Enable / disable editor program." ON)
 option(TALLER_MAKE_WARNINGS_AS_ERRORS "Enable / disable warnings as errors." ON)
+option(TALLER_ENABLE_ASAN "Enable AddressSanitizer (ASAN) for memory error detection." OFF)
+option(TALLER_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (UBSAN)." OFF)
 
 message(CMAKE_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
+
+# Configure sanitizers
+if(TALLER_ENABLE_ASAN)
+    message(STATUS "ASAN enabled")
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
+
+if(TALLER_ENABLE_UBSAN)
+    message(STATUS "UBSAN enabled")
+    add_compile_options(-fsanitize=undefined)
+    add_link_options(-fsanitize=undefined)
+endif()
+
+# Fetch spdlog for logging
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.14.1
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(spdlog)
 
 # Define target: lib common between client, server and editor programs
 # HEY TODO XXX: change the name to something that you like
@@ -129,7 +154,7 @@ if(TALLER_CLIENT)
     target_include_directories(taller_client PRIVATE ${libSDL2pp_SOURCE_DIR})
 
     # Link the taller_common lib target
-    target_link_libraries(taller_client taller_common SDL2pp::SDL2pp)
+    target_link_libraries(taller_client taller_common SDL2pp::SDL2pp spdlog::spdlog)
 endif()
 
 if(TALLER_SERVER)
@@ -146,7 +171,7 @@ if(TALLER_SERVER)
     set_project_warnings(taller_server ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
 
     # Link the taller_common, taller_game and taller_world lib targets
-    target_link_libraries(taller_server taller_common taller_game taller_world)
+    target_link_libraries(taller_server taller_common taller_game taller_world spdlog::spdlog)
 endif()
 
 if(TALLER_EDITOR)
@@ -166,7 +191,7 @@ if(TALLER_EDITOR)
     target_include_directories(taller_editor PRIVATE ${libSDL2pp_SOURCE_DIR})
 
     # Link the taller_common lib target
-    target_link_libraries(taller_editor taller_common SDL2pp::SDL2pp)
+    target_link_libraries(taller_editor taller_common SDL2pp::SDL2pp spdlog::spdlog)
 endif()
 
 
@@ -220,5 +245,6 @@ if(TALLER_TESTS)
         taller_game
         taller_world
         GTest::gtest_main
+        spdlog::spdlog
     )
 endif()

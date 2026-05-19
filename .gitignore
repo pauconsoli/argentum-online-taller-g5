@@ -1,2 +1,25 @@
+# Build
 build/
-tags.*
+cmake-build-*/
+
+# IDEs
+.idea/
+.vscode/
+
+# Compile commands
+compile_commands.json
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# Sanitizers
+*.asan
+
+# Executables
+taller_client
+taller_server
+taller_editor
+taller_tests
