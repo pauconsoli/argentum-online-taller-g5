@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include "game_update.h"
-#include "position.h"
+#include "common/position.h"
 
 class MovedUpdate : public GameUpdate {
 private:

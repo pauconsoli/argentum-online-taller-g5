@@ -9,6 +9,7 @@ target_sources(taller_tests
     world/cell_test.cpp
     world/zone_test.cpp
     world/world_map_test.cpp
+    world/world_test.cpp
     PUBLIC
     # .h files
     )

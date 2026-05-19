@@ -32,6 +32,9 @@ public:
     bool player_exists(uint32_t player_id) const;
 
     std::unique_ptr<GameUpdate> move_player(uint32_t player_id, Direction direction);
+    
+    // solo lo uso para poner celdas bloqueantes en el mapa en los tests
+    void set_cell(const Position& pos, const Cell& cell); 
 
 };
 

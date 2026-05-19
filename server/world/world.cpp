@@ -37,6 +37,11 @@ Player* World::get_player(uint32_t player_id) {
     return nullptr;
 }
 
+bool World::player_exists(uint32_t player_id) const {
+    return players.find(player_id) != players.end();
+}
+
+//(0,0) es la esquina superior izquierda, x aumenta hacia la derecha e y hacia abajo
 Position World::calculate_destination(const Position& current, Direction direction) const {
     Position dest = current;
     switch (direction) {
@@ -82,4 +87,9 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
 
     //update: devuelvo un update con la nueva posición del jugador
     return std::make_unique<MovedUpdate>(player_id, next); 
+}
+
+// SOLO PARA TESTS
+void World::set_cell(const Position& pos, const Cell& cell) {
+    map.set_cell(pos, cell);
 }
