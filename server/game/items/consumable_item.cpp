@@ -1,4 +1,4 @@
-#include "server/game/items/potion.h"
+#include "server/game/items/consumable_item.h"
 #include "server/game/player.h"
 
 ConsumableItem::ConsumableItem(const std::string& name, ConsumableType type, int restore):
