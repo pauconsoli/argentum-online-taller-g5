@@ -8,8 +8,10 @@
 #include <string>
 
 #include "server/game/character.h"
-#include "player_class.h"
-#include "player_race.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
+
+class Item;
 
 class Player: public Character {
 private:
@@ -66,6 +68,11 @@ public:
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
+
+    void equip(Item& item); //implementar
+
+    void restore_health(int amount); //implementar
+    void restore_mana(int amount);  //implementar
 };
 
 #endif

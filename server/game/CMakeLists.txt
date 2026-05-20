@@ -5,6 +5,12 @@ target_sources(taller_game
     player.cpp
     game_config.cpp
     game_formulas.cpp
+    items/item.cpp
+    items/weapon.cpp
+    items/normal_weapon.cpp
+    items/magic_weapon.cpp
+    items/spell.cpp
+    items/defensive_item.cpp
     PUBLIC
     # .h files
     character.h
@@ -13,4 +19,12 @@ target_sources(taller_game
     game_formulas.h
     player_class.h
     player_race.h
+    items/item.h
+    items/weapon.h
+    items/normal_weapon.h
+    items/magic_weapon.h
+    items/spell.h
+    items/defensive_item.h
+    items/equipment_slot.h
+    items/consumable.h
     )
