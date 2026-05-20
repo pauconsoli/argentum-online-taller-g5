@@ -3,23 +3,23 @@
 
 #include "server/game/items/item.h"
 
-enum class PotionType {
+enum class ConsumableType {
     HEALTH,
     MANA
 };
 
-class Potion : public Item {
+class ConsumableItem : public Item {
 private:
-    PotionType type;
+    ConsumableType type;
 
     int restore;
 
 public:
-    Potion(const std::string& name, PotionType type, int restore);
+    ConsumableItem(const std::string& name, ConsumableType type, int restore);
 
-    ~Potion() override;
+    ~ConsumableItem() override;
 
-    PotionType get_type() const;
+    ConsumableType get_type() const;
 
     int get_restore() const;
 
