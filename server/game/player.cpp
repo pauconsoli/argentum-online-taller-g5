@@ -88,3 +88,18 @@ uint64_t Player::get_gold() const {
 uint64_t Player::get_experience() const {
     return experience;
 }
+
+void Player::equip(Item& item) {
+    (void)item;
+    // TODO
+}
+
+void Player::restore_health(int amount) {
+    (void)amount;
+    // TODO
+}
+
+void Player::restore_mana(int amount) {
+    (void)amount;
+    // TODO
+}
