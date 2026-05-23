@@ -1,5 +1,3 @@
-// item.h
-
 #ifndef ITEM_H
 #define ITEM_H
 
@@ -21,8 +19,7 @@ public:
 
     virtual void use(Player& player) = 0; //consumir, equipar, etc
 
-    // nullopt => no es equipable
-    virtual std::optional<EquipmentSlot> get_slot() const = 0;  //no se si es lo mejor
+    virtual std::optional<EquipmentSlot> get_slot() const = 0;  //no se si es lo mejor. nullopt si no es equipable
 };
 
 #endif

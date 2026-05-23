@@ -11,6 +11,7 @@ target_sources(taller_game
     items/magic_weapon.cpp
     items/spell.cpp
     items/defensive_item.cpp
+    items/consumable_item.cpp
     PUBLIC
     # .h files
     character.h
@@ -26,5 +27,5 @@ target_sources(taller_game
     items/spell.h
     items/defensive_item.h
     items/equipment_slot.h
-    items/consumable.h
+    items/consumable_item.h
     )
