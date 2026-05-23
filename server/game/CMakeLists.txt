@@ -5,6 +5,8 @@ target_sources(taller_game
     player.cpp
     game_config.cpp
     game_formulas.cpp
+    equipment.cpp
+    inventory.cpp
     items/item.cpp
     items/weapon.cpp
     items/normal_weapon.cpp
@@ -20,6 +22,8 @@ target_sources(taller_game
     game_formulas.h
     player_class.h
     player_race.h
+    equipment.h
+    inventory.h
     items/item.h
     items/weapon.h
     items/normal_weapon.h

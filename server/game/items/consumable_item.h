@@ -1,5 +1,5 @@
-#ifndef POTION_H
-#define POTION_H
+#ifndef CONSUMABLE_ITEM_H
+#define CONSUMABLE_ITEM_H
 
 #include "server/game/items/item.h"
 
