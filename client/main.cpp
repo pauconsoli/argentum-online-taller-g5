@@ -1,39 +1,56 @@
-#include "common/foo.h"
-
 #include <iostream>
-#include <exception>
-
-#include <SDL2pp/SDL2pp.hh>
 #include <SDL2/SDL.h>
 
-using namespace SDL2pp;
+int main() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cerr << "Error inicializando SDL: " << SDL_GetError() << std::endl;
+        return 1;
+    }
 
-int main() try {
-	// Initialize SDL library
-	SDL sdl(SDL_INIT_VIDEO);
+    SDL_Window* window = SDL_CreateWindow(
+        "Argentum Online - G5",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        800,
+        600,
+        SDL_WINDOW_SHOWN
+    );
+    if (window == nullptr) {
+        std::cerr << "Error creando ventana: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
 
-	// Create main window: 640x480 dimensions, resizable, "SDL2pp demo" title
-	Window window("SDL2pp demo",
-			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			640, 480,
-			SDL_WINDOW_RESIZABLE);
+    SDL_Renderer* renderer = SDL_CreateRenderer(
+        window,
+        -1,
+        SDL_RENDERER_ACCELERATED
+    );
+    if (renderer == nullptr) {
+        std::cerr << "Error creando renderer: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
 
-	// Create accelerated video renderer with default driver
-	Renderer renderer(window, -1, SDL_RENDERER_ACCELERATED);
+    bool running = true;
+    SDL_Event event;
 
-	// Clear screen
-	renderer.Clear();
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            }
+        }
 
-	// Show rendered frame
-	renderer.Present();
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        SDL_RenderPresent(renderer);
+    }
 
-	// 5 second delay
-	SDL_Delay(5000);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
-	// Here all resources are automatically released and library deinitialized
-	return 0;
-} catch (std::exception& e) {
-	// If case of error, print it and exit with error
-	std::cerr << e.what() << std::endl;
-	return 1;
+    return 0;
 }
