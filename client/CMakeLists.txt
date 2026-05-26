@@ -4,8 +4,10 @@ target_sources(taller_client
     sdl/game_client.cpp
     sdl/renderer.cpp
     sdl/input_handler.cpp
+    sdl/camera.cpp
     PUBLIC
     sdl/game_client.h
     sdl/renderer.h
     sdl/input_handler.h
+    sdl/camera.h
     )
