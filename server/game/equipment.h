@@ -1,41 +1,23 @@
 #ifndef EQUIPMENT_H
 #define EQUIPMENT_H
 
+#include <map>
 #include "server/game/items/equipment_slot.h"
 
 class Item;
 
-// Equipment: gestiona los 4 slots de equipamiento del jugador
-// - Un item por cada slot
-// - nullptr si el slot está vacío
 class Equipment {
 private:
-    Item* weapon = nullptr;
-    Item* armor = nullptr;
-    Item* helmet = nullptr;
-    Item* shield = nullptr;
+    std::map<EquipmentSlot, Item*> equipment;
 
 public:
-    Equipment() = default;
-    ~Equipment() = default;
+    Equipment();
 
-    Equipment(const Equipment&) = delete;
-    Equipment& operator=(const Equipment&) = delete;
+    Item* equip(Item* item, EquipmentSlot slot); // devuelve el item que estaba equipado o nullptr si el slot estaba vacío
+    Item* unequip(EquipmentSlot slot); // devuelve el item desequipado
 
-    // Obtener el item equipado en un slot
     Item* get(EquipmentSlot slot) const;
-
-    // Equipar un item en su slot (devuelve lo que había, nullptr si nada)
-    Item* set(EquipmentSlot slot, Item* item);
-
-    // Desequipar un slot
-    Item* unset(EquipmentSlot slot);
-
-    // Verificar si un slot tiene algo equipado
     bool has(EquipmentSlot slot) const;
-
-    // Remover item de cualquier slot donde esté (usado en remove_item)
-    bool remove(Item* item);
 };
 
 #endif
