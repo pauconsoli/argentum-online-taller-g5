@@ -33,8 +33,8 @@ void GameClient::run() {
     bool running = true;
     SDL_Event event;
 
-    int frame_w = 51;
-    int frame_h = 64;
+    int frame_w = 31;
+    int frame_h = 45;
     int frame_x = 0;
     int frame_y = 0;
 
