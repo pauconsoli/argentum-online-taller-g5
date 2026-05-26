@@ -20,6 +20,7 @@ GameClient::GameClient(int width, int height) : window(nullptr), renderer(nullpt
     }
 
     renderer = new Renderer(window);
+    renderer->load_texture("../client/assets/body.png");
 }
 
 GameClient::~GameClient() {
@@ -32,12 +33,18 @@ void GameClient::run() {
     bool running = true;
     SDL_Event event;
 
+    int frame_w = 51;
+    int frame_h = 64;
+    int frame_x = 0;
+    int frame_y = 0;
+
     while (running) {
         while (SDL_PollEvent(&event)) {
             running = input_handler.handle(event);
         }
 
         renderer->clear();
+        renderer->draw_frame(frame_x, frame_y, frame_w, frame_h, 400, 300);
         renderer->present();
     }
 }

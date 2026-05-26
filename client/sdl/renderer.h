@@ -2,19 +2,23 @@
 #define RENDERER_H
 
 #include <SDL2/SDL.h>
+#include <SDL_image.h>
+#include <string>
 
 class Renderer {
 private:
     SDL_Renderer* sdl_renderer;
+    SDL_Texture* texture;
 
 public:
     explicit Renderer(SDL_Window* window);
     ~Renderer();
 
-    // No permitimos copiar el Renderer
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
 
+    void load_texture(const std::string& path);
+    void draw_frame(int frame_x, int frame_y, int frame_w, int frame_h, int x, int y);
     void clear();
     void present();
 };
