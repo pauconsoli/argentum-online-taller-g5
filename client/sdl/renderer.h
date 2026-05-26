@@ -21,6 +21,7 @@ public:
     void draw_frame(int frame_x, int frame_y, int frame_w, int frame_h, int x, int y);
     void clear();
     void present();
+    SDL_Renderer* get_sdl_renderer() const;
 };
 
 #endif

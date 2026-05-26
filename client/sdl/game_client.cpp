@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 GameClient::GameClient(int width, int height) : 
-    window(nullptr), renderer(nullptr), 
+    window(nullptr), renderer(nullptr), hud(nullptr),
     camera(width, height), player_x(400), player_y(300) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error(SDL_GetError());
@@ -21,9 +21,11 @@ GameClient::GameClient(int width, int height) :
     }
     renderer = new Renderer(window);
     renderer->load_texture("../client/assets/body.png");
+    hud = new Hud(renderer->get_sdl_renderer(), "../client/assets/font.ttf");
 }
 
 GameClient::~GameClient() {
+    delete hud;
     delete renderer;
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -88,6 +90,7 @@ void GameClient::run() {
 
         renderer->clear();
         renderer->draw_frame(frame_x, frame_y, frame_w, frame_h, screen_x, screen_y);
+        hud->draw(100, 100, 50, 100, 1);
         renderer->present();
     }
 }

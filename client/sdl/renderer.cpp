@@ -47,3 +47,7 @@ void Renderer::clear() {
 void Renderer::present() {
     SDL_RenderPresent(sdl_renderer);
 }
+
+SDL_Renderer* Renderer::get_sdl_renderer() const {
+    return sdl_renderer;
+}
