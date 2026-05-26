@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
+#include "server/game/items/consumable_item.h"
+#include "server/game/items/defensive_item.h"
 #include "server/game/items/item.h"
+#include "server/game/items/magic_weapon.h"
+#include "server/game/items/normal_weapon.h"
 #include "server/game/items/spell.h"
 #include "server/game/items/weapon.h"
-#include "server/game/items/normal_weapon.h"
-#include "server/game/items/magic_weapon.h"
-#include "server/game/items/defensive_item.h"
-#include "server/game/items/consumable_item.h"
 
-class SpellTest : public ::testing::Test {
-protected:
+class SpellTest: public ::testing::Test {
+ protected:
     Spell damage_spell{"Fireball", 20, 40, 0, 0};
     Spell heal_spell{"Heal", 0, 0, 30, 50};
 };
@@ -50,8 +50,8 @@ TEST_F(SpellTest, HealSpell) {
 }
 
 
-class WeaponTest : public ::testing::Test {
-protected:
+class WeaponTest: public ::testing::Test {
+ protected:
     Weapon sword{"Excalibur"};
     Weapon dagger{"Dagger"};
 };
@@ -68,9 +68,8 @@ TEST_F(WeaponTest, WeaponEquipmentSlot) {
 }
 
 
-
-class NormalWeaponTest : public ::testing::Test {
-protected:
+class NormalWeaponTest: public ::testing::Test {
+ protected:
     NormalWeapon long_sword{"Long Sword", 15, 30, false};
     NormalWeapon bow{"Bow", 10, 20, true};
     NormalWeapon dagger{"Dagger", 5, 12, false};
@@ -105,21 +104,13 @@ TEST_F(NormalWeaponTest, NormalWeaponIsEquippable) {
 }
 
 
-class MagicWeaponTest : public ::testing::Test {
-protected:
+class MagicWeaponTest: public ::testing::Test {
+ protected:
     std::unique_ptr<Spell> fireball{std::make_unique<Spell>("Fireball", 20, 40, 0, 0)};
     std::unique_ptr<Spell> heal{std::make_unique<Spell>("Heal", 0, 0, 30, 50)};
-    
-    MagicWeapon staff{
-        "Staff of Fire Ruby",
-        std::make_unique<Spell>("Fireball", 20, 40, 0, 0),
-        30
-    };
-    MagicWeapon healing_wand{
-        "Wand of Healing",
-        std::make_unique<Spell>("Heal", 0, 0, 30, 50),
-        20
-    };
+
+    MagicWeapon staff{"Staff of Fire Ruby", std::make_unique<Spell>("Fireball", 20, 40, 0, 0), 30};
+    MagicWeapon healing_wand{"Wand of Healing", std::make_unique<Spell>("Heal", 0, 0, 30, 50), 20};
 };
 
 TEST_F(MagicWeaponTest, MagicWeaponInitialization) {
@@ -153,8 +144,8 @@ TEST_F(MagicWeaponTest, DamageSpellMagicWeapon) {
 }
 
 
-class DefensiveItemTest : public ::testing::Test {
-protected:
+class DefensiveItemTest: public ::testing::Test {
+ protected:
     DefensiveItem leather_armor{"Leather Armor", 5, 10, EquipmentSlot::ARMOR};
     DefensiveItem steel_armor{"Steel Armor", 15, 25, EquipmentSlot::ARMOR};
     DefensiveItem helmet{"Iron Helmet", 8, 15, EquipmentSlot::HELMET};
@@ -180,8 +171,8 @@ TEST_F(DefensiveItemTest, DefensiveItemShieldSlot) {
 }
 
 
-class ConsumableItemTest : public ::testing::Test {
-protected:
+class ConsumableItemTest: public ::testing::Test {
+ protected:
     ConsumableItem health_potion{"Health Potion", ConsumableType::HEALTH, 50};
     ConsumableItem mana_potion{"Mana Potion", ConsumableType::MANA, 40};
     ConsumableItem super_health_potion{"Super Health Potion", ConsumableType::HEALTH, 100};

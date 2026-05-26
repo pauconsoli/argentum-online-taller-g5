@@ -1,17 +1,18 @@
-#include "gtest/gtest.h"
 #include "server/game/game_config.h"
-#include "server/game/player_race.h"
-#include "server/game/player_class.h"
 
-class GameConfigTest : public ::testing::Test {
-protected:
+#include "gtest/gtest.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
+
+class GameConfigTest: public ::testing::Test {
+ protected:
     GameConfig& config = GameConfig::get_instance();
 };
 
 TEST_F(GameConfigTest, SingletonInstance) {
     GameConfig& config1 = GameConfig::get_instance();
     GameConfig& config2 = GameConfig::get_instance();
-    
+
     EXPECT_EQ(&config1, &config2);
 }
 

@@ -4,9 +4,9 @@
 #include <string>
 
 class Client {
-private:
+ private:
     //...
-public:
+ public:
     //...
 };
 

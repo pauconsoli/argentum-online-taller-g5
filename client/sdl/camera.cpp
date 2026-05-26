@@ -1,7 +1,6 @@
 #include "camera.h"
 
-Camera::Camera(int screen_w, int screen_h) : 
-    x(0), y(0), screen_w(screen_w), screen_h(screen_h) {}
+Camera::Camera(int screen_w, int screen_h): x(0), y(0), screen_w(screen_w), screen_h(screen_h) {}
 
 void Camera::center_on(int player_x, int player_y) {
     x = player_x - screen_w / 2;

@@ -2,7 +2,7 @@
 #define ZONE_H
 
 class Zone {
-public:
+ public:
     virtual ~Zone() = default;
 
     virtual bool is_safe() const = 0;

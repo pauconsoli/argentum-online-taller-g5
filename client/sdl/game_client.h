@@ -2,14 +2,15 @@
 #define GAME_CLIENT_H
 
 #include <SDL2/SDL.h>
-#include "renderer.h"
-#include "input_handler.h"
+
 #include "camera.h"
 #include "hud.h"
+#include "input_handler.h"
+#include "renderer.h"
 
 
 class GameClient {
-private:
+ private:
     SDL_Window* window;
     Renderer* renderer;
     Hud* hud;
@@ -18,7 +19,7 @@ private:
     int player_x;
     int player_y;
 
-public:
+ public:
     GameClient(int width, int height);
     ~GameClient();
 

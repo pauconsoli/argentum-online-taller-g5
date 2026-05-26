@@ -3,19 +3,18 @@
 
 #include "../common/queue.h"
 #include "../common/socket.h"
-
 #include "receiver_thread.h"
 #include "sender_thread.h"
 
-
+// cppcheck-suppress noConstructor
 class ClientHandler {
-private:
+ private:
     Socket peer;
     // ...
     ReceiverThread receiver;
     SenderThread sender;
 
-public:
+ public:
     // ...
     ~ClientHandler() = default;
 

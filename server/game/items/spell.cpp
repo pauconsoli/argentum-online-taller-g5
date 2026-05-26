@@ -1,11 +1,11 @@
 #include "server/game/items/spell.h"
 
 Spell::Spell(const std::string& name, int min_damage, int max_damage, int min_heal, int max_heal):
-        name(name),
-        min_damage(min_damage),
-        max_damage(max_damage),
-        min_heal(min_heal),
-        max_heal(max_heal) {}
+    name(name),
+    min_damage(min_damage),
+    max_damage(max_damage),
+    min_heal(min_heal),
+    max_heal(max_heal) {}
 
 Spell::~Spell() = default;
 

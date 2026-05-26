@@ -1,18 +1,19 @@
 #ifndef HUD_H
 #define HUD_H
 
-#include <SDL2/SDL.h>
-#include <SDL_ttf.h>
 #include <string>
 
+#include <SDL2/SDL.h>
+#include <SDL_ttf.h>
+
 class Hud {
-private:
+ private:
     SDL_Renderer* sdl_renderer;
     TTF_Font* font;
 
     void draw_text(const std::string& text, int x, int y, SDL_Color color);
 
-public:
+ public:
     explicit Hud(SDL_Renderer* renderer, const std::string& font_path);
     ~Hud();
 

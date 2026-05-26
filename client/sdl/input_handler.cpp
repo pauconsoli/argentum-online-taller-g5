@@ -1,9 +1,10 @@
 #include "input_handler.h"
+
 #include <iostream>
 
 InputHandler::InputHandler() {}
 
-bool InputHandler::handle(SDL_Event& event) {
+bool InputHandler::handle(const SDL_Event& event) {
     if (event.type == SDL_QUIT) {
         return false;
     }

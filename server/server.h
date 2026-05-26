@@ -14,12 +14,12 @@ class GameLoopThread;
 
 
 class Server {
-private:
+ private:
     //...
     mutable std::mutex clients_mutex;
     std::atomic<bool> keep_running;
 
-public:
+ public:
     // ...
     void run();
 

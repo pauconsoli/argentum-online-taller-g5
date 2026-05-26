@@ -1,24 +1,24 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-// Player: representa a un jugador en el juego, con atributos específicos como nombre, 
+// Player: representa a un jugador en el juego, con atributos específicos como nombre,
 // raza, clase, oro, experiencia, etc. Hereda de Character
 
 #include <cstdint>
-#include <string>
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "server/game/character.h"
-#include "server/game/player_class.h"
-#include "server/game/player_race.h"
 #include "server/game/equipment.h"
 #include "server/game/inventory.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
 
 class Item;
 
 class Player: public Character {
-private:
-
+ private:
     std::string name;
 
     PlayerRace p_race;
@@ -32,20 +32,10 @@ private:
     std::unique_ptr<Equipment> equipment;
     std::unique_ptr<Inventory> inventory;
 
-public:
-    Player(
-            uint32_t id,
-            const std::string& name,
-            PlayerRace p_race,
-            PlayerClass p_class,
-            int level,
-            int max_hp,
-            int max_mana,
-            int strength,
-            int agility,
-            int intelligence,
-            int constitution,
-            const Position& position);
+ public:
+    Player(uint32_t id, const std::string& name, PlayerRace p_race, PlayerClass p_class, int level,
+           int max_hp, int max_mana, int strength, int agility, int intelligence, int constitution,
+           const Position& position);
 
     ~Player() override = default;
 
@@ -79,10 +69,10 @@ public:
 
     Inventory& get_inventory();
 
-    void equip(Item& item); //implementar
+    void equip(Item& item);  // implementar
 
-    void restore_health(int amount); //implementar
-    void restore_mana(int amount);  //implementar
+    void restore_health(int amount);  // implementar
+    void restore_mana(int amount);    // implementar
 };
 
 #endif

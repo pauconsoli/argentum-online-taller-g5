@@ -1,20 +1,19 @@
 #ifndef CONSUMABLE_ITEM_H
 #define CONSUMABLE_ITEM_H
 
+#include <string>
+
 #include "server/game/items/item.h"
 
-enum class ConsumableType {
-    HEALTH,
-    MANA
-};
+enum class ConsumableType { HEALTH, MANA };
 
-class ConsumableItem : public Item {
-private:
+class ConsumableItem: public Item {
+ private:
     ConsumableType type;
 
     int restore;
 
-public:
+ public:
     ConsumableItem(const std::string& name, ConsumableType type, int restore);
 
     ~ConsumableItem() override;

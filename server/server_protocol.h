@@ -8,11 +8,11 @@
 #include "../common/socket.h"
 
 class ServerProtocol {
-private:
+ private:
     Socket& skt;
     // ...
 
-public:
+ public:
     explicit ServerProtocol(Socket& socket);
     // ...
 };

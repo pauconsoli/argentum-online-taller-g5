@@ -11,19 +11,19 @@ class PlayerConnection;
 class ClientHandler;
 class Server;
 
-
+// cppcheck-suppress noConstructor
 class AcceptorThread: public Thread {
-private:
+ private:
     //...
     Socket& listener;
     std::list<ClientHandler*> clients;
     Server& server;
 
+    // cppcheck-suppress unusedPrivateFunction
     void reap() noexcept;
     void clear() noexcept;
 
-public:
-
+ public:
     ~AcceptorThread();
 
     void run() override;
