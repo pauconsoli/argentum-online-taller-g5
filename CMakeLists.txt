@@ -131,6 +131,8 @@ if(TALLER_CLIENT OR TALLER_EDITOR)
         OVERRIDE_FIND_PACKAGE
         URL https://github.com/libSDL2pp/libSDL2pp/archive/cc198c9a5657048bee67ece82de620b2d5661084.zip
     )
+    # Disable Opus support in SDL2_mixer (broken on macOS with Homebrew opusfile)
+    set(SDL2MIXER_OPUS OFF CACHE BOOL "" FORCE)
 
     FetchContent_MakeAvailable(SDL2 SDL2_image SDL2_mixer SDL2_ttf libSDL2pp)
 endif()
@@ -152,9 +154,12 @@ if(TALLER_CLIENT)
 
     # add libSDL2pp's headers
     target_include_directories(taller_client PRIVATE ${libSDL2pp_SOURCE_DIR})
+    target_include_directories(taller_client PRIVATE ${sdl2_image_SOURCE_DIR}/include)
+    target_include_directories(taller_client PRIVATE ${sdl2_ttf_SOURCE_DIR})
+
 
     # Link the taller_common lib target
-    target_link_libraries(taller_client taller_common SDL2pp::SDL2pp spdlog::spdlog)
+    target_link_libraries(taller_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf spdlog::spdlog)
 endif()
 
 if(TALLER_SERVER)

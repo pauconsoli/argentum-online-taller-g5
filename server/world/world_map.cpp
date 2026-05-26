@@ -15,7 +15,7 @@ bool WorldMap::is_valid_position(const Position& pos) const {
            pos.y >= 0 && pos.y < height;
 }
 
-bool WorldMap::is_blocking(const Position& pos) const {
+bool WorldMap::is_position_blocked(const Position& pos) const {
     if (!is_valid_position(pos)) {
         return true; //si la posición no es válida, es bloqueante (ej algo fuera del mapa)
     }

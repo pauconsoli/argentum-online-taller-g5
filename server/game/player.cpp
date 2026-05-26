@@ -1,4 +1,6 @@
 #include "player.h"
+#include "server/game/inventory.h"
+#include "server/game/equipment.h"
 
 Player::Player(
         uint32_t id,
@@ -28,7 +30,9 @@ Player::Player(
         p_class(player_class),
         gold(0),
         experience(0),
-        meditating(false) {}
+        meditating(false),
+        equipment(std::make_unique<Equipment>()),
+        inventory(std::make_unique<Inventory>(*equipment)) {}
 
 bool Player::can_cast_magic() const {
     return p_class != PlayerClass::WARRIOR;
@@ -87,4 +91,26 @@ uint64_t Player::get_gold() const {
 
 uint64_t Player::get_experience() const {
     return experience;
+}
+
+Equipment& Player::get_equipment() {
+    return *equipment;
+}
+
+Inventory& Player::get_inventory() {
+    return *inventory;
+}
+
+void Player::equip(Item& item) {
+    inventory->equip(item, *this);
+}
+
+void Player::restore_health(int amount) {
+    (void)amount;
+    // TODO
+}
+
+void Player::restore_mana(int amount) {
+    (void)amount;
+    // TODO
 }

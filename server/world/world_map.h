@@ -16,7 +16,7 @@ class Zone;
 
 class WorldMap {
 private:
-    std::vector<std::vector<Cell>> cells;
+    std::vector<std::vector<Cell>> cells; //usar un solo vectir, cuando indexo hacer suma, pero no está mal
 
     std::vector<std::vector<Zone*>> zones;
 
@@ -28,7 +28,7 @@ public:
 
     bool is_valid_position(const Position& pos) const;
 
-    bool is_blocking(const Position& pos) const;
+    bool is_position_blocked(const Position& pos) const;
 
     const Cell& get_cell(const Position& pos) const;
     void set_cell(const Position& pos, const Cell& cell);
