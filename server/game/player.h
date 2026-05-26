@@ -6,10 +6,13 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 
 #include "server/game/character.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
+#include "server/game/equipment.h"
+#include "server/game/inventory.h"
 
 class Item;
 
@@ -25,6 +28,9 @@ private:
     uint64_t experience;
 
     bool meditating;
+
+    std::unique_ptr<Equipment> equipment;
+    std::unique_ptr<Inventory> inventory;
 
 public:
     Player(
@@ -68,6 +74,10 @@ public:
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
+
+    Equipment& get_equipment();
+
+    Inventory& get_inventory();
 
     void equip(Item& item); //implementar
 

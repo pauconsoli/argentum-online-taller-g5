@@ -1,58 +1,33 @@
 #include "server/game/equipment.h"
 #include "server/game/items/item.h"
 
+Equipment::Equipment() {
+    equipment[EquipmentSlot::WEAPON] = nullptr;
+    equipment[EquipmentSlot::ARMOR] = nullptr;
+    equipment[EquipmentSlot::HELMET] = nullptr;
+    equipment[EquipmentSlot::SHIELD] = nullptr;
+}
+
 Item* Equipment::get(EquipmentSlot slot) const {
-    switch (slot) {
-        case EquipmentSlot::WEAPON:
-            return weapon;
-        case EquipmentSlot::ARMOR:
-            return armor;
-        case EquipmentSlot::HELMET:
-            return helmet;
-        case EquipmentSlot::SHIELD:
-            return shield;
+    auto it = equipment.find(slot);
+    if (it != equipment.end()) {
+        return it->second;
     }
     return nullptr;
 }
 
-Item* Equipment::set(EquipmentSlot slot, Item* item) {
-    Item* old = nullptr;
-    switch (slot) {
-        case EquipmentSlot::WEAPON:
-            old = weapon;
-            weapon = item;
-            break;
-        case EquipmentSlot::ARMOR:
-            old = armor;
-            armor = item;
-            break;
-        case EquipmentSlot::HELMET:
-            old = helmet;
-            helmet = item;
-            break;
-        case EquipmentSlot::SHIELD:
-            old = shield;
-            shield = item;
-            break;
-    }
-    return old;
+Item* Equipment::equip(Item* item, EquipmentSlot slot) {
+    Item* prev = equipment[slot];  // nullptr si no existía
+    equipment[slot] = item;
+    return prev;
 }
 
-Item* Equipment::unset(EquipmentSlot slot) {
-    return set(slot, nullptr);
+Item* Equipment::unequip(EquipmentSlot slot) {
+    Item* item = equipment[slot];
+    equipment[slot] = nullptr;
+    return item;  // nullptr si el slot estaba vacío
 }
 
 bool Equipment::has(EquipmentSlot slot) const {
     return get(slot) != nullptr;
-}
-
-bool Equipment::remove(Item* item) {
-    for (auto slot : {EquipmentSlot::WEAPON, EquipmentSlot::ARMOR, 
-                      EquipmentSlot::HELMET, EquipmentSlot::SHIELD}) {
-        if (get(slot) == item) {
-            unset(slot);
-            return true;
-        }
-    }
-    return false;
 }

@@ -1,104 +1,81 @@
 #include "server/game/inventory.h"
+#include "server/game/equipment.h"
+#include "server/game/items/item.h"
 #include "server/game/player.h"
 
-Inventory::Inventory() = default;
+Inventory::Inventory(Equipment& eq) : equipment(eq) {}
 
-int Inventory::find_item(Item& item) {
-    for (size_t i = 0; i < items.size(); ++i) {
-        if (items[i].get() == &item) {
-            return static_cast<int>(i);
-        }
+int Inventory::find_item(const Item& item) const {
+    for (int i = 0; i < static_cast<int>(items.size()); i++) {
+        if (items[i].get() == &item) return i;
     }
     return -1;
 }
 
 bool Inventory::add_item(std::unique_ptr<Item> item) {
-    if (is_full()) {
-        return false;
-    }
-    
+    if (is_full()) return false;
     items.push_back(std::move(item));
     return true;
 }
 
-bool Inventory::equip(Item& item) {
-    if (!contains_item(item)) {
-        return false;
-    }
+bool Inventory::equip(Item& item, Player& player) {   // equipar puede ser que se agregue al equipment o que se consuma dependiendo del tipo de item
+    int index = find_item(item);
+    if (index == -1) return false; // no está en el inventario
 
     auto slot = item.get_slot();
-    if (!slot.has_value()) {
-        return false;  // No es equipable (es consumible)
+    if (!slot.has_value()) {  // si no tiene slot asignado es porque es consumible
+        return use_consumable(index, player);
     }
 
-    if (equipment.has(slot.value())) {
-        unequip(slot.value());
+    Item* prev = equipment.equip(items[index].get(), *slot);  // tomo el item anterior del slot si existe
+
+    auto equipped_item = std::move(items[index]);
+    items.erase(items.begin() + index);
+    equipped_item.release();  
+
+    if (prev != nullptr) {
+        if (!is_full()) {
+            items.push_back(std::unique_ptr<Item>(prev));
+        } else {
+            delete prev;  // sería el drop
+        }
     }
 
-    equipment.set(slot.value(), &item);
     return true;
 }
 
 bool Inventory::unequip(EquipmentSlot slot) {
-    if (!equipment.has(slot)) {
-        return false;
+    Item* item = equipment.unequip(slot);
+    if (item == nullptr) return false;  // slot vacío
+
+    if (!is_full()) {
+        items.push_back(std::unique_ptr<Item>(item)); // si el inventario no está lleno vuelve al inventario
+    } else {
+        delete item;  //drop
     }
-    
-    equipment.unset(slot);
     return true;
 }
 
-bool Inventory::use_consumable(Item& item, Player& player) {
-    if (!contains_item(item)) {
-        return false;
-    }
-    
-    auto slot = item.get_slot();
-    if (slot.has_value()) {
-        return false;  // No es consumible (es equipable)
-    }
-
-    item.use(player);
-    
-    remove_item(item);
-    
+bool Inventory::use_consumable(int item_index, Player& player) {
+    (*items[item_index]).use(player);    
+    items.erase(items.begin() + item_index);
     return true;
 }
 
-bool Inventory::remove_item(Item& item) {
-
-    equipment.remove(&item);
-
+std::unique_ptr<Item> Inventory::remove_item(Item& item) {
     int index = find_item(item);
-    if (index == -1) {
-        return false;
-    }
-    
+    if (index == -1) return nullptr;
+    auto owned = std::move(items[index]);
     items.erase(items.begin() + index);
-    return true;
-}
-
-Item* Inventory::get_equipped(EquipmentSlot slot) const {
-    return equipment.get(slot);
-}
-
-const std::vector<std::unique_ptr<Item>>& Inventory::get_items() const {
-    return items;
-}
-
-size_t Inventory::get_size() const {
-    return items.size();
+    return owned;
 }
 
 bool Inventory::is_full() const {
     return items.size() >= MAX_ITEMS;
 }
 
-bool Inventory::contains_item(Item& item) const {
-    for (const auto& inv_item : items) {
-        if (inv_item.get() == &item) {
-            return true;
-        }
-    }
-    return false;
+size_t Inventory::get_size() const { return items.size(); }
+
+const std::vector<std::unique_ptr<Item>>& Inventory::get_items() const {
+    return items;
 }
