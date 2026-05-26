@@ -8,7 +8,7 @@ Equipment::Equipment() {
     equipment[EquipmentSlot::SHIELD] = nullptr;
 }
 
-Item* Equipment::get(EquipmentSlot slot) const {
+Item* Equipment::get_item_from_slot(EquipmentSlot slot) const {
     auto it = equipment.find(slot);
     if (it != equipment.end()) {
         return it->second;
@@ -28,6 +28,6 @@ Item* Equipment::unequip(EquipmentSlot slot) {
     return item;  // nullptr si el slot estaba vacío
 }
 
-bool Equipment::has(EquipmentSlot slot) const {
-    return get(slot) != nullptr;
+bool Equipment::slot_has_item(EquipmentSlot slot) const {
+    return get_item_from_slot(slot) != nullptr;
 }

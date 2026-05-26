@@ -16,8 +16,8 @@ public:
     Item* equip(Item* item, EquipmentSlot slot); // devuelve el item que estaba equipado o nullptr si el slot estaba vacío
     Item* unequip(EquipmentSlot slot); // devuelve el item desequipado
 
-    Item* get(EquipmentSlot slot) const;
-    bool has(EquipmentSlot slot) const;
+    Item* get_item_from_slot(EquipmentSlot slot) const;
+    bool slot_has_item(EquipmentSlot slot) const;
 };
 
 #endif
