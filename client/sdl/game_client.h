@@ -3,11 +3,13 @@
 
 #include <SDL2/SDL.h>
 #include "renderer.h"
+#include "input_handler.h"
 
 class GameClient {
 private:
     SDL_Window* window;
     Renderer* renderer;
+    InputHandler input_handler;
 
 public:
     GameClient(int width, int height);

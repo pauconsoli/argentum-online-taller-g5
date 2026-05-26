@@ -34,9 +34,7 @@ void GameClient::run() {
 
     while (running) {
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
+            running = input_handler.handle(event);
         }
 
         renderer->clear();
