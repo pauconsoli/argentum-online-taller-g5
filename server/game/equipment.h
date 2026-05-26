@@ -1,24 +1,23 @@
 #ifndef EQUIPMENT_H
 #define EQUIPMENT_H
 
-#include <map>
-
 #include "server/game/items/equipment_slot.h"
 
 class Item;
+class Inventory;
 
+// Equipment es un wrapper que proporciona acceso a los items equipados almacenados en el inventario
 class Equipment {
  private:
-    std::map<EquipmentSlot, Item*> equipment;
+    Inventory* inventory;  // @not_owned: referencia al inventario
 
  public:
-    Equipment();
+    explicit Equipment(Inventory& inv);
 
-    Item* equip(Item* item, EquipmentSlot slot);  // devuelve el item que estaba equipado o nullptr
-                                                  // si el slot estaba vacío
-    Item* unequip(EquipmentSlot slot);            // devuelve el item desequipado
-
+    // Obtiene el item equipado en un slot, o nullptr si no hay
     Item* get_item_from_slot(EquipmentSlot slot) const;
+
+    // Verifica si hay un item equipado en el slot
     bool slot_has_item(EquipmentSlot slot) const;
 };
 

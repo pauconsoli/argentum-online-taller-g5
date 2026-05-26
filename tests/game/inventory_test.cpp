@@ -2,7 +2,6 @@
 
 #include "common/position.h"
 #include "gtest/gtest.h"
-#include "server/game/equipment.h"
 #include "server/game/items/consumable_item.h"
 #include "server/game/items/defensive_item.h"
 #include "server/game/items/magic_weapon.h"
@@ -18,7 +17,6 @@ class InventoryTest: public ::testing::Test {
                   15, position};
 
     Inventory& inventory = player.get_inventory();
-    Equipment& equipment = player.get_equipment();
 
     NormalWeapon sword{"Espada", 5, 15, false};
     NormalWeapon axe{"Hacha", 8, 20, false};
@@ -71,8 +69,9 @@ TEST_F(InventoryTest, EquipItemFromInventory) {
 
     EXPECT_EQ(inventory.get_size(), 1);
     EXPECT_TRUE(inventory.equip(*ptr, player));
-    EXPECT_EQ(inventory.get_size(), 0);  // se sacó del inventario
-    EXPECT_TRUE(equipment.slot_has_item(EquipmentSlot::WEAPON));
+    EXPECT_EQ(inventory.get_size(),
+              1);  // el item se queda en el inventario, solo marcado como equipado
+    EXPECT_TRUE(inventory.slot_has_item(EquipmentSlot::WEAPON));
 }
 
 TEST_F(InventoryTest, EquipItemNotInInventory) {
@@ -99,7 +98,7 @@ TEST_F(InventoryTest, SwapEquippedItem) {
     inventory.add_item(std::move(sword_item));
     inventory.equip(*sword_ptr, player);
 
-    EXPECT_EQ(inventory.get_size(), 0);
+    EXPECT_EQ(inventory.get_size(), 1);  // item permanece en inventario
 
     auto axe_item = std::make_unique<NormalWeapon>("Hacha", 8, 20, false);
     Item* axe_ptr = axe_item.get();
@@ -107,8 +106,8 @@ TEST_F(InventoryTest, SwapEquippedItem) {
 
     bool result = inventory.equip(*axe_ptr, player);
     EXPECT_TRUE(result);
-    EXPECT_EQ(inventory.get_size(), 1);  // la espada volvió al inventario
-    EXPECT_EQ(equipment.get_item_from_slot(EquipmentSlot::WEAPON), axe_ptr);
+    EXPECT_EQ(inventory.get_size(), 2);  // ambos items siguen en el inventario
+    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::WEAPON), axe_ptr);
 }
 
 TEST_F(InventoryTest, SwapWhenInventoryFull) {
@@ -122,15 +121,13 @@ TEST_F(InventoryTest, SwapWhenInventoryFull) {
     inventory.add_item(std::move(sword));
     EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
 
-    inventory.equip(*sword_ptr, player);  // sale del inventario, se equipa
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS - 1);
+    inventory.equip(*sword_ptr, player);  // se marca como equipado, sigue en inventario
+    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
 
+    // El inventario está lleno, no se puede agregar más items
     auto axe = std::make_unique<NormalWeapon>("Hacha", 8, 20, false);
-    Item* axe_ptr = axe.get();
-    inventory.add_item(std::move(axe));
-
-    bool result = inventory.equip(*axe_ptr, player);
-    EXPECT_TRUE(result);
+    bool result = inventory.add_item(std::move(axe));
+    EXPECT_FALSE(result);  // no hay espacio
     EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
 }
 
@@ -140,11 +137,11 @@ TEST_F(InventoryTest, UnequipToEmptyInventory) {
     inventory.add_item(std::move(sword));
     inventory.equip(*ptr, player);
 
-    EXPECT_EQ(inventory.get_size(), 0);
+    EXPECT_EQ(inventory.get_size(), 1);  // item sigue en el inventario
     bool result = inventory.unequip(EquipmentSlot::WEAPON);
     EXPECT_TRUE(result);
-    EXPECT_EQ(inventory.get_size(), 1);
-    EXPECT_FALSE(equipment.slot_has_item(EquipmentSlot::WEAPON));
+    EXPECT_EQ(inventory.get_size(), 1);  // item sigue en el inventario, solo se desmarca
+    EXPECT_FALSE(inventory.slot_has_item(EquipmentSlot::WEAPON));
 }
 
 TEST_F(InventoryTest, UnequipFromEmptySlot) {
@@ -153,24 +150,22 @@ TEST_F(InventoryTest, UnequipFromEmptySlot) {
 }
 
 TEST_F(InventoryTest, UnequipWhenInventoryFull) {
-    auto sword = std::make_unique<NormalWeapon>("Espada", 5, 15, false);
-    Item* sword_ptr = sword.get();
-    inventory.add_item(std::move(sword));
-    inventory.equip(*sword_ptr, player);  // sale del inventario porque se equipa, inventario vacío
-
     for (int i = 0; i < MAX_INVENTORY_ITEMS; i++) {
         auto item = std::make_unique<NormalWeapon>("Arma " + std::to_string(i), 5, 15, false);
         inventory.add_item(std::move(item));
     }
-
     EXPECT_TRUE(inventory.is_full());
 
-    bool result =
-        inventory.unequip(EquipmentSlot::WEAPON);  // se hace el unequip pero el item se dropea
-                                                   // porque el inventario está lleno
-    EXPECT_TRUE(result);  // devuelve true porque se hizo el unequip (aunque se dropee)
+    // Equipar el primer item (ya está en el inventario)
+    Item* first_item = inventory.get_slots()[0].item.get();
+    inventory.equip(*first_item, player);
+    EXPECT_TRUE(inventory.slot_has_item(EquipmentSlot::WEAPON));
+
+    // Desquipar simplemente desmarca el item (sigue en inventario)
+    bool result = inventory.unequip(EquipmentSlot::WEAPON);
+    EXPECT_TRUE(result);
     EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);  // el inventario sigue lleno
-    EXPECT_FALSE(equipment.slot_has_item(EquipmentSlot::WEAPON));
+    EXPECT_FALSE(inventory.slot_has_item(EquipmentSlot::WEAPON));
 }
 
 // ver después que hacer si se droppea

@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "server/game/character.h"
-#include "server/game/equipment.h"
 #include "server/game/inventory.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -29,7 +28,6 @@ class Player: public Character {
 
     bool meditating;
 
-    std::unique_ptr<Equipment> equipment;
     std::unique_ptr<Inventory> inventory;
 
  public:
@@ -64,8 +62,6 @@ class Player: public Character {
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
-
-    Equipment& get_equipment();
 
     Inventory& get_inventory();
 
