@@ -35,8 +35,8 @@ void GameClient::run() {
     bool running = true;
     SDL_Event event;
 
-    int frame_w = 31;
-    int frame_h = 45;
+    int frame_w = 27;
+    int frame_h = 47;
     int frame_x = 0;
     int frame_y = 0;
     int speed = 3;
@@ -56,19 +56,23 @@ void GameClient::run() {
 
         if (keys[SDL_SCANCODE_UP]) {
             player_y -= speed;
-            frame_y = 45; 
+            frame_y = 47;
+            total_frames = 6;
             moving = true;
         } else if (keys[SDL_SCANCODE_DOWN]) {
             player_y += speed;
-            frame_y = 0; 
+            frame_y = 0;
+            total_frames = 6;
             moving = true;
         } else if (keys[SDL_SCANCODE_LEFT]) {
             player_x -= speed;
-            frame_y = 90;
+            frame_y = 94;
+            total_frames = 5;
             moving = true;
         } else if (keys[SDL_SCANCODE_RIGHT]) {
             player_x += speed;
-            frame_y = 135; 
+            frame_y = 141;
+            total_frames = 5;
             moving = true;
         }
 
