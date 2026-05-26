@@ -4,11 +4,11 @@
 #include <SDL2/SDL.h>
 
 class InputHandler {
-public:
+ public:
     InputHandler();
 
     // Retorna false si el usuario cerró la ventana, true si no
-    bool handle(SDL_Event& event);
+    bool handle(const SDL_Event& event);
 };
 
 #endif

@@ -4,7 +4,7 @@
 #include <string>
 
 class Spell {
-private:
+ private:
     std::string name;
 
     int min_damage;
@@ -13,7 +13,7 @@ private:
     int min_heal;
     int max_heal;
 
-public:
+ public:
     Spell(const std::string& name, int min_damage, int max_damage, int min_heal, int max_heal);
 
     ~Spell();

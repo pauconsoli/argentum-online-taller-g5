@@ -1,16 +1,18 @@
 #ifndef NORMAL_WEAPON_H
 #define NORMAL_WEAPON_H
 
+#include <string>
+
 #include "server/game/items/weapon.h"
 
-class NormalWeapon : public Weapon {
-private:
+class NormalWeapon: public Weapon {
+ private:
     int min_damage;
     int max_damage;
 
     bool ranged;
 
-public:
+ public:
     NormalWeapon(const std::string& name, int min_damage, int max_damage, bool ranged);
 
     ~NormalWeapon() override;

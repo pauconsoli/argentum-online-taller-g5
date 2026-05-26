@@ -6,11 +6,10 @@
 
 
 class GameLoopThread: public Thread {
-private:
+ private:
     //...
 
-public:
-
+ public:
     //...
     void run() override;
 

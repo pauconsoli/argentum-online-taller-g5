@@ -1,16 +1,17 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <SDL2/SDL.h>
-#include <SDL_image.h>
 #include <string>
 
+#include <SDL2/SDL.h>
+#include <SDL_image.h>
+
 class Renderer {
-private:
+ private:
     SDL_Renderer* sdl_renderer;
     SDL_Texture* texture;
 
-public:
+ public:
     explicit Renderer(SDL_Window* window);
     ~Renderer();
 

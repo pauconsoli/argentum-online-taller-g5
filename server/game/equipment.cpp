@@ -1,4 +1,5 @@
 #include "server/game/equipment.h"
+
 #include "server/game/items/item.h"
 
 Equipment::Equipment() {

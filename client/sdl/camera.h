@@ -2,13 +2,13 @@
 #define CAMERA_H
 
 class Camera {
-private:
+ private:
     int x;
     int y;
     int screen_w;
     int screen_h;
 
-public:
+ public:
     Camera(int screen_w, int screen_h);
 
     void center_on(int player_x, int player_y);

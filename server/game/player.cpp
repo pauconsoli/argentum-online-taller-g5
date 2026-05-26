@@ -1,42 +1,26 @@
 #include "player.h"
-#include "server/game/inventory.h"
-#include "server/game/equipment.h"
 
-Player::Player(
-        uint32_t id,
-        const std::string& name,
-        PlayerRace race,
-        PlayerClass player_class,
-        int level,
-        int max_hp,
-        int max_mana,
-        int strength,
-        int agility,
-        int intelligence,
-        int constitution,
-        const Position& position):
-        Character(
-                id,
-                level,
-                max_hp,
-                max_mana,
-                strength,
-                agility,
-                intelligence,
-                constitution,
-                position),
-        name(name),
-        p_race(race),
-        p_class(player_class),
-        gold(0),
-        experience(0),
-        meditating(false),
-        equipment(std::make_unique<Equipment>()),
-        inventory(std::make_unique<Inventory>(*equipment)) {}
+#include <utility>
+
+#include "server/game/equipment.h"
+#include "server/game/inventory.h"
+
+Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClass player_class,
+               int level, int max_hp, int max_mana, int strength, int agility, int intelligence,
+               int constitution, const Position& position):
+    Character(id, level, max_hp, max_mana, strength, agility, intelligence, constitution, position),
+    name(name),
+    p_race(race),
+    p_class(player_class),
+    gold(0),
+    experience(0),
+    meditating(false),
+    equipment(std::make_unique<Equipment>()),
+    inventory(std::make_unique<Inventory>(*equipment)) {}
 
 bool Player::can_cast_magic() const {
     return p_class != PlayerClass::WARRIOR;
-} //si no es guerrero, puede usar magia 
+}  // si no es guerrero, puede usar magia
 
 void Player::move(const Position& new_position) {
     position = new_position;
@@ -107,10 +91,10 @@ void Player::equip(Item& item) {
 
 void Player::restore_health(int amount) {
     (void)amount;
-    // TODO
+    // TODO(Pau)
 }
 
 void Player::restore_mana(int amount) {
     (void)amount;
-    // TODO
+    // TODO(Pau)
 }

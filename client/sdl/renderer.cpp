@@ -1,7 +1,8 @@
 #include "renderer.h"
+
 #include <stdexcept>
 
-Renderer::Renderer(SDL_Window* window) : texture(nullptr) {
+Renderer::Renderer(SDL_Window* window): texture(nullptr) {
     sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (sdl_renderer == nullptr) {
         throw std::runtime_error(SDL_GetError());

@@ -1,20 +1,19 @@
 #include "game_client.h"
+
 #include <stdexcept>
 
-GameClient::GameClient(int width, int height) : 
-    window(nullptr), renderer(nullptr), hud(nullptr),
-    camera(width, height), player_x(400), player_y(300) {
+GameClient::GameClient(int width, int height):
+    window(nullptr),
+    renderer(nullptr),
+    hud(nullptr),
+    camera(width, height),
+    player_x(400),
+    player_y(300) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error(SDL_GetError());
     }
-    window = SDL_CreateWindow(
-        "Argentum Online - G5",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        width,
-        height,
-        SDL_WINDOW_SHOWN
-    );
+    window = SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     if (window == nullptr) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
@@ -37,6 +36,8 @@ void GameClient::run() {
 
     int frame_w = 31;
     int frame_h = 45;
+    // cppcheck-suppress variableScope
+    // cppcheck-suppress unreadVariable
     int frame_x = 0;
     int frame_y = 0;
     int speed = 3;
@@ -44,7 +45,7 @@ void GameClient::run() {
     int current_frame = 0;
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
-    Uint32 frame_delay = 100; 
+    Uint32 frame_delay = 100;
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -56,11 +57,11 @@ void GameClient::run() {
 
         if (keys[SDL_SCANCODE_UP]) {
             player_y -= speed;
-            frame_y = 45; 
+            frame_y = 45;
             moving = true;
         } else if (keys[SDL_SCANCODE_DOWN]) {
             player_y += speed;
-            frame_y = 0; 
+            frame_y = 0;
             moving = true;
         } else if (keys[SDL_SCANCODE_LEFT]) {
             player_x -= speed;
@@ -68,7 +69,7 @@ void GameClient::run() {
             moving = true;
         } else if (keys[SDL_SCANCODE_RIGHT]) {
             player_x += speed;
-            frame_y = 135; 
+            frame_y = 135;
             moving = true;
         }
 

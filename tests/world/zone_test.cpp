@@ -1,20 +1,21 @@
-#include "gtest/gtest.h"
 #include "server/world/zone.h"
+
+#include "gtest/gtest.h"
 #include "server/world/city.h"
 #include "server/world/dungeon.h"
 
-class CityTest : public ::testing::Test {
-protected:
+class CityTest: public ::testing::Test {
+ protected:
     City city;
 };
 
-class DungeonTest : public ::testing::Test {
-protected:
+class DungeonTest: public ::testing::Test {
+ protected:
     Dungeon dungeon;
 };
 
-class ZonePolymorphismTest : public ::testing::Test {
-protected:
+class ZonePolymorphismTest: public ::testing::Test {
+ protected:
     Zone* city_zone = new City();
     Zone* dungeon_zone = new Dungeon();
 };
@@ -48,20 +49,20 @@ TEST_F(ZonePolymorphismTest, DungeonPolymorphism) {
 TEST_F(ZonePolymorphismTest, VirtualDestructor) {
     delete city_zone;
     delete dungeon_zone;
-    // ver que funciona el destructor virtual 
+    // ver que funciona el destructor virtual
 }
 
 TEST(ZoneTest, SafetyDifference) {
     City city;
     Dungeon dungeon;
-    
+
     EXPECT_NE(city.is_safe(), dungeon.is_safe());
 }
 
 TEST(ZoneTest, BothCanSpawn) {
     City city;
     Dungeon dungeon;
-    
+
     EXPECT_TRUE(city.can_spawn());
     EXPECT_TRUE(dungeon.can_spawn());
 }

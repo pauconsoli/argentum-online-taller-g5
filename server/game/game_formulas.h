@@ -4,7 +4,7 @@
 class Player;
 
 class GameFormulas {
-public:
+ public:
     static int calculate_max_hp(const Player& player);
 
     static int calculate_max_mana(const Player& player);

@@ -4,15 +4,13 @@
 #include "terrain_type.h"
 
 class Cell {
-private:
+ private:
     TerrainType terrain_type;
 
     bool blocking;
 
-public:
-    Cell(
-        TerrainType terrain_type = TerrainType::GRASS,
-        bool blocking = false);
+ public:
+    explicit Cell(TerrainType terrain_type = TerrainType::GRASS, bool blocking = false);
 
     TerrainType get_terrain_type() const;
 

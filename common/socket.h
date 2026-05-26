@@ -7,7 +7,7 @@
  * en sockets IPv4 para TCP.
  * */
 class Socket {
-private:
+ private:
     int skt;
     bool closed;
     int stream_status;
@@ -42,7 +42,7 @@ private:
      * */
     void chk_skt_or_fail() const;
 
-public:
+ public:
     /*
      * Constructores para `Socket` tanto para conectarse a un servidor
      * (`Socket::Socket(const char*, const char*)`) como para ser usado

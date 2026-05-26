@@ -11,7 +11,7 @@
 class LibError: public std::exception {
     char msg_error[256];
 
-public:
+ public:
     /*
      * Dado que `errno` es una variable global y puede ser modificada por
      * cualquier función, hay que hacer una copia apenas se haya detectado
@@ -28,7 +28,7 @@ public:
      *  */
     LibError(int error_code, const char* fmt, ...) noexcept;
 
-    virtual const char* what() const noexcept;
+    const char* what() const noexcept override;
 
     virtual ~LibError();
 };

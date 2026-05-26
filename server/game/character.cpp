@@ -1,27 +1,19 @@
 #include "character.h"
 
-Character::Character(
-        uint32_t id,
-        int level,
-        int max_hp,
-        int max_mana,
-        int strength,
-        int agility,
-        int intelligence,
-        int constitution,
-        const Position& position):
-        id(id),
-        level(level),
-        current_hp(max_hp),
-        max_hp(max_hp),
-        current_mana(max_mana),
-        max_mana(max_mana),
-        strength(strength),
-        agility(agility),
-        intelligence(intelligence),
-        constitution(constitution),
-        position(position),
-        dead(false) {}
+Character::Character(uint32_t id, int level, int max_hp, int max_mana, int strength, int agility,
+                     int intelligence, int constitution, const Position& position):
+    id(id),
+    level(level),
+    current_hp(max_hp),
+    max_hp(max_hp),
+    current_mana(max_mana),
+    max_mana(max_mana),
+    strength(strength),
+    agility(agility),
+    intelligence(intelligence),
+    constitution(constitution),
+    position(position),
+    dead(false) {}
 
 void Character::receive_damage(int damage) {
     if (damage <= 0 || dead) {
@@ -99,4 +91,3 @@ const Position& Character::get_position() const {
 void Character::set_position(const Position& new_position) {
     position = new_position;
 }
-

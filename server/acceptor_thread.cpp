@@ -6,23 +6,22 @@
 //...
 
 void AcceptorThread::reap() noexcept {
-
     //...
 }
 
 void AcceptorThread::clear() noexcept {
-
     //...
 }
 
-AcceptorThread::~AcceptorThread() { clear(); }
+AcceptorThread::~AcceptorThread() {
+    clear();
+}
 
 void AcceptorThread::run() {
     //...
 }
 
 void AcceptorThread::stop() {
-
     Thread::stop();
     try {
         listener.shutdown(SHUT_RDWR);

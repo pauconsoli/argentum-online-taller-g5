@@ -2,9 +2,9 @@
 #define PLAYER_CONNECTION_H
 
 class PlayerConnection {
-private:
+ private:
     //...
-public:
+ public:
     //...
 };
 

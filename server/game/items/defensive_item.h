@@ -1,16 +1,18 @@
 #ifndef DEFENSIVE_ITEM_H
 #define DEFENSIVE_ITEM_H
 
+#include <string>
+
 #include "server/game/items/item.h"
 
-class DefensiveItem : public Item {
-private:
+class DefensiveItem: public Item {
+ private:
     int min_defense;
     int max_defense;
 
     EquipmentSlot slot;
 
-public:
+ public:
     DefensiveItem(const std::string& name, int min_defense, int max_defense, EquipmentSlot slot);
 
     ~DefensiveItem() override;

@@ -5,10 +5,10 @@
 #include "player_race.h"
 
 class GameConfig {
-private:
+ private:
     GameConfig() = default;
 
-public:
+ public:
     static GameConfig& get_instance();
 
     float get_race_hp_multiplier(PlayerRace race) const;
