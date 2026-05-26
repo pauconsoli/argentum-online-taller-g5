@@ -44,13 +44,13 @@ TEST_F(WorldMapTest, IsValidPositionBoundary) {
 }
 
 TEST_F(WorldMapTest, IsBlockingValidPosition) {
-    EXPECT_FALSE(map.is_blocking(center)); // por defecto las celdas no son bloqueantes
+    EXPECT_FALSE(map.is_position_blocked(center)); // por defecto las celdas no son bloqueantes
 }
 
 TEST_F(WorldMapTest, IsBlockingOutOfBounds) {
     // fuera del mapa siempre bloqueante
-    EXPECT_TRUE(map.is_blocking(out_of_bounds));
-    EXPECT_TRUE(map.is_blocking(negative));
+    EXPECT_TRUE(map.is_position_blocked(out_of_bounds));
+    EXPECT_TRUE(map.is_position_blocked(negative));
 }
 
 TEST_F(WorldMapTest, SetCellAndGetCell) {
@@ -66,7 +66,7 @@ TEST_F(WorldMapTest, SetBlockingCell) {
     Cell water(TerrainType::WATER, true);
     map.set_cell(center, water);
     
-    EXPECT_TRUE(map.is_blocking(center));
+    EXPECT_TRUE(map.is_position_blocked(center));
 }
 
 TEST_F(WorldMapTest, SetZoneCity) {
@@ -117,7 +117,7 @@ TEST_F(WorldMapTest, SetCellOutOfBoundsIgnored) {
     Cell water(TerrainType::WATER, true);
     map.set_cell(out_of_bounds, water);
     
-    bool is_blocking = map.is_blocking(out_of_bounds);
+    bool is_blocking = map.is_position_blocked(out_of_bounds);
     EXPECT_TRUE(is_blocking);  // verdadero porque fuera del mapa es bloqueante
 }
 

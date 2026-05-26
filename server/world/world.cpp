@@ -6,7 +6,8 @@
 // TODO: más verificaciones/excepciones/logging
 
 World::World(int width, int height):
-        map(width, height) {}
+        map(width, height),
+        occupied(height, std::vector<bool>(width, false)) {}
 
 void World::add_player(std::unique_ptr<Player> player) {
 
@@ -16,7 +17,7 @@ void World::add_player(std::unique_ptr<Player> player) {
         return; // acá iría una excepción
     }
 
-    positions[pos] = player.get(); //actualizo el map de posiciones para colisiones
+    occupied[pos.y][pos.x] = true;  // marco la posición como ocupada
     players[player->get_id()] = std::move(player); //agrego el player al map de players
 }
 
@@ -24,7 +25,7 @@ void World::remove_player(uint32_t player_id) {
     auto it = players.find(player_id);
     if (it != players.end()) {
         Position pos = it->second->get_position();
-        positions.erase(pos); // elimino la posición del "espacio"
+        occupied[pos.y][pos.x] = false;  // marco la posición como libre
         players.erase(it); // elimino el jugador 
     }
 }
@@ -54,7 +55,7 @@ Position World::calculate_destination(const Position& current, Direction directi
 }
 
 bool World::is_position_occupied(const Position& position) const {
-    return positions.find(position) != positions.end(); // busco la posición en el map, si no está, no hay nadie ahí
+    return occupied[position.y][position.x];
 }
 
 std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction direction) {
@@ -72,7 +73,7 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
         return nullptr; //update: no cambio nada
     }
 
-    if (map.is_blocking(next)) { // si la celda destino es bloqueante, no se mueve
+    if (map.is_position_blocked(next)) { // si la celda destino es bloqueante, no se mueve
         return nullptr; //update: no cambio nada
     }
 
@@ -81,9 +82,9 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
     }
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
-    positions.erase(current);
+    occupied[current.y][current.x] = false;
     player->set_position(next);
-    positions[next] = player;
+    occupied[next.y][next.x] = true;
 
     //update: devuelvo un update con la nueva posición del jugador
     return std::make_unique<MovedUpdate>(player_id, next); 

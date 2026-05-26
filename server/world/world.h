@@ -17,7 +17,7 @@ private:
     WorldMap map;
 
     std::map<uint32_t, std::unique_ptr<Player>> players;  // player_id -> Player
-    std::map<Position, Character*> positions; // position -> Character , para chequear colisiones 
+    std::vector<std::vector<bool>> occupied;  // matriz booleana para saber si una posición está ocupada (true) o no (false) 
 
     Position calculate_destination(const Position& current, Direction direction) const;
 
