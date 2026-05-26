@@ -1,20 +1,19 @@
 #include "game_client.h"
+
 #include <stdexcept>
 
-GameClient::GameClient(int width, int height) : 
-    window(nullptr), renderer(nullptr), hud(nullptr),
-    camera(width, height), player_x(400), player_y(300) {
+GameClient::GameClient(int width, int height):
+    window(nullptr),
+    renderer(nullptr),
+    hud(nullptr),
+    camera(width, height),
+    player_x(400),
+    player_y(300) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error(SDL_GetError());
     }
-    window = SDL_CreateWindow(
-        "Argentum Online - G5",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        width,
-        height,
-        SDL_WINDOW_SHOWN
-    );
+    window = SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     if (window == nullptr) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
@@ -37,6 +36,8 @@ void GameClient::run() {
 
     int frame_w = 27;
     int frame_h = 47;
+    // cppcheck-suppress variableScope
+    // cppcheck-suppress unreadVariable
     int frame_x = 0;
     int frame_y = 0;
     int speed = 3;
@@ -44,7 +45,7 @@ void GameClient::run() {
     int current_frame = 0;
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
-    Uint32 frame_delay = 100; 
+    Uint32 frame_delay = 100;
 
     while (running) {
         while (SDL_PollEvent(&event)) {

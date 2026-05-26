@@ -31,4 +31,6 @@ void ClientHandler::hard_kill() noexcept {
     }
 }
 
-bool ClientHandler::is_dead() const { return !receiver.is_alive() && !sender.is_alive(); }
+bool ClientHandler::is_dead() const {
+    return !receiver.is_alive() && !sender.is_alive();
+}

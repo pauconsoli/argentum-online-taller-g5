@@ -1,28 +1,23 @@
-#include "gtest/gtest.h"
 #include "server/game/character.h"
-#include "server/game/player.h"
+
 #include "common/position.h"
+#include "gtest/gtest.h"
+#include "server/game/player.h"
 
-class TestCharacter : public Character {
-public:
-    TestCharacter(
-            uint32_t id,
-            int level,
-            int max_hp,
-            int max_mana,
-            int strength,
-            int agility,
-            int intelligence,
-            int constitution,
-            const Position& position)
-        : Character(id, level, max_hp, max_mana, strength, agility, 
-                    intelligence, constitution, position) {}
+class TestCharacter: public Character {
+ public:
+    TestCharacter(uint32_t id, int level, int max_hp, int max_mana, int strength, int agility,
+                  int intelligence, int constitution, const Position& position):
+        Character(id, level, max_hp, max_mana, strength, agility, intelligence, constitution,
+                  position) {}
 
-    bool can_cast_magic() const override { return true; }
+    bool can_cast_magic() const override {
+        return true;
+    }
 };
 
-class CharacterTest : public ::testing::Test {
-protected:
+class CharacterTest: public ::testing::Test {
+ protected:
     Position position{10, 20};
     TestCharacter character{1, 5, 100, 50, 10, 8, 12, 15, position};
 };
@@ -62,7 +57,7 @@ TEST_F(CharacterTest, ReceiveDamageMoreThanHP) {
 TEST_F(CharacterTest, ReceiveDamageWhenAlreadyDead) {
     character.receive_damage(100);
     EXPECT_TRUE(character.is_dead());
-    
+
     character.receive_damage(50);
     EXPECT_EQ(character.get_current_hp(), 0);
     EXPECT_TRUE(character.is_dead());
@@ -81,7 +76,7 @@ TEST_F(CharacterTest, ReceiveZeroDamageIgnored) {
 TEST_F(CharacterTest, HealRestoresHP) {
     character.receive_damage(30);
     EXPECT_EQ(character.get_current_hp(), 70);
-    
+
     character.heal(15);
     EXPECT_EQ(character.get_current_hp(), 85);
 }
@@ -94,7 +89,7 @@ TEST_F(CharacterTest, HealCannotExceedMaxHP) {
 TEST_F(CharacterTest, HealWhenDead) {
     character.receive_damage(100);
     EXPECT_TRUE(character.is_dead());
-    
+
     character.heal(50);
     EXPECT_EQ(character.get_current_hp(), 0);
     EXPECT_TRUE(character.is_dead());
@@ -108,7 +103,7 @@ TEST_F(CharacterTest, HealNegativeIgnored) {
 TEST_F(CharacterTest, SetPosition) {
     Position new_pos{30, 40};
     character.set_position(new_pos);
-    
+
     const Position& pos = character.get_position();
     EXPECT_EQ(pos.x, 30);
     EXPECT_EQ(pos.y, 40);

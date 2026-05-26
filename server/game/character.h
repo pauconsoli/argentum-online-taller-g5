@@ -5,15 +5,14 @@
 // "tipos" de personajes, como HP, mana, fuerza, etc. También tiene métodos
 // para recibir daño, curarse, etc
 
+#include <cstdint>
 #include <string>
 #include <utility>
-#include <cstdint>
 
 #include "common/position.h"
 
 class Character {
-protected:
-
+ protected:
     uint32_t id;
 
     int level;
@@ -33,18 +32,9 @@ protected:
 
     bool dead;
 
-public:
-
-    Character(
-            uint32_t id,
-            int level,
-            int max_hp,
-            int max_mana,
-            int strength,
-            int agility,
-            int intelligence,
-            int constitution,
-            const Position& position);
+ public:
+    Character(uint32_t id, int level, int max_hp, int max_mana, int strength, int agility,
+              int intelligence, int constitution, const Position& position);
 
     virtual ~Character() = default;
 

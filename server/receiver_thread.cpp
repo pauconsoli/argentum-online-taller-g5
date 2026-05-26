@@ -5,7 +5,7 @@
 #include "player_connection.h"
 
 void ReceiverThread::run() {
-   //...
+    //...
 }
 
 void ReceiverThread::stop() {

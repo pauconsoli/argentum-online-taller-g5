@@ -1,8 +1,8 @@
 #include "server/game/items/weapon.h"
+
 #include "server/game/player.h"
 
-Weapon::Weapon(const std::string& name):
-        Item(name) {}
+Weapon::Weapon(const std::string& name): Item(name) {}
 
 Weapon::~Weapon() = default;
 

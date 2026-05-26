@@ -1,11 +1,11 @@
 #include "server/game/items/magic_weapon.h"
-#include "server/game/items/spell.h"
+
 #include <utility>
 
+#include "server/game/items/spell.h"
+
 MagicWeapon::MagicWeapon(const std::string& name, std::unique_ptr<Spell> spell, int mana_cost):
-        Weapon(name),
-        spell(std::move(spell)),
-        mana_cost(mana_cost) {}
+    Weapon(name), spell(std::move(spell)), mana_cost(mana_cost) {}
 
 MagicWeapon::~MagicWeapon() = default;
 

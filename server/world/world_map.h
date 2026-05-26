@@ -2,9 +2,9 @@
 #define WORLD_MAP_H
 
 // WorldMap: representa el mapa del mundo Argentum, con sus celdas y zonas
-// Idea actual: hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones. 
-// Cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal) tiene 
-// sus propias características (ej si es segura o no, si se puede spawnear ahí, etc).
+// Idea actual: hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones.
+// Cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal)
+// tiene sus propias características (ej si es segura o no, si se puede spawnear ahí, etc).
 
 
 #include <vector>
@@ -15,15 +15,16 @@
 class Zone;
 
 class WorldMap {
-private:
-    std::vector<std::vector<Cell>> cells; //usar un solo vectir, cuando indexo hacer suma, pero no está mal
+ private:
+    std::vector<std::vector<Cell>>
+        cells;  // usar un solo vectir, cuando indexo hacer suma, pero no está mal
 
     std::vector<std::vector<Zone*>> zones;
 
     int width;
     int height;
 
-public:
+ public:
     WorldMap(int width, int height);
 
     bool is_valid_position(const Position& pos) const;

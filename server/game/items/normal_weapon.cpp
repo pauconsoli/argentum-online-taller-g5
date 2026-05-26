@@ -1,10 +1,7 @@
 #include "server/game/items/normal_weapon.h"
 
 NormalWeapon::NormalWeapon(const std::string& name, int min_damage, int max_damage, bool ranged):
-        Weapon(name),
-        min_damage(min_damage),
-        max_damage(max_damage),
-        ranged(ranged) {}
+    Weapon(name), min_damage(min_damage), max_damage(max_damage), ranged(ranged) {}
 
 NormalWeapon::~NormalWeapon() = default;
 

@@ -1,19 +1,20 @@
-#include "gtest/gtest.h"
 #include "server/game/player.h"
-#include "common/position.h"
 
-class PlayerTest : public ::testing::Test {
-protected:
+#include "common/position.h"
+#include "gtest/gtest.h"
+
+class PlayerTest: public ::testing::Test {
+ protected:
     Position position{5, 10};
-    
-    Player mage{1, "Merlin", PlayerRace::HUMAN, PlayerClass::MAGE, 
-                5, 100, 80, 10, 8, 16, 15, position};
-    Player warrior{2, "Conan", PlayerRace::DWARF, PlayerClass::WARRIOR,
-                   5, 150, 0, 18, 7, 8, 18, position};
-    Player cleric{3, "Priest", PlayerRace::HUMAN, PlayerClass::CLERIC,
-                  5, 100, 60, 12, 9, 14, 14, position};
-    Player paladin{4, "Knight", PlayerRace::HUMAN, PlayerClass::PALADIN,
-                   5, 130, 40, 15, 10, 12, 16, position};
+
+    Player mage{1,  "Merlin", PlayerRace::HUMAN, PlayerClass::MAGE, 5, 100, 80, 10, 8,
+                16, 15,       position};
+    Player warrior{2, "Conan", PlayerRace::DWARF, PlayerClass::WARRIOR, 5, 150, 0, 18, 7,
+                   8, 18,      position};
+    Player cleric{3,  "Priest", PlayerRace::HUMAN, PlayerClass::CLERIC, 5, 100, 60, 12, 9,
+                  14, 14,       position};
+    Player paladin{4,  "Knight", PlayerRace::HUMAN, PlayerClass::PALADIN, 5, 130, 40, 15, 10,
+                   12, 16,       position};
 };
 
 TEST_F(PlayerTest, ConstructorInitializesPlayer) {
@@ -46,7 +47,7 @@ TEST_F(PlayerTest, PaladinCanCastMagic) {
 TEST_F(PlayerTest, MoveChangesPosition) {
     Position new_pos{15, 20};
     mage.move(new_pos);
-    
+
     const Position& pos = mage.get_position();
     EXPECT_EQ(pos.x, 15);
     EXPECT_EQ(pos.y, 20);
@@ -55,7 +56,7 @@ TEST_F(PlayerTest, MoveChangesPosition) {
 TEST_F(PlayerTest, AddGold) {
     mage.add_gold(100);
     EXPECT_EQ(mage.get_gold(), 100u);
-    
+
     mage.add_gold(50);
     EXPECT_EQ(mage.get_gold(), 150u);
 }
@@ -86,7 +87,7 @@ TEST_F(PlayerTest, RemoveGoldFromZero) {
 TEST_F(PlayerTest, AddExperience) {
     mage.add_experience(1000);
     EXPECT_EQ(mage.get_experience(), 1000u);
-    
+
     mage.add_experience(500);
     EXPECT_EQ(mage.get_experience(), 1500u);
 }
@@ -120,7 +121,7 @@ TEST_F(PlayerTest, InheritsCharacterMethods) {
     EXPECT_EQ(mage.get_current_hp(), 100);
     mage.receive_damage(30);
     EXPECT_EQ(mage.get_current_hp(), 70);
-    
+
     mage.heal(10);
     EXPECT_EQ(mage.get_current_hp(), 80);
 }

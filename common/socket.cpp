@@ -230,7 +230,7 @@ Socket& Socket::operator=(Socket&& other) {
      * y debemos desinicializarlo primero antes de pisarle
      * el recurso con el que le robaremos al otro socket (`other`)
      * */
-    if (not this->closed) {
+    if (!this->closed) {
         ::shutdown(this->skt, 2);
         ::close(this->skt);
     }
@@ -430,9 +430,13 @@ void Socket::shutdown(int how) {
     }
 }
 
-bool Socket::is_stream_send_closed() const { return stream_status & STREAM_SEND_CLOSED; }
+bool Socket::is_stream_send_closed() const {
+    return stream_status & STREAM_SEND_CLOSED;
+}
 
-bool Socket::is_stream_recv_closed() const { return stream_status & STREAM_RECV_CLOSED; }
+bool Socket::is_stream_recv_closed() const {
+    return stream_status & STREAM_RECV_CLOSED;
+}
 
 int Socket::close() {
     chk_skt_or_fail();
@@ -442,7 +446,7 @@ int Socket::close() {
 }
 
 Socket::~Socket() {
-    if (not this->closed) {
+    if (!this->closed) {
         ::shutdown(this->skt, 2);
         ::close(this->skt);
     }

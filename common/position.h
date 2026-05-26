@@ -6,16 +6,16 @@ struct Position {
     int y;
 
     bool operator<(const Position& other) const {
-        if (x != other.x) return x < other.x;
+        if (x != other.x)
+            return x < other.x;
         return y < other.y;
     }
-    
+
     bool operator==(const Position& other) const {
         return x == other.x && y == other.y;
     }
-
 };
 
-//por ahora, solo una struct, si después necesitamos métodos la convertimos a clase
+// por ahora, solo una struct, si después necesitamos métodos la convertimos a clase
 
 #endif

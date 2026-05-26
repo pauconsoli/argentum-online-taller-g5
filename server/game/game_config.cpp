@@ -1,7 +1,7 @@
 #include "game_config.h"
 
 // Ahora los valores estan hardcodeados
-// TODO: que se carguen del TOML
+// TODO(Pau): que se carguen del TOML
 
 GameConfig& GameConfig::get_instance() {
     static GameConfig instance;
@@ -44,9 +44,7 @@ float GameConfig::get_race_mana_multiplier(PlayerRace race) const {
     return 1.0f;
 }
 
-float GameConfig::get_class_hp_multiplier(
-        PlayerClass player_class) const {
-
+float GameConfig::get_class_hp_multiplier(PlayerClass player_class) const {
     switch (player_class) {
         case PlayerClass::MAGE:
             return 0.7f;
@@ -64,9 +62,7 @@ float GameConfig::get_class_hp_multiplier(
     return 1.0f;
 }
 
-float GameConfig::get_class_mana_multiplier(
-        PlayerClass player_class) const {
-
+float GameConfig::get_class_mana_multiplier(PlayerClass player_class) const {
     switch (player_class) {
         case PlayerClass::MAGE:
             return 1.5f;

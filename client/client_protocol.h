@@ -2,9 +2,9 @@
 #define CLIENT_PROTOCOL_H
 
 class ClientProtocol {
-private:
+ private:
     //...
-public:
+ public:
     //...
 };
 

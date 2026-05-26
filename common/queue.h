@@ -24,9 +24,9 @@ struct ClosedQueue: public std::runtime_error {
  * On a closed queue, any method will raise ClosedQueue.
  *
  * */
-template <typename T, class C = std::deque<T> >
+template <typename T, class C = std::deque<T>>
 class Queue {
-private:
+ private:
     std::queue<T, C> q;
     const unsigned int max_size;
 
@@ -36,7 +36,7 @@ private:
     std::condition_variable is_not_full;
     std::condition_variable is_not_empty;
 
-public:
+ public:
     Queue(): max_size(UINT_MAX - 1), closed(false) {}
     explicit Queue(const unsigned int max_size): max_size(max_size), closed(false) {}
 
@@ -130,14 +130,14 @@ public:
         is_not_empty.notify_all();
     }
 
-private:
+ private:
     Queue(const Queue&) = delete;
     Queue& operator=(const Queue&) = delete;
 };
 
 template <>
 class Queue<void*> {
-private:
+ private:
     std::queue<void*> q;
     const unsigned int max_size;
 
@@ -147,7 +147,7 @@ private:
     std::condition_variable is_not_full;
     std::condition_variable is_not_empty;
 
-public:
+ public:
     explicit Queue(const unsigned int max_size): max_size(max_size), closed(false) {}
 
 
@@ -240,7 +240,7 @@ public:
         is_not_empty.notify_all();
     }
 
-private:
+ private:
     Queue(const Queue&) = delete;
     Queue& operator=(const Queue&) = delete;
 };
@@ -248,23 +248,33 @@ private:
 
 template <typename T>
 class Queue<T*>: private Queue<void*> {
-public:
+ public:
     explicit Queue(const unsigned int max_size): Queue<void*>(max_size) {}
 
 
-    bool try_push(T* const& val) { return Queue<void*>::try_push(val); }
+    bool try_push(T* const& val) {
+        return Queue<void*>::try_push(val);
+    }
 
-    bool try_pop(T*& val) { return Queue<void*>::try_pop(reinterpret_cast<void*&>(val)); }
+    bool try_pop(T*& val) {
+        return Queue<void*>::try_pop(reinterpret_cast<void*&>(val));
+    }
 
-    void push(T* const& val) { return Queue<void*>::push(val); }
+    void push(T* const& val) {
+        return Queue<void*>::push(val);
+    }
 
     // cppcheck-suppress duplInheritedMember
-    T* pop() { return (T*)Queue<void*>::pop(); }
+    T* pop() {
+        return reinterpret_cast<T*>(Queue<void*>::pop());
+    }
 
     // cppcheck-suppress duplInheritedMember
-    void close() { return Queue<void*>::close(); }
+    void close() {
+        return Queue<void*>::close();
+    }
 
-private:
+ private:
     Queue(const Queue&) = delete;
     Queue& operator=(const Queue&) = delete;
 };

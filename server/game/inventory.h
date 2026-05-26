@@ -1,7 +1,7 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "server/game/items/item.h"
 
@@ -11,7 +11,7 @@ class Player;
 class Equipment;
 
 class Inventory {
-private:
+ private:
     static constexpr size_t MAX_ITEMS = MAX_INVENTORY_ITEMS;
     std::vector<std::unique_ptr<Item>> items;
     Equipment& equipment;  // referenciaa
@@ -20,7 +20,7 @@ private:
     bool use_consumable(int item_index, Player& player);
     int find_item(const Item& item) const;
 
-public:
+ public:
     explicit Inventory(Equipment& eq);
     ~Inventory() = default;
 

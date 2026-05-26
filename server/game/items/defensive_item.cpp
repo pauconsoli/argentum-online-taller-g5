@@ -2,11 +2,9 @@
 
 #include "server/game/player.h"
 
-DefensiveItem::DefensiveItem(const std::string& name, int min_defense, int max_defense, EquipmentSlot slot):
-        Item(name),
-        min_defense(min_defense),
-        max_defense(max_defense),
-        slot(slot) {}
+DefensiveItem::DefensiveItem(const std::string& name, int min_defense, int max_defense,
+                             EquipmentSlot slot):
+    Item(name), min_defense(min_defense), max_defense(max_defense), slot(slot) {}
 
 DefensiveItem::~DefensiveItem() = default;
 

@@ -1,9 +1,10 @@
-#include "gtest/gtest.h"
 #include "server/world/cell.h"
+
+#include "gtest/gtest.h"
 #include "server/world/terrain_type.h"
 
-class CellTest : public ::testing::Test {
-protected:
+class CellTest: public ::testing::Test {
+ protected:
     Cell grass_cell{TerrainType::GRASS, false};
     Cell grass_blocking_cell{TerrainType::GRASS, true};
     Cell water_cell{TerrainType::WATER, true};
@@ -43,7 +44,7 @@ TEST_F(CellTest, AllTerrainTypes) {
     Cell dirt(TerrainType::DIRT, false);
     Cell stone(TerrainType::STONE, false);
     Cell sand(TerrainType::SAND, false);
-    
+
     EXPECT_EQ(grass.get_terrain_type(), TerrainType::GRASS);
     EXPECT_EQ(water.get_terrain_type(), TerrainType::WATER);
     EXPECT_EQ(dirt.get_terrain_type(), TerrainType::DIRT);
