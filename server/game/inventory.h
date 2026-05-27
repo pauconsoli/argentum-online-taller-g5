@@ -2,6 +2,7 @@
 #define INVENTORY_H
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "server/game/items/equipment_slot.h"
@@ -52,6 +53,8 @@ class Inventory {
     const std::vector<InventorySlot>& get_slots() const;
 
     Item* get_equipped_item(EquipmentSlot slot) const;
+
+    std::vector<std::pair<EquipmentSlot, Item*>> get_equipped_items() const;
 
     bool slot_has_item(EquipmentSlot slot) const;
 

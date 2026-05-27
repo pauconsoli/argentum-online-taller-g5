@@ -1,6 +1,7 @@
 #include "player.h"
 
 #include <utility>
+#include <vector>
 
 #include "server/game/inventory.h"
 
@@ -83,12 +84,16 @@ void Player::equip(Item& item) {
     inventory->equip(item, *this);
 }
 
+std::vector<std::pair<EquipmentSlot, Item*>> Player::get_equipment() const {
+    return inventory->get_equipped_items();
+}
+
 void Player::restore_health(int amount) {
-    (void)amount;
+    (void) amount;
     // TODO(Pau)
 }
 
 void Player::restore_mana(int amount) {
-    (void)amount;
+    (void) amount;
     // TODO(Pau)
 }

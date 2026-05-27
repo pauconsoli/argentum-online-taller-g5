@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "server/game/character.h"
 #include "server/game/inventory.h"
@@ -64,6 +65,8 @@ class Player: public Character {
     uint64_t get_experience() const;
 
     Inventory& get_inventory();
+
+    std::vector<std::pair<EquipmentSlot, Item*>> get_equipment() const;
 
     void equip(Item& item);  // implementar
 

@@ -318,3 +318,59 @@ TEST_F(InventoryTest, CannotEquipMultipleArmorInSameSlot) {
 
     EXPECT_EQ(inventory.get_size(), 2);
 }
+
+TEST_F(InventoryTest, GetEquippedItemsEmpty) {
+    auto equipped = inventory.get_equipped_items();
+    EXPECT_TRUE(equipped.empty());
+}
+
+TEST_F(InventoryTest, GetEquippedItemsSingleItem) {
+    auto sword = std::make_unique<NormalWeapon>("Espada", 5, 15, false);
+    Item* sword_ptr = sword.get();
+    inventory.add_item(std::move(sword));
+    inventory.equip(*sword_ptr, player);
+
+    auto equipped = inventory.get_equipped_items();
+    EXPECT_EQ(equipped.size(), 1);
+    EXPECT_EQ(equipped[0].first, EquipmentSlot::WEAPON);
+    EXPECT_EQ(equipped[0].second, sword_ptr);
+}
+
+TEST_F(InventoryTest, GetEquippedItemsMultiple) {
+    auto sword = std::make_unique<NormalWeapon>("Espada", 5, 15, false);
+    Item* sword_ptr = sword.get();
+    inventory.add_item(std::move(sword));
+    inventory.equip(*sword_ptr, player);
+
+    auto armor = std::make_unique<DefensiveItem>("Armadura", 5, 10, EquipmentSlot::ARMOR);
+    Item* armor_ptr = armor.get();
+    inventory.add_item(std::move(armor));
+    inventory.equip(*armor_ptr, player);
+
+    auto helmet = std::make_unique<DefensiveItem>("Casco", 3, 6, EquipmentSlot::HELMET);
+    Item* helmet_ptr = helmet.get();
+    inventory.add_item(std::move(helmet));
+    inventory.equip(*helmet_ptr, player);
+
+    auto equipped = inventory.get_equipped_items();
+    EXPECT_EQ(equipped.size(), 3);
+
+    for (const auto& [slot, item_ptr] : equipped) {
+        EXPECT_TRUE(item_ptr == sword_ptr || item_ptr == armor_ptr || item_ptr == helmet_ptr);
+    }
+}
+
+TEST_F(InventoryTest, GetEquippedItemsAfterUnequip) {
+    auto sword = std::make_unique<NormalWeapon>("Espada", 5, 15, false);
+    Item* sword_ptr = sword.get();
+    inventory.add_item(std::move(sword));
+    inventory.equip(*sword_ptr, player);
+
+    auto equipped_before = inventory.get_equipped_items();
+    EXPECT_EQ(equipped_before.size(), 1);
+
+    inventory.unequip(EquipmentSlot::WEAPON);
+
+    auto equipped_after = inventory.get_equipped_items();
+    EXPECT_EQ(equipped_after.size(), 0);
+}

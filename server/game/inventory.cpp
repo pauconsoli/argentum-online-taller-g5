@@ -123,6 +123,16 @@ Item* Inventory::get_equipped_item(EquipmentSlot slot) const {
     return nullptr;
 }
 
+std::vector<std::pair<EquipmentSlot, Item*>> Inventory::get_equipped_items() const {
+    std::vector<std::pair<EquipmentSlot, Item*>> result;
+    for (const auto& slot : slots) {
+        if (slot.equipped_slot.has_value()) {
+            result.push_back({slot.equipped_slot.value(), slot.item.get()});
+        }
+    }
+    return result;
+}
+
 bool Inventory::slot_has_item(EquipmentSlot slot) const {
     return get_equipped_item(slot) != nullptr;
 }
