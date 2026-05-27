@@ -11,11 +11,12 @@
 
 class Player;
 
-// InventorySlot: item con flag de si está equipado
+// InventorySlot: item con cantidad y flag de si está equipado
 struct InventorySlot {
-    std::unique_ptr<Item> item;
+    std::unique_ptr<Item> item;                  // template/referencia del item
+    int quantity = 1;                            // cantidad de este item (stackable)
     std::optional<EquipmentSlot> equipped_slot;  // nullopt si no está equipado,
-                                                 // tiene el slot si está equipado
+                                                 // tiene el slot si está equipado (solo 1 equipado)
 };
 
 class Inventory {
@@ -23,9 +24,11 @@ class Inventory {
     static constexpr size_t MAX_ITEMS = MAX_INVENTORY_ITEMS;
     std::vector<InventorySlot> slots;
 
-    // USA un consumible (desp lo elimina del inventario)
+    int find_item_by_ref(const Item& item) const;
+
+    int find_item_by_type(const Item& item) const;
+
     bool use_consumable(int item_index, Player& player);
-    int find_item(const Item& item) const;
 
  public:
     Inventory();
@@ -34,29 +37,25 @@ class Inventory {
     Inventory(const Inventory&) = delete;
     Inventory& operator=(const Inventory&) = delete;
 
-    bool add_item(std::unique_ptr<Item> item);
+    bool add_item(std::unique_ptr<Item> item,
+                  int quantity = 1);  // por defecto es 1, pero se puede agregar más de una unidad
+                                      // para el caso del loot
 
-    // Marca el item como equipado en su slot correspondiente
-    // Si había otro item equipado en ese slot, lo desactualiza
-    // retorna false si el item no está o viola restricción
     bool equip(Item& item, Player& player);
 
-    // Desmarca el item del slot indicado
-    // retorna false si el slot está vacío
     bool unequip(EquipmentSlot slot);
 
-    // Saca el item del inventario (para dropearlo, retorna ownership)
     std::unique_ptr<Item> remove_item(Item& item);
 
     bool is_full() const;
     size_t get_size() const;
     const std::vector<InventorySlot>& get_slots() const;
 
-    // Obtiene el item equipado en un slot, o nullptr
     Item* get_equipped_item(EquipmentSlot slot) const;
 
-    // Verifica si hay un item equipado en un slot
     bool slot_has_item(EquipmentSlot slot) const;
+
+    InventorySlot pop_slot(int slot_index);
 };
 
 #endif

@@ -124,7 +124,6 @@ TEST_F(InventoryTest, SwapWhenInventoryFull) {
     inventory.equip(*sword_ptr, player);  // se marca como equipado, sigue en inventario
     EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
 
-    // El inventario está lleno, no se puede agregar más items
     auto axe = std::make_unique<NormalWeapon>("Hacha", 8, 20, false);
     bool result = inventory.add_item(std::move(axe));
     EXPECT_FALSE(result);  // no hay espacio
@@ -168,4 +167,154 @@ TEST_F(InventoryTest, UnequipWhenInventoryFull) {
     EXPECT_FALSE(inventory.slot_has_item(EquipmentSlot::WEAPON));
 }
 
-// ver después que hacer si se droppea
+
+TEST_F(InventoryTest, AddStackableItem) {
+    auto potion1 = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    EXPECT_TRUE(inventory.add_item(std::move(potion1)));
+    EXPECT_EQ(inventory.get_size(), 1);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 1);
+
+    auto potion2 = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    EXPECT_TRUE(inventory.add_item(std::move(potion2)));
+    EXPECT_EQ(inventory.get_size(), 1);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 2);  // pero con cantidad 2
+}
+
+TEST_F(InventoryTest, AddMultipleStackableItems) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    EXPECT_TRUE(inventory.add_item(std::move(potion), 5));
+    EXPECT_EQ(inventory.get_size(), 1);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 5);
+
+    auto potion2 = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    EXPECT_TRUE(inventory.add_item(std::move(potion2), 3));
+    EXPECT_EQ(inventory.get_size(), 1);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 8);
+}
+
+TEST_F(InventoryTest, StackableAndNonStackableItems) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    inventory.add_item(std::move(potion), 5);
+
+    auto sword = std::make_unique<NormalWeapon>("Espada", 5, 15, false);
+    inventory.add_item(std::move(sword));
+
+    EXPECT_EQ(inventory.get_size(), 2);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 5);
+    EXPECT_EQ(inventory.get_slots()[1].quantity, 1);
+}
+
+
+TEST_F(InventoryTest, PopSlotReturnsInventorySlotWithQuantity) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    inventory.add_item(std::move(potion), 21);
+    EXPECT_EQ(inventory.get_size(), 1);
+
+    auto slot = inventory.pop_slot(0);
+    EXPECT_NE(slot.item, nullptr);
+    EXPECT_EQ(slot.quantity, 21);
+    EXPECT_EQ(inventory.get_size(), 0);
+}
+
+TEST_F(InventoryTest, PopSlotInvalidIndex) {
+    auto slot_invalid = inventory.pop_slot(999);
+    EXPECT_EQ(slot_invalid.item, nullptr);
+    EXPECT_EQ(slot_invalid.quantity, 0);
+    EXPECT_EQ(inventory.get_size(), 0);
+}
+
+
+TEST_F(InventoryTest, UseConsumableWithMultipleInStack) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    Item* ptr = potion.get();
+    inventory.add_item(std::move(potion), 5);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 5);
+
+    bool result = inventory.equip(*ptr, player);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(inventory.get_size(), 1);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 4);
+}
+
+TEST_F(InventoryTest, UseLastConsumableInStack) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    Item* ptr = potion.get();
+    inventory.add_item(std::move(potion), 1);
+    EXPECT_EQ(inventory.get_size(), 1);
+
+    bool result = inventory.equip(*ptr, player);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(inventory.get_size(), 0);
+}
+
+
+TEST_F(InventoryTest, RemoveItemFromStack) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    Item* ptr = potion.get();
+    inventory.add_item(std::move(potion), 5);
+
+    auto removed = inventory.remove_item(*ptr);
+    EXPECT_EQ(removed, nullptr);  // quedan más --> retorna nullptr. ver si esto queda así
+    EXPECT_EQ(inventory.get_size(), 1);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 4);
+}
+
+TEST_F(InventoryTest, RemoveLastItemFromStack) {
+    auto potion = std::make_unique<ConsumableItem>("Poción de Vida", ConsumableType::HEALTH, 30);
+    Item* ptr = potion.get();
+    inventory.add_item(std::move(potion), 1);
+
+    auto removed = inventory.remove_item(*ptr);
+    EXPECT_NE(removed, nullptr);  // es el último --> retorna el item. idem arriba
+    EXPECT_EQ(inventory.get_size(), 0);
+}
+
+TEST_F(InventoryTest, RemoveItemNotInInventory) {
+    NormalWeapon sword{"Espada", 5, 15, false};
+    auto removed = inventory.remove_item(sword);
+    EXPECT_EQ(removed, nullptr);
+}
+
+TEST_F(InventoryTest, CannotEquipNormalAndMagicWeaponTogether) {
+    auto sword = std::make_unique<NormalWeapon>("Espada", 5, 15, false);
+    Item* sword_ptr = sword.get();
+    inventory.add_item(std::move(sword));
+
+    EXPECT_TRUE(inventory.equip(*sword_ptr, player));
+    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::WEAPON), sword_ptr);
+
+    auto spell = std::make_unique<Spell>("Fireball", 20, 40, 0, 0);
+    auto staff = std::make_unique<MagicWeapon>("Báculo", std::move(spell), 30);
+    Item* staff_ptr = staff.get();
+    inventory.add_item(std::move(staff));
+
+    EXPECT_TRUE(inventory.equip(*staff_ptr, player));
+    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::WEAPON), staff_ptr);
+
+    EXPECT_TRUE(inventory.slot_has_item(EquipmentSlot::WEAPON));
+    EXPECT_FALSE(inventory.get_equipped_item(EquipmentSlot::WEAPON) ==
+                 sword_ptr);  // la espada no está equipada y el báculo si
+
+    EXPECT_EQ(inventory.get_size(), 2);
+}
+
+TEST_F(InventoryTest, CannotEquipMultipleArmorInSameSlot) {
+    auto armor1 = std::make_unique<DefensiveItem>("Armadura Ligera", 5, 10, EquipmentSlot::ARMOR);
+    Item* armor1_ptr = armor1.get();
+    inventory.add_item(std::move(armor1));
+
+    EXPECT_TRUE(inventory.equip(*armor1_ptr, player));
+    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::ARMOR), armor1_ptr);
+
+    auto armor2 = std::make_unique<DefensiveItem>("Armadura Pesada", 8, 16, EquipmentSlot::ARMOR);
+    Item* armor2_ptr = armor2.get();
+    inventory.add_item(std::move(armor2));
+
+    EXPECT_TRUE(inventory.equip(*armor2_ptr, player));
+    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::ARMOR), armor2_ptr);
+    EXPECT_FALSE(inventory.get_equipped_item(EquipmentSlot::ARMOR) == armor1_ptr);
+    EXPECT_NE(inventory.get_slots()[0].equipped_slot,
+              EquipmentSlot::ARMOR);  // el primer item ya no está equipado
+
+    EXPECT_EQ(inventory.get_size(), 2);
+}
