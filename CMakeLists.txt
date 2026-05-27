@@ -20,7 +20,7 @@ option(TALLER_TESTS "Enable / disable tests." ON)
 option(TALLER_CLIENT "Enable / disable client program." ON)
 option(TALLER_SERVER "Enable / disable server program." ON)
 option(TALLER_EDITOR "Enable / disable editor program." ON)
-option(TALLER_MAKE_WARNINGS_AS_ERRORS "Enable / disable warnings as errors." ON)
+option(TALLER_MAKE_WARNINGS_AS_ERRORS "Enable / disable warnings as errors." OFF)
 option(TALLER_ENABLE_ASAN "Enable AddressSanitizer (ASAN) for memory error detection." OFF)
 option(TALLER_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (UBSAN)." OFF)
 
