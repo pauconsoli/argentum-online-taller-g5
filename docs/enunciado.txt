@@ -1,0 +1,423 @@
+Taller de Programación I (75.42)
+Facultad de Ingeniería
+Universidad de Buenos Aires
+Argentum Online
+Índice
+Introducción
+Descripción
+Tierras de Argentum
+Puntos de vida
+Puntos de maná
+Oro
+Inventario
+Puntos de experiencia
+Ataque
+Defensa
+Razas y Clases
+Muerte
+Fair play
+Ciudades y pueblos
+Cavernas y Mazmorras
+Items
+Criaturas o NPC
+Clanes
+Interfaz de usuario
+Mini-chat
+Vestimenta
+Persistencia
+Configuración
+Sonidos
+Musica
+Animaciones
+Configuración
+Cheats
+Sonidos
+Musica
+Animaciones
+Entregables
+Aplicaciones Requeridas
+Unit tests
+Restricciones
+Referencias
+Introducción
+El presente trabajo consistirá en recrear el mítico y entrañable juego Argentum On-line [1], un juego
+multijugador en donde los participantes controlan a un personaje de rol en un mundo fantástico de magia y
+lleno de criaturas salvajes.
+Descripción
+Tierras de Argentum
+Argentum es un lugar extenso, rico y variado desde zonas boscosas hasta desiertos.
+El tipo de terreno sin embargo no afecta la jugabilidad en ningún modo (da lo mismo caminar sobre un
+camino que sobre arena).
+Por supuesto, en las zonas boscosas hay árboles.
+Esparcidas sobre Argentum hay edificaciones y construcciones (que no están dentro de las ciudades ni
+pueblos) que no tienen ninguna utilidad particular salvo la de obstaculizar el paso. Como es de suponerse,
+los personajes no pueden atravesar las paredes!
+También es cierto que los personajes no pueden atravesarse entre sí ni con los NPC: las personas
+colisionan, incluso los fantasmas!
+Puntos de vida
+Son los puntos que determinan la salud del personaje. Si llegan a 0 el personaje muere y se transforma en
+fantasma.
+Los puntos de vida máximos de un personajes están dados por la siguiente ecuación:
+VidaMax = Constitución * FClaseVida * FRazaVida * Nivel
+Los puntos de vida pueden recuperarse (hasta llegar al máximo) tomando alguna poción curativa o con
+algún hechizo de curación.
+También pueden recuperarse con el paso del tiempo según esta ecuación:
+Vida = FRazaRecuperacion * segundos
+Puntos de maná
+Todos los personajes salvo el Guerrero pueden realizar hechizos de magia. Cada hechizo requiere un
+mínimo de maná para realizarse y consume la misma cantidad.
+Los puntos de maná máximos están dados por:
+ManaMax = Inteligencia * FClaseMana * FRazaMana * Nivel
+Los puntos de maná pueden recuperarse (hasta llegar al máximo) tomando alguna poción mana o realizando
+meditación o simplemente por el paso del tiempo.
+Un personaje puede meditar con el comando /meditar. En el estado de meditación el jugador no puede
+realizar otra acción, cualquier acción lo sacaran del estado de meditación.
+La recuperación de maná está dada por:
+Mana = FClaseMeditacion * Inteligencia * segundos
+La recuperación por el mero paso del tiempo está dada por:
+Mana = FRazaRecuperacion * segundos
+Oro
+En Argentum la moneda de comercio es el oro. Un personaje puede comprar y vender objetos
+intercambiando oro.
+Además, cada vez que el jugador mate a un NPC habrá cierta cantidad de oro que el NPC "dejará caer"
+(llamado drop).
+Este está dado por la siguiente ecuación:
+Oro = rand(0, 0.2) * VidaMaxNPC
+Si el jugador mata a otro jugador, el oro obtenido será exactamente el oro que el jugador muerto tenía "en
+exceso".
+Cada personaje tiene un máximo de oro que puede tener en mano "seguro"; el personaje podrá tener hasta
+un adicional del 50% y este oro se lo considera "en exceso".
+Por ejemplo si un personaje tiene como máximo 1000 de oro podrá tener en mano hasta 1500. Si el
+personaje cuenta a la hora de morir con 900 de oro, nada de su oro se caerá al suelo (el muerto no lo
+perderá) por ser 900 < 1000 (su máximo).
+Si en cambio tenía 1100, el muerto conservará 1000 y dejará caer al suelo 100 de oro.
+El máximo de oro en mano "seguro" que cada jugador tiene esta dado por:
+OroMax = 100 * Nivel^1.1
+Inventario
+Cada jugador podrá tener hasta un máximo de N objetos en su inventario. Estos incluyen armas, armaduras,
+cascos, escudos, pociones, báculos (hechizos) entre otros.
+Algunos de estos objetos pueden ser equipados, es decir, ser usados por el jugador.
+Por ejemplo, cuando un jugador tiene un arma equipada, el daño que produzca en un ataque estará
+determinado por esta.
+Un jugador puede tener múltiples armas, armaduras, cascos, escudos y varas/báculos (hechizos) pero sólo
+podrá tener equipado uno de cada uno.
+No se podrá tener un arma y una vara/báculo equipados a la vez.
+Otros objetos, como las pociones, cuando son equipadas son consumidas por el personaje teniendo un
+efecto inmediato.
+El jugador podrá recolectar objetos del suelo posicionándose sobre ellos y ejecutando el comando /tomar.
+De forma inversa, el jugador podrá seleccionar un objeto de su inventario y dejarlo caer con /tirar.
+Puntos de experiencia
+Cada personaje tendrá puntos de experiencia que, superados un límite, harán que el jugador pase al
+siguiente nivel.
+El límite para alcanzar el siguiente nivel está dado por:
+Limite = 1000 * Nivel^1.8
+La experiencia se consigue atacando a un NPC o a otro jugador.
+Por cada ataque realizado se obtiene este cantidad de experiencia:
+Exp = Daño * max(NivelDelOtro - Nivel + 10, 0)
+donde NivelDelOtro es el nivel del NPC o del jugador que está siendo atacado.
+Al matar a un NPC o a otro jugador se obtendrá una experiencia adicional:
+Exp = rand(0, 0.1) * VidaMaxDelOtro * max(NivelDelOtro - Nivel + 10, 0)
+donde VidaMaxDelOtro es la vida máxima del NPC o del otro jugador.
+Ataque
+Un personaje puede atacar a un NPC o a otro jugador restándole puntos de vida.
+El daño producido esta dado por:
+Daño = Fuerza * rand(DañoArmaMin, DañoArmaMax)
+Existe cierta probabilidad de realizar un ataque crítico que causa el doble de daño y no puede ser esquivado.
+Si el arma equipada es una arma con rango, por ejemplo un arco, o bien es un hechizo, el jugador puede
+realizar el ataque a distancia haciendo click sobre el NPC o jugador.
+En otro caso, el ataque se realiza solo si el jugador está al lado del adversario (jugador o NPC) que quiera
+atacar.
+Defensa
+Ante un ataque un personaje o NPC puede defenderse.
+Primero, existe la posibilidad de esquivar el ataque y recibir un daño nulo:
+Esquivar si rand(0, 1) ^ Agilidad < 0.001
+Si el ataque no pudo ser esquivado le personaje recibirá un daño pero este podrá ser reducido según la
+defensa que le provea su armadura, escudo y/o casco:
+Defensa = rand(ArmaduraMin, ArmaduraMax) + rand(EscudoMin, EscudoMax) +
+rand(CascoMin, CascoMax)
+Si un jugador recibe un daño de 10, pero tiene una defensa de 8, solo se le restaran 2 puntos de vida.
+Razas y Clases
+Al momento de crear el personaje se podría elegir la raza y la clase del personaje.
+Cada raza y cada clase afectan de una u otra manera a las ecuaciones que gobiernan el juego.
+Por ejemplo, FRazaRecuperación afecta como un personaje recupera sus puntos de vida y maná.
+Hay 4 razas:
+- Humanos: son una raza equilibrada.
+- Elfos: son muy inteligentes y ágiles pero de una constitución física frágil
+- Enanos: son muy fuertes y resistentes, pero la agilidad no es lo suyo
+- Gnomos: inteligentes y resistentes, pero mucho menos ágiles que los elfos.
+Hay 4 clases:
+- Mago: quienes hayan estudiado magia han cultivados sus mentes y menos sus cuerpos
+- Clérigo: un poco menos inteligentes y hábiles que los magos, un clérigo compensa sus falencias con un
+mayor desempeño físico.
+- Paladin: entrenados para el combate, son fuertes y resistentes aunque capaces también de usar magia,
+con una mucho menor inteligencia que un mago.
+- Guerrero: han dedicado toda su vida al combate, son típicamente más fuertes y resistentes que otros pero
+carecen de la sabiduría para usar la magia.
+De todas las clases, el guerrero es el único que no puede usar la magia, ni meditar y su mana es siempre 0.
+Muerte
+Cuando un jugador muere este puede perder oro (véase la sección Oro) y/o experiencia (véase la sección
+Experiencia).
+Ademas, todos los objetos de su inventario caen al piso.
+Tras la muerte, el personaje se convierte en fantasma.
+Un fantasma puede moverse como cualquier otro jugador solo que no podrá interactuar con nadie ni con
+nada.
+El jugador podrá dirigirse al sanador de la ciudad más próxima para resucitar o bien podrá ingresar el
+comando /resucitar.
+En este último caso, el jugador aparecerá resucitado junto al sanador de la ciudad más próxima. Esta
+operación no es inmediata y el fantasma estará inmovilizado un tiempo proporcional a la distancia entre él y
+el sanador antes de trasladarse hacia él y resucitar.
+Fair play
+Un jugador con un nivel 12 o menor es considerado "newbie". Los newbies no pueden atacar ni ser atacados
+por otros jugadores.
+Un jugador no podrá atacar ni ser atacado por otro jugador si la diferencia de niveles entre ellos es superior
+a 10.
+Ciudades y pueblos
+A lo largo de las tierras de Argentum hay pequeñas ciudades y pueblos en las que los jugadores podrán
+encontrar al menos a un sacerdote, un comerciante y un banquero.
+Los jugadores pueden interactuar con ellos seleccionándolos (click) y escribiendo algún comando:
+Sacerdote: puede resucitar a un personaje (/resucitar), puede curar a un personaje herido tanto en vida
+como en mana (/curar) y puede vender báculos y varas (hechizos) y pociones (/comprar <objeto>)
+Comerciante: puede comprar y vender casi cualquier artículo incluyendo armas, armaduras y cascos.
+Algunos compran y venden pociones pero nunca hechizos (/comprar <objeto> y /vender <objeto>)
+Banquero: los jugadores pueden guardar sus pertenencias en el banco incluyendo el oro (/depositar
+<objeto>) y por supuesto pueden retirarlos del banco (/retirar <objeto>) En el caso del oro podrá
+especificar el monto: /depositar oro <cant> y /retirar oro <cant>
+El sistema bancario de Argentum es sin duda muy eficiente: cuando un jugador hace un depósito, el jugador
+puede hacer un retiro desde cualquier sucursal en todo Argentum sin cargo.
+Las ciudades y pueblos son zonas seguras: los jugadores no pueden atacar ni ser atacados ni los NPC
+pueden entrar.
+Cavernas y Mazmorras
+Esparcidas por distintas zonas de Argentum hay entradas a cavernas o mazmorras. En ella habitan NPC que
+no están en otros lados, muchos más fuertes que el promedio, que custodian grandes tesoros.
+Items
+Existen los siguientes items:
+- Espada: arma de combate a mano, tiene un daño de 2 a 5.
+- Hacha: arma de combate a mano, tiene un daño de 4 a 5.
+- Martillo: arma de combate a mano, tiene un daño de 1 a 9.
+- Vara de fresno: permite lanzar el hechizo "flecha mágica" que tiene un daño a distancia de 2 a 4.
+Consume 5 de mana.
+- Flauta élfica: permite lanzar el hechizo "curar" sobre el jugador que restaura la vida. Consume 100 de
+mana.
+- Báculo nudoso: permite lanzar el hechizo "misil" que tiene un daño a distancia de 4 a 8. Consume 15 de
+mana.
+- Báculo engarzado: permite lanzar el hechizo "explosion" que tiene un daño a distancia de 8 a 20.
+Consume 30 de mana.
+- Arco simple: arma a distancia, tiene un daño de 1 a 4. Las flechas son infinitas.
+- Arco compuesto: arma a distancia, tiene un daño de 4 a 16. Las flechas son infinitas.
+- Armadura de cuero: ofrece una defensa entre 2 y 6
+- Armadura de placas: ofrece una defensa entre 15 y 30
+- Tunica azul: ofrece una defensa entre 6 y 10
+- Capucha: casco que ofrece defensa entre 1 y 4
+- Casco de hierro: ofrece defensa entre 4 y 8
+- Escudo de tortuga: ofrece defensa entre 1 y 2
+- Escudo de hierro: ofrece defensa entre 1 y 4
+- Sombrero mágico: casco que ofrece una defensa entre 4 y 12.
+Criaturas o NPC
+Hay varias criaturas en Argentum listas para atacar a un jugador si este se encuentra lo suficientemente
+cerca, incluso si el jugador no inicia el ataque.
+Todas las criaturas tiene un ataque cuerpo a cuerpo y se dirigirán al jugador más cercano para atacarle (si
+es que está lo suficientemente cerca)
+Cada cierto tiempo un cierto número de criaturas serán creadas hasta que la población de estas llegue a un
+límite, lo que garantiza que en Argentum haya siempre criaturas sin llegar a saturar las tierras.
+Con la muerte de cada criatura existe cierta probabilidad de que esta deje algún objeto u oro:
+Probabilidad -> Item dejado
+0.80 Nada
+0.08 Oro, una cantidad igual a rand(0.01, 0.2) * VidaMaxNPC
+0.01 Un poción de vida o mana elegida al azar
+0.01 Cualquier otro objeto al azar
+Las criaturas existentes son:
+- Goblin (varios tipos)
+- Esqueleto (varios tipos)
+- Zombie
+- Araña (varios tipos)
+- Orco
+- Golem (varios tipos)
+Algunos NPCs pueden aparecer en cualquier zona de Argentum, otros son específicos de zonas o de
+mazmorras (esto le da variedad al juego: si alguien quiere cazar arañas debe ir a los bosques, no a los
+desiertos)
+Clanes
+Un jugador con nivel 6 o más podrá fundar un clan con el comando /fundar-clan <nombre del clan> (el
+nombre debe ser único). Una vez que un jugador funda un clan no podrá irse de él ni podrá fundar otro.
+Otros jugadores podrán pedir unirse al clan con /unirse <nombre del clan> y el fundador podrá ver los
+miembros actuales y los pedidos pendientes de revisión con /revisar-clan y podrá aceptar o rechazar un
+pedido con /clan-aceptar <nick> y /clan-rechazar <nick>. El comando /clan-ban <nick> es como rechazar
+pero además hace que los pedidos futuros de ese usuario sean automáticamente rechazados.
+El comando /clan-kick <nick> hecha a un jugador del clan (pero no lo banea)
+Un jugador que es aceptado no puede unirse a otro salvo que deje el clan con /dejar-clan. Tanto un jugador
+que es aceptado como quien es rechazado van a recibir un mensaje que indica su nueva situación.
+Jugadores que pertenecen al mismo clan reciben mensajes adicionales sobre los otros miembros:
+- Cuando un jugador entra o sale de Argentum
+- Cuando un jugador está siendo atacado
+Los jugadores de un clan no pueden atacarse entre sí.
+Si están jugando juntos (están cerca los unos de los otros), los jugadores reciben una bonificación de
+defensa y de ataque proporcional a la cantidad de jugadores del clan en el lugar.
+Los clanes tienen un límite de 16 jugadores incluyendo al fundador.
+Interfaz de usuario
+El juego muestra al personaje desde una vista de águila con el personaje en el centro de la pantalla.
+El jugador puede moverse usando el teclado y puede atacar haciendo click sobre otro jugador o NPC.
+La interfaz debe mostrar también el inventario, cuales objetos están equipados, la cantidad de oro, vida y
+mana del jugador y su experiencia y nivel.
+El cliente debe poder mostrar el juego en fullscreen y en modo ventana. El modo ventana debe poder
+aceptar un tamaño arbitrario.
+No es necesario que el cambio del tamaño se haga en runtime, puede hacerse vía un archivo o un
+parámetro por línea de comandos.
+La imagen esta a efectos ilustrativos. No se requiere que la UI sea igual a
+esta. La imagen pertenece a una variante del juego original conocida como
+OptimizAO.
+Mini-chat
+La interfaz cuenta con un mini-chat que muestra los últimos mensajes relevantes para el jugador y un
+text-input para que el jugador pueda escribir.
+Los mensajes relevantes son:
+- Daño provocado
+- Daño recibido
+- Evasion (si el jugador pudo esquivar un ataque o el contrincante lo hizo)
+- Mensajes de otro jugador destinados a él
+El jugador puede escribir los siguientes mensajes. Algunos requieren que el jugador seleccione a otro
+personaje para dirigirle el mensaje.
+- /meditar
+El jugador entra en estado de meditación y recupera mana (ver Puntos de mana).
+- /resucitar
+Si el jugador es un fantasma, se traslada a la ciudad más cercana y resucita. Sino, el mensaje debe ser
+enviado a un sacerdote (ver Muerte).
+- /curar
+Recupera los puntos de vida y maná. El mensaje lo debe recibir un sacerdote.
+- /depositar <objeto>
+Toma el objeto del inventario del jugador y lo pone en el banco. El mensaje debe ser enviado a un
+banquero.
+- /retirar <objeto>
+Recupera un objeto del banco y lo guarda en el inventario. El mensaje debe ser enviado a un banquero.
+- /listar
+Lista los objetos que el comerciante tiene para vender o los que el banquero tiene.
+- /comprar <objeto>
+Comprar un objeto. El mensaje debe ser enviado a un sacerdote o comerciante.
+- /vender <objeto>
+Vende un objeto. El mensaje debe ser enviado a un comerciante.
+- /tomar
+Recoge del suelo un objeto y lo guarda en el inventario.
+- /tirar
+Tira el objeto del inventario seleccionado.
+- @<nick> <msj>
+Le envía un mensaje privado a otro jugador.
+- /fundar-clan <nombre del clan>
+Funda un clan
+- /unirse <nombre del clan>
+Pide unirse a un clan
+- /revisar-clan
+Revisa pedidos pendientes y miembros (solo el fundador)
+- /clan-aceptar <nick>
+Acepta a un jugador que pidió unirse a un clan. (solo el fundador)
+- /clan-rechazar <nick>
+Acepta a un jugador que pidió unirse a un clan. (solo el fundador)
+- /clan-ban <nick>
+Acepta a un jugador que pidió unirse a un clan. (solo el fundador)
+- /dejar-clan
+Un jugador deja el clan. Un fundador no puede hacerlo.
+- /clan-kick <nick>
+Hecha a un jugador del clan pero no lo banea. (solo el fundador)
+Vestimenta
+Todo personaje tendrá una vestimenta que irá cambiando según la armadura, casco, sombrero, arma y/o
+báculo equipado y se mostrará así en pantalla.
+Si no se tiene una armadura equipada, se debe mostrar una vestimenta común.
+Persistencia
+Se debe garantizar que los avances de los jugadores sean persistidos. Así cuando un jugador vuelva a jugar
+podrá continuar con su personaje en el mismo lugar en donde estaba al momento de salir.
+Es importante que la persistencia se haga periódicamente en caso que el jugador tenga una desconexión
+abrupta.
+Se recomienda usar 2 archivos:
+- El primero contiene los datos de cada jugador donde estos son structs de tamaño fijo y constante.
+- El segundo es un diccionario (map) que mapea el nombre de un jugador con la posición (offset) de
+los datos del jugador en el primer archivo.
+No se puede cargar todo el archivo a memoria (se presume que habrá miles de jugadores pero que solo
+unos cientos estarán online a la vez por lo que el costo de tener todo el archivo a memoria con todos los
+datos de todos los jugadores es un exceso.
+Sin embargo se permite tener en memoria el segundo archivo que funciona como índice y es mucho más
+chico.
+Los archivos deben ser binarios y el borrado de usuarios no será requerido.
+Configuración
+Es importante que cada ecuación esté programada en su propio método o función de C++ y que todas las
+ecuaciones se encuentren en una única clase o módulo.
+Además, todos los valores numéricos (constantes numéricas) deben venir de un archivo de configuración de
+texto.
+Tener las ecuaciones en un solo lugar les permitirán hacer modificaciones a la lógica del juego si alguna
+ecuación está desbalanceada y hace que el juego no sea divertido.
+Un archivo de configuración le permitirá a ustedes hacer "ajustes" más finos sin recompilar y al docente le
+permitirá cambiar ciertos valores para facilitar la corrección (por ejemplo se puede poner vida infinita)
+Sonidos
+Como todo juego se debe reproducir sonidos para darle realismo a los eventos y acciones que suceden:
+- Cuando hay un golpe de espada se debe emitir el sonido característico.
+- Cuando hay una explosión se debe emitir un sonido acorde.
+Si la cantidad de eventos que suceden es muy grande, algunos sonidos deben ser evitados para no saturar
+al jugador con tanta información.
+Musica
+Se debe reproducir una música de fondo.
+Animaciones
+Las unidades no son mostradas con imágenes estáticas sino con pequeñas animaciones: debe mostrarse
+cómo se mueven con animaciones.
+Configuración
+Todos los valores numéricos (constantes numéricas) deben venir de un archivo de configuración de texto
+TOML.
+Tener los parámetros en un solo lugar les permitirán hacer modificaciones al juego si este está
+desbalanceado y hace que el juego no sea divertido.
+Un archivo de configuración le permitirá a ustedes hacer ajustes más finos sin recompilar y al docente le
+permitirá cambiar ciertos valores para facilitar la corrección.
+Aclaración: No se debe implementar un parser TOML, sino que se debe investigar y utilizar uno ya
+existente.
+Cheats
+El juego debe poder aceptar cierta combinación de teclas para activar vida infinita, mana infinito, morir
+automáticamente, etc. Implementar esto lo más tempranamente posible para que facilite las pruebas (por
+ejemplo, para probar si resucitar funciona, es más fácil ejecutar el cheat de morir y luego correr /resucitar q
+esperar a q un NPC los mate.). ¡Qué trucazo!
+Sonidos
+Como todo juego se debe reproducir sonidos para darle realismo a los eventos y acciones que suceden:
+- Cuando hay un disparo/ataque se debe emitir el sonido característico.
+- Cuando hay una muerte se debe emitir un sonido acorde.
+Si la cantidad de eventos que suceden es muy grande, algunos sonidos deben ser evitados para no saturar
+al jugador con tanta información.
+El volumen de los ruidos deberá estar modulado por la distancia: eventos cercanos producirán sonidos o
+ruidos más fuertes.
+Musica
+Se debe reproducir una música de fondo.
+Animaciones
+Las explosiones, los disparos y todo lo que sea dinámico tendrá que ser animado.
+Entregables
+- Documentación (véase los detalles en la página web oficial de la materia):
+- Manual del usuario
+- Documentación técnica
+- Manual de proyecto
+- Instalador (sea un makefile, cmake o un script the shell) que debe:
+- Descargar las dependencias del proyecto e instalarlas (por ejemplo SDL)
+- Compilar el proyecto
+- Correr los test unitarios
+- Copiar/mover binarios a ~/.local/bin, los assets (como imágenes, audios) a
+~/.local/share/NAME/ y los archivos de configuración a ~/.config/NAME/, donde NAME es
+el nombre del TP que el grupo decida darle.
+Nota: dentro de ~/.local/share/NAME/ o de ~/.config/NAME/ pueden haber tantas
+subcarpetas como lo necesiten/deseen.
+- Repositorio en Github con el código, el instalador, documentación y todo el material necesario para la
+compilación y ejecución.
+- Un video promocional de cómo se juega mostrando todos los features implementados (incluyendo al
+editor). Idealmente sería orientado a la audiencia potencialmente compradora del juego.
+Aplicaciones Requeridas
+El proyecto consta de 3 aplicaciones:
+- Cliente gráfico
+- Servidor
+- Editor gráfico
+El editor no tiene por qué conectarse al servidor: los niveles editados pueden ser manualmente movidos al
+servidor. No así el cliente que debe descargarse del servidor el/los niveles a jugar.
+El proyecto debe poderse compilar y ejecutar en un Ubuntu 24.04 (o en su versión más ligera
+Xubuntu 24.04).
+Este es el mismo entorno que fue usado durante la cursada por el Sercom.
+Unit tests
+El protocolo de comunicación debe estar testeado con GoogleTests u otro framework de testing para C++.
+Los tests pueden mockear los sockets o no.
+Restricciones
+La siguiente es una lista de restricciones técnicas exigidas por el cliente:
+1. El sistema se debe realizar en C++ (C++20) con el estándar POSIX 2008 utilizando librerías SDL y Qt
+y se permite el uso de QTCreator.
+2. El protocolo de comunicación debe ser en formato binario.
+3. El estado del juego/escenario debe ser en formato binario.
+4. Los archivos de configuración deben ser en el formato TOML.
+5. Todo socket utilizado en este TP debe ser bloqueante (es el comportamiento por defecto).
+Referencias
+[1] : https://www.argentumonline.com.ar/
+[2]: Assets (imagenes): https://github.com/ao-org/Recursos

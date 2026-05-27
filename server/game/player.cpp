@@ -1,8 +1,8 @@
 #include "player.h"
 
 #include <utility>
+#include <vector>
 
-#include "server/game/equipment.h"
 #include "server/game/inventory.h"
 
 Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClass player_class,
@@ -15,8 +15,7 @@ Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClas
     gold(0),
     experience(0),
     meditating(false),
-    equipment(std::make_unique<Equipment>()),
-    inventory(std::make_unique<Inventory>(*equipment)) {}
+    inventory(std::make_unique<Inventory>()) {}
 
 bool Player::can_cast_magic() const {
     return p_class != PlayerClass::WARRIOR;
@@ -77,10 +76,6 @@ uint64_t Player::get_experience() const {
     return experience;
 }
 
-Equipment& Player::get_equipment() {
-    return *equipment;
-}
-
 Inventory& Player::get_inventory() {
     return *inventory;
 }
@@ -89,12 +84,16 @@ void Player::equip(Item& item) {
     inventory->equip(item, *this);
 }
 
+std::vector<std::pair<EquipmentSlot, Item*>> Player::get_equipment() const {
+    return inventory->get_equipped_items();
+}
+
 void Player::restore_health(int amount) {
-    (void)amount;
+    (void) amount;
     // TODO(Pau)
 }
 
 void Player::restore_mana(int amount) {
-    (void)amount;
+    (void) amount;
     // TODO(Pau)
 }

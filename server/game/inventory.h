@@ -1,49 +1,64 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 #include <memory>
+#include <optional>
+#include <utility>
 #include <vector>
 
+#include "server/game/items/equipment_slot.h"
 #include "server/game/items/item.h"
 
-#define MAX_INVENTORY_ITEMS 20  // esto despues hay que sacarlo a un config o algo asi
+#define MAX_INVENTORY_ITEMS 20
 
 class Player;
-class Equipment;
+
+// InventorySlot: item con cantidad y flag de si está equipado
+struct InventorySlot {
+    std::unique_ptr<Item> item;                  // template/referencia del item
+    int quantity = 1;                            // cantidad de este item (stackable)
+    std::optional<EquipmentSlot> equipped_slot;  // nullopt si no está equipado,
+                                                 // tiene el slot si está equipado (solo 1 equipado)
+};
 
 class Inventory {
  private:
     static constexpr size_t MAX_ITEMS = MAX_INVENTORY_ITEMS;
-    std::vector<std::unique_ptr<Item>> items;
-    Equipment& equipment;  // referenciaa
+    std::vector<InventorySlot> slots;
 
-    // USA un consumible (desp lo elimina del inventario)
+    int find_item_by_ref(const Item& item) const;
+
+    int find_item_by_type(const Item& item) const;
+
     bool use_consumable(int item_index, Player& player);
-    int find_item(const Item& item) const;
 
  public:
-    explicit Inventory(Equipment& eq);
+    Inventory();
     ~Inventory() = default;
 
     Inventory(const Inventory&) = delete;
     Inventory& operator=(const Inventory&) = delete;
 
-    bool add_item(std::unique_ptr<Item> item);
+    bool add_item(std::unique_ptr<Item> item,
+                  int quantity = 1);  // por defecto es 1, pero se puede agregar más de una unidad
+                                      // para el caso del loot
 
-    // saca el item del inventario y lo pone en el slot de equipment
-    // si es consumible, lo consume en lugar de equiparlo
-    // retorna false si el item no está o viola restricción
     bool equip(Item& item, Player& player);
 
-    // saca el item del slot y lo devuelve al inventario
-    // retorna false si el slot está vacío
     bool unequip(EquipmentSlot slot);
 
-    // saca el item del inventario (para dropearlo por ej)
     std::unique_ptr<Item> remove_item(Item& item);
 
     bool is_full() const;
     size_t get_size() const;
-    const std::vector<std::unique_ptr<Item>>& get_items() const;
+    const std::vector<InventorySlot>& get_slots() const;
+
+    Item* get_equipped_item(EquipmentSlot slot) const;
+
+    std::vector<std::pair<EquipmentSlot, Item*>> get_equipped_items() const;
+
+    bool slot_has_item(EquipmentSlot slot) const;
+
+    InventorySlot pop_slot(int slot_index);
 };
 
 #endif
