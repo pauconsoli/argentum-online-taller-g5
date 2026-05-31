@@ -3,37 +3,31 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
+#include <utility>
 
 #include "acceptor_thread.h"
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/updates/game_update.h"
 #include "game/player.h"
-#include "gameloop_thread.h"
 #include "player_connection.h"
 
-namespace {
-constexpr char SERVER_STOP_COMMAND = 'q';  // sacar a config
-}
+constexpr char SERVER_STOP_COMMAND = 'q';
 
+Server::Server(const std::string& service_name_):
+    service_name(service_name_),
+    clients(),
+    nicks_in_use(),
+    matches(),
+    next_match_id(1),
+    next_player_id(1),
+    gameloop_command_queue(),
+    keep_running(false) {}
 
-Server::Server(const std::string& service_name) noexcept:
-    service_name(service_name), gameloop_command_queue(), keep_running(false) {}
+Server::~Server() = default;
 
-void Server::add_client(PlayerConnection* client) {
-    std::unique_lock<std::mutex> lock(clients_mutex);
-    clients.push_back(client);
-}
-
-void Server::remove_client(PlayerConnection* client) {
-    std::unique_lock<std::mutex> lock(clients_mutex);
-    auto it = std::find(clients.begin(), clients.end(), client);
-    if (it != clients.end()) {
-        clients.erase(it);
-    }
-}
-
-void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update) {
+void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
     auto it =
         std::find_if(clients.begin(), clients.end(), [player_id](const PlayerConnection* client) {
@@ -41,37 +35,136 @@ void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<const Gam
         });
     if (it != clients.end()) {
         try {
-            (*it)->enqueue_message(update);
+            (*it)->enqueue_update(update);
         } catch (const ClosedQueue&) {}
     }
 }
 
-void Server::broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) {
+void Server::broadcast_update_to_all(std::shared_ptr<GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
     for (auto* client : clients) {
         try {
-            client->enqueue_message(update);
+            client->enqueue_update(update);
         } catch (const ClosedQueue&) {}
     }
 }
 
 void Server::broadcast_update_to_nearby(const Position& position, int range,
-                                        std::shared_ptr<const GameUpdate> update) {
+                                        std::shared_ptr<GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
     for (auto* client : clients) {
-        if (!client->get_player()) {
+        if (!client->get_player_id()) {
             continue;
         }
 
-        Position player_pos = client->get_player()->get_position();
+        Position player_pos = client->get_player_id()->get_position();
         int distance = std::abs(player_pos.x - position.x) + std::abs(player_pos.y - position.y);
 
         if (distance <=
             range) {  // range es la distancia máxima para recibir el update de ese evento
             try {
-                client->enqueue_message(update);
+                client->enqueue_update(update);
             } catch (const ClosedQueue&) {}
         }
+    }
+}
+
+uint32_t Server::login(PlayerConnection& conn, const std::string& nick) {
+    if (nick.empty()) {
+        throw std::invalid_argument("nick vacío");
+    }
+    std::lock_guard<std::mutex> lk(clients_mutex);
+    if (nicks_in_use.count(nick) > 0) {
+        throw std::runtime_error("nick ya en uso");
+    }
+    uint32_t pid = next_player_id.fetch_add(1);
+    nicks_in_use.insert(nick);
+    conn.set_player_id(pid);
+    conn.set_nick(nick);
+    return pid;
+}
+
+std::vector<MatchInfo> Server::list_matches() {
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    std::vector<MatchInfo> out;
+    out.reserve(matches.size());
+    for (const auto& kv : matches) {
+        const auto& m = kv.second;
+        out.push_back({m->get_id(), m->get_name(), m->get_current_players(), m->get_max_players()});
+    }
+    return out;
+}
+
+uint32_t Server::create_match(const std::string& name, uint8_t max_players,
+                              PlayerConnection& conn) {
+    (void) conn;
+    if (name.empty()) {
+        throw std::invalid_argument("nombre de match vacío");
+    }
+    if (max_players == 0) {
+        throw std::invalid_argument("max_players debe ser > 0");
+    }
+    // TODO(Pau): acá poner tu Match concreto. Por ahora
+    // deje una exception para que se pueda detectar en el cliente.
+    throw std::runtime_error("create_match: Match concreto no implementado todavía (Pau)");
+}
+
+Match* Server::join_match(uint32_t match_id, PlayerConnection& conn) {
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    auto it = matches.find(match_id);
+    if (it == matches.end()) {
+        return nullptr;
+    }
+    Match* m = it->second.get();
+    if (m->is_full()) {
+        return nullptr;
+    }
+    try {
+        m->add_player(&conn);
+    } catch (...) {
+        return nullptr;
+    }
+    return m;
+}
+
+void Server::leave_match(PlayerConnection& conn) {
+    uint32_t match_id = conn.get_current_match_id();
+    if (match_id == 0) {
+        return;
+    }
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    auto it = matches.find(match_id);
+    if (it == matches.end()) {
+        return;
+    }
+    it->second->remove_player(&conn);
+}
+
+void Server::disconnect(PlayerConnection& conn) {
+    if (conn.get_state() == PlayerConnection::State::IN_MATCH) {
+        leave_match(conn);
+    }
+
+    std::lock_guard<std::mutex> lk(clients_mutex);
+    const std::string& nick = conn.get_nick();
+    if (!nick.empty()) {
+        nicks_in_use.erase(nick);
+    }
+    conn.set_state(PlayerConnection::State::DISCONNECTING);
+    conn.close_send_queue();
+}
+
+void Server::add_client(PlayerConnection* conn) {
+    std::lock_guard<std::mutex> lk(clients_mutex);
+    clients.push_back(conn);
+}
+
+void Server::remove_client(PlayerConnection* conn) {
+    std::lock_guard<std::mutex> lk(clients_mutex);
+    clients.remove(conn);
+    const std::string& nick = conn->get_nick();
+    if (!nick.empty()) {
+        nicks_in_use.erase(nick);
     }
 }
 
@@ -81,7 +174,7 @@ void Server::run() {
 
         keep_running = true;
 
-        AcceptorThread acceptor(server_socket, gameloop_command_queue, *this);
+        AcceptorThread acceptor(*server_socket, *this);
         GameLoopThread gameloop(gameloop_command_queue, *this);
 
         try {

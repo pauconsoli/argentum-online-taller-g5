@@ -5,12 +5,21 @@
 #include <memory>
 
 enum class UpdateType : uint8_t {
-    MOVED = 0x01,
-    STATS = 0x02,
-    INVENTORY = 0x03,
-    MESSAGE = 0x04,
-    DEATH = 0x05,
-    REVIVE = 0x06,
+    LOGIN_OK,
+    MATCH_LIST,
+    MATCH_CREATED,
+    MATCH_JOINED,
+    PLAYER_JOINED,
+    PLAYER_LEFT,
+    ERROR,
+
+    SNAPSHOT,
+    MOVED,
+    STATS,
+    DEATH,
+    REVIVE,
+    INVENTORY,
+    CHAT_MSG,
 };
 
 class GameUpdate {

@@ -1,40 +1,51 @@
 #ifndef PLAYER_CONNECTION_H
 #define PLAYER_CONNECTION_H
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
+#include <string>
 
-#include "../common/queue.h"
-
-class Player;
-class GameUpdate;
+#include "common/queue.h"
+#include "common/updates/game_update.h"
 
 class PlayerConnection {
+ public:
+    enum class State { CONNECTED, AUTHENTICATED, IN_MATCH, DISCONNECTING };
+
  private:
-    uint32_t player_id;
-    Player* player;                                        // @not_owned: managed by World
-    Queue<std::shared_ptr<const GameUpdate>>& send_queue;  // @not_owned: reference
+    std::atomic<uint32_t> player_id;
+    std::string nick;
+    std::atomic<uint32_t> current_match_id;
+    std::atomic<State> state;
+    Queue<std::shared_ptr<const GameUpdate>>& send_queue;
 
  public:
-    /**
-     * Constructs a player connection.
-     * @param player_id The unique player ID
-     * @param player Pointer to the Player object
-     * @param send_queue Reference to queue for sending GameUpdate messages to client
-     */
-    PlayerConnection(uint32_t player_id, Player* player,
-                     Queue<std::shared_ptr<const GameUpdate>>& send_queue);
+    PlayerConnection();
+
+    void set_player_id(uint32_t id);
+    void set_nick(const std::string& nick);
+    void set_current_match_id(uint32_t match_id);
+    void set_state(State new_state);
 
     uint32_t get_player_id() const;
-    Player* get_player();
+    const std::string& get_nick() const;
+    uint32_t get_current_match_id() const;
+    State get_state() const;
 
-    /**
-     * Enqueues a GameUpdate to be sent to the client.
-     * @param update The update to send (shared ownership)
-     */
-    void enqueue_message(std::shared_ptr<const GameUpdate> update);
+    void enqueue_update(std::shared_ptr<GameUpdate> update);
+    bool try_enqueue_update(std::shared_ptr<GameUpdate> update);
+
+    Queue<std::shared_ptr<const GameUpdate>>& get_send_queue() {
+        return send_queue;
+    }
+
+    void close_send_queue();
 
     ~PlayerConnection() = default;
+
+    PlayerConnection(const PlayerConnection&) = delete;
+    PlayerConnection& operator=(const PlayerConnection&) = delete;
 };
 
 #endif
