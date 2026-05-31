@@ -6,10 +6,12 @@ target_sources(taller_client
     sdl/input_handler.cpp
     sdl/camera.cpp
     sdl/hud.cpp
+    sdl/sprite_manager.cpp
     PUBLIC
     sdl/game_client.h
     sdl/renderer.h
     sdl/input_handler.h
     sdl/camera.h
     sdl/hud.h
+    sdl/sprite_manager.h
     )
