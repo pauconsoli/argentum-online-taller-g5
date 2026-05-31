@@ -15,10 +15,12 @@ target_sources(taller_server
     # .h files
     server.h
     server_protocol.h
+    server_ops.h
     acceptor_thread.h
     client_handler.h
     player_connection.h
     receiver_thread.h
     sender_thread.h
     gameloop_thread.h
+    game/match.h
     )
