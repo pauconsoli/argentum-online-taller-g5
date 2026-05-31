@@ -18,6 +18,7 @@ project(taller_tp
 
 option(TALLER_TESTS "Enable / disable tests." ON)
 option(TALLER_CLIENT "Enable / disable client program." ON)
+option(TALLER_CLIENT_CLI "Enable / disable client CLI (debug, sin GUI)." ON)
 option(TALLER_SERVER "Enable / disable server program." ON)
 option(TALLER_EDITOR "Enable / disable editor program." ON)
 option(TALLER_MAKE_WARNINGS_AS_ERRORS "Enable / disable warnings as errors." ON)
@@ -163,6 +164,20 @@ if(TALLER_CLIENT)
 
     # Link the taller_common lib target
     target_link_libraries(taller_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf spdlog::spdlog)
+endif()
+
+# Binario CLI del cliente (sin GUI). Para smoke-testear el server mientras
+# Qt/SDL no estén listos. Comparte client.cpp y client_protocol.cpp con
+# taller_client pero usa un main propio.
+if(TALLER_CLIENT_CLI)
+    add_executable(taller_client_cli
+        client/client_main.cpp
+        client/client.cpp
+        client/client_protocol.cpp
+    )
+    add_dependencies(taller_client_cli taller_common)
+    set_project_warnings(taller_client_cli ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    target_link_libraries(taller_client_cli taller_common spdlog::spdlog)
 endif()
 
 if(TALLER_SERVER)

@@ -3,31 +3,31 @@
 
 #include <list>
 
-#include "../common/queue.h"
-#include "../common/socket.h"
-#include "../common/thread.h"
+#include "common/socket.h"
+#include "common/thread.h"
 
-class PlayerConnection;
 class ClientHandler;
 class Server;
 
-// cppcheck-suppress noConstructor
 class AcceptorThread: public Thread {
  private:
-    //...
     Socket& listener;
-    std::list<ClientHandler*> clients;
     Server& server;
+    std::list<ClientHandler*> clients;
 
-    // cppcheck-suppress unusedPrivateFunction
     void reap() noexcept;
     void clear() noexcept;
 
  public:
-    ~AcceptorThread();
+    AcceptorThread(Socket& listener_sock, Server& srv);
 
     void run() override;
     void stop() override;
+
+    ~AcceptorThread();
+
+    AcceptorThread(const AcceptorThread&) = delete;
+    AcceptorThread& operator=(const AcceptorThread&) = delete;
 };
 
 #endif

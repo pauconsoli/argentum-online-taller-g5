@@ -1,10 +1,15 @@
 #include "client_handler.h"
 
+#include <iostream>
+#include <utility>
+
 #include <sys/socket.h>
 
-#include "receiver_thread.h"
-#include "sender_thread.h"
-
+ClientHandler::ClientHandler(Socket&& sock, ServerOps& server_ops):
+        peer(std::move(sock)),
+        conn(),
+        receiver(peer, conn, server_ops),
+        sender(peer, conn) {}
 
 void ClientHandler::start_threads() {
     receiver.start();
@@ -16,21 +21,23 @@ void ClientHandler::stop_threads() noexcept {
     sender.stop();
 }
 
-void ClientHandler::join_threads() {
-    receiver.join();
-    sender.join();
-}
-
 void ClientHandler::hard_kill() noexcept {
     stop_threads();
     try {
         peer.shutdown(SHUT_RDWR);
         peer.close();
     } catch (const std::exception& e) {
-        std::cerr << "[CLIENT_HANDLER] Error closing socket in hard_kill: " << e.what() << "\n";
+        std::cerr << "[CLIENT_HANDLER] Error en hard_kill: " << e.what() << "\n";
     }
+}
+
+void ClientHandler::join_threads() {
+    receiver.join();
+    sender.join();
 }
 
 bool ClientHandler::is_dead() const {
     return !receiver.is_alive() && !sender.is_alive();
 }
+
+PlayerConnection& ClientHandler::get_player_connection() { return conn; }
