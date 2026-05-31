@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "../common/position.h"
 #include "../common/queue.h"
 #include "../common/thread.h"
 
@@ -16,7 +17,9 @@ class PlayerConnection;
 class ClientHandler;
 class GameLoopThread;
 class AcceptorThread;
+
 class ClientCommand;
+class GameUpdate;
 
 class Server {
  private:
@@ -34,6 +37,13 @@ class Server {
 
     void add_client(PlayerConnection* client);
     void remove_client(PlayerConnection* client);
+
+    void send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update);
+    void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update);
+
+    void broadcast_update_to_nearby(const Position& position, int range,
+                                    std::shared_ptr<const GameUpdate> update);
+
     bool is_running() const {
         return keep_running;
     }

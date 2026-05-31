@@ -2,6 +2,7 @@
 #define GAME_UPDATE_H
 
 #include <cstdint>
+#include <memory>
 
 enum class UpdateType : uint8_t {
     MOVED = 0x01,

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "common/queue.h"
+#include "../common/queue.h"
 
 class Player;
 class GameUpdate;
@@ -12,16 +12,27 @@ class GameUpdate;
 class PlayerConnection {
  private:
     uint32_t player_id;
-    Player* player;
-    Queue<std::unique_ptr<GameUpdate>>& send_queue;
+    Player* player;                                        // @not_owned: managed by World
+    Queue<std::shared_ptr<const GameUpdate>>& send_queue;  // @not_owned: reference
 
  public:
+    /**
+     * Constructs a player connection.
+     * @param player_id The unique player ID
+     * @param player Pointer to the Player object
+     * @param send_queue Reference to queue for sending GameUpdate messages to client
+     */
     PlayerConnection(uint32_t player_id, Player* player,
-                     Queue<std::unique_ptr<GameUpdate>>& send_queue);
+                     Queue<std::shared_ptr<const GameUpdate>>& send_queue);
 
     uint32_t get_player_id() const;
     Player* get_player();
-    void enqueue_message(std::unique_ptr<GameUpdate> update);
+
+    /**
+     * Enqueues a GameUpdate to be sent to the client.
+     * @param update The update to send (shared ownership)
+     */
+    void enqueue_message(std::shared_ptr<const GameUpdate> update);
 
     ~PlayerConnection() = default;
 };
