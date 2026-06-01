@@ -19,8 +19,8 @@ GameClient::GameClient(int width, int height):
         throw std::runtime_error(SDL_GetError());
     }
     renderer = new Renderer(window);
-    renderer->load_texture("../client/assets/body.png");
-    hud = new Hud(renderer->get_sdl_renderer(), "../client/assets/font.ttf");
+    renderer->load_texture("client/assets/body.png");
+    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
 }
 
 GameClient::~GameClient() {
