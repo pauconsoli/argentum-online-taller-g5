@@ -32,9 +32,7 @@ class BasicMatch: public Match {
 
     void tick(World& world) override;
 
-    void start() override;
     void stop() override;
-    void join() override;
 
  private:
     uint32_t match_id;

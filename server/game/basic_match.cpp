@@ -5,8 +5,8 @@
 
 #include "common/commands/client_command.h"
 #include "common/updates/game_update.h"
-#include "player_connection.h"
-#include "world/world.h"
+#include "server/player_connection.h"
+#include "server/world/world.h"
 
 BasicMatch::BasicMatch(uint32_t match_id, const std::string& name, uint8_t max_players):
     match_id(match_id), name(name), max_players(max_players), current_players(0) {}

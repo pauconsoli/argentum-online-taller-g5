@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "client_command.h"
-#include "direction.h"
+#include "common/direction.h"
 
 class MoveCommand: public ClientCommand {
  private:

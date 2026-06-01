@@ -7,6 +7,7 @@
 #include <mutex>
 #include <queue>
 #include <stdexcept>
+#include <utility>
 
 struct ClosedQueue: public std::runtime_error {
     ClosedQueue(): std::runtime_error("The queue is closed") {}
@@ -74,7 +75,7 @@ class Queue {
             is_not_full.notify_all();
         }
 
-        val = q.front();
+        val = std::move(q.front());
         q.pop();
         return true;
     }
@@ -97,6 +98,24 @@ class Queue {
         q.push(val);
     }
 
+    void push(T&& val) {
+        std::unique_lock<std::mutex> lck(mtx);
+
+        if (closed) {
+            throw ClosedQueue();
+        }
+
+        while (q.size() == this->max_size) {
+            is_not_full.wait(lck);
+        }
+
+        if (q.empty()) {
+            is_not_empty.notify_all();
+        }
+
+        q.push(std::move(val));
+    }
+
     // cppcheck-suppress duplInheritedMember
     T pop() {
         std::unique_lock<std::mutex> lck(mtx);
@@ -112,7 +131,7 @@ class Queue {
             is_not_full.notify_all();
         }
 
-        T const val = q.front();
+        T val = std::move(q.front());
         q.pop();
 
         return val;

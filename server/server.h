@@ -46,7 +46,7 @@ class Server: public ServerOps {
     std::unique_ptr<World> world;
 
  public:
-    explicit Server(const std::string& service_name) noexcept;
+    explicit Server(const std::string& service_name);
 
     void run();
 

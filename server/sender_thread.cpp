@@ -10,7 +10,7 @@
 void SenderThread::run() {
     try {
         while (should_keep_running()) {
-            std::unique_ptr<GameUpdate> update = player_conn.get_send_queue().pop();
+            std::shared_ptr<const GameUpdate> update = player_conn.get_send_queue().pop();
             if (!update) {
                 continue;
             }
