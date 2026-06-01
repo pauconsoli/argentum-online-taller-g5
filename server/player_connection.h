@@ -11,19 +11,14 @@
 
 class PlayerConnection {
  public:
-    enum class State {
-        CONNECTED,        
-        AUTHENTICATED,
-        IN_MATCH,
-        DISCONNECTING
-    };
+    enum class State { CONNECTED, AUTHENTICATED, IN_MATCH, DISCONNECTING };
 
  private:
     std::atomic<uint32_t> player_id;
     std::string nick;
     std::atomic<uint32_t> current_match_id;
     std::atomic<State> state;
-    Queue<std::unique_ptr<GameUpdate>> send_queue;
+    std::unique_ptr<Queue<std::shared_ptr<const GameUpdate>>> send_queue;
 
  public:
     PlayerConnection();
@@ -38,11 +33,11 @@ class PlayerConnection {
     uint32_t get_current_match_id() const;
     State get_state() const;
 
-    void enqueue_update(std::unique_ptr<GameUpdate> update);
-    bool try_enqueue_update(std::unique_ptr<GameUpdate> update);
+    void enqueue_update(std::shared_ptr<const GameUpdate> update);
+    bool try_enqueue_update(std::shared_ptr<const GameUpdate> update);
 
-    Queue<std::unique_ptr<GameUpdate>>& get_send_queue() {
-        return send_queue;
+    Queue<std::shared_ptr<const GameUpdate>>& get_send_queue() {
+        return *send_queue;
     }
 
     void close_send_queue();

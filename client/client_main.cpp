@@ -28,6 +28,7 @@
 #include <string>
 #include <thread>
 
+#include "client.h"
 #include "common/direction.h"
 #include "common/queue.h"
 #include "common/updates/error_update.h"
@@ -39,8 +40,6 @@
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
-
-#include "client.h"
 
 namespace {
 
@@ -55,7 +54,7 @@ void print_update(const GameUpdate& u) {
         case UpdateType::MATCH_LIST: {
             const auto& v = static_cast<const MatchListUpdate&>(u);
             std::cout << "[OK] match list (" << v.matches.size() << "):\n";
-            for (const auto& m: v.matches) {
+            for (const auto& m : v.matches) {
                 std::cout << "  - id=" << m.id << " name=" << m.name << " ("
                           << static_cast<int>(m.current_players) << "/"
                           << static_cast<int>(m.max_players) << ")\n";
@@ -75,8 +74,8 @@ void print_update(const GameUpdate& u) {
         }
         case UpdateType::PLAYER_JOINED: {
             const auto& v = static_cast<const PlayerJoinedUpdate&>(u);
-            std::cout << "[+] entró " << v.nick << " (id=" << v.player_id << ") en ("
-                      << v.pos.x << "," << v.pos.y << ")\n";
+            std::cout << "[+] entró " << v.nick << " (id=" << v.player_id << ") en (" << v.pos.x
+                      << "," << v.pos.y << ")\n";
             break;
         }
         case UpdateType::PLAYER_LEFT: {
@@ -86,8 +85,8 @@ void print_update(const GameUpdate& u) {
         }
         case UpdateType::MOVED: {
             const auto& v = static_cast<const MovedUpdate&>(u);
-            std::cout << "[mov] player " << v.get_player_id() << " -> (" << v.get_pos().x
-                      << "," << v.get_pos().y << ")\n";
+            std::cout << "[mov] player " << v.get_player_id() << " -> (" << v.get_pos().x << ","
+                      << v.get_pos().y << ")\n";
             break;
         }
         case UpdateType::SNAPSHOT: {

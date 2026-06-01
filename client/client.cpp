@@ -19,7 +19,7 @@ class ClientReceiverThread: public Thread {
 
  public:
     ClientReceiverThread(ClientProtocol& p, Queue<std::unique_ptr<GameUpdate>>& q, Socket& s):
-            protocol(p), out_queue(q), socket(s) {}
+        protocol(p), out_queue(q), socket(s) {}
 
     void run() override {
         try {
@@ -50,14 +50,14 @@ class ClientReceiverThread: public Thread {
     }
 };
 
-}
+}  // namespace
 
 Client::Client(const std::string& host, const std::string& port):
-        socket(host.c_str(), port.c_str()),
-        protocol(socket),
-        send_mutex(),
-        received_updates(),
-        receiver_thread(nullptr) {}
+    socket(host.c_str(), port.c_str()),
+    protocol(socket),
+    send_mutex(),
+    received_updates(),
+    receiver_thread(nullptr) {}
 
 Client::~Client() {
     try {
@@ -68,10 +68,9 @@ Client::~Client() {
 
 void Client::start() {
     if (receiver_thread) {
-        return; 
+        return;
     }
-    receiver_thread =
-            std::make_unique<ClientReceiverThread>(protocol, received_updates, socket);
+    receiver_thread = std::make_unique<ClientReceiverThread>(protocol, received_updates, socket);
     receiver_thread->start();
 }
 

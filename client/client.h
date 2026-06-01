@@ -6,13 +6,12 @@
 #include <mutex>
 #include <string>
 
+#include "client_protocol.h"
 #include "common/direction.h"
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/thread.h"
 #include "common/updates/game_update.h"
-
-#include "client_protocol.h"
 
 class Client {
  private:

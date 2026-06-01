@@ -6,10 +6,7 @@
 #include <sys/socket.h>
 
 ClientHandler::ClientHandler(Socket&& sock, ServerOps& server_ops):
-        peer(std::move(sock)),
-        conn(),
-        receiver(peer, conn, server_ops),
-        sender(peer, conn) {}
+    peer(std::move(sock)), conn(), receiver(peer, conn, server_ops), sender(peer, conn) {}
 
 void ClientHandler::start_threads() {
     receiver.start();
@@ -40,4 +37,6 @@ bool ClientHandler::is_dead() const {
     return !receiver.is_alive() && !sender.is_alive();
 }
 
-PlayerConnection& ClientHandler::get_player_connection() { return conn; }
+PlayerConnection& ClientHandler::get_player_connection() {
+    return conn;
+}

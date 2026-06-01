@@ -102,3 +102,13 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
 void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
+
+std::vector<std::unique_ptr<GameUpdate>> World::update() {
+    std::vector<std::unique_ptr<GameUpdate>> events;
+
+    // TODO(Pau): Update player health/mana regeneration
+    // TODO(Pau): Update NPC states
+    // TODO(Pau): Process world events (respawns, item drops, etc)
+
+    return events;
+}
