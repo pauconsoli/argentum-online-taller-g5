@@ -1,6 +1,8 @@
 target_sources(taller_client
     PRIVATE
     main.cpp
+    client.cpp
+    client_protocol.cpp
     sdl/game_client.cpp
     sdl/renderer.cpp
     sdl/input_handler.cpp
@@ -8,6 +10,8 @@ target_sources(taller_client
     sdl/hud.cpp
     sdl/sprite_manager.cpp
     PUBLIC
+    client.h
+    client_protocol.h
     sdl/game_client.h
     sdl/renderer.h
     sdl/input_handler.h
