@@ -6,6 +6,7 @@ GameClient::GameClient(int width, int height):
     window(nullptr),
     renderer(nullptr),
     hud(nullptr),
+    sprite_manager(nullptr),
     camera(width, height),
     player_x(400),
     player_y(300) {
@@ -19,12 +20,14 @@ GameClient::GameClient(int width, int height):
         throw std::runtime_error(SDL_GetError());
     }
     renderer = new Renderer(window);
-    renderer->load_texture("../client/assets/body.png");
+    sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
+    sprite_manager->load("body", "../client/assets/body.png");
     hud = new Hud(renderer->get_sdl_renderer(), "../client/assets/font.ttf");
 }
 
 GameClient::~GameClient() {
     delete hud;
+    delete sprite_manager;
     delete renderer;
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -94,7 +97,7 @@ void GameClient::run() {
         int screen_y = camera.get_screen_y(player_y);
 
         renderer->clear();
-        renderer->draw_frame(frame_x, frame_y, frame_w, frame_h, screen_x, screen_y);
+        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y, frame_w, frame_h, screen_x, screen_y);
         hud->draw(100, 100, 50, 100, 1);
         renderer->present();
     }
