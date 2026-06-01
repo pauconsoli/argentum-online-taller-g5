@@ -21,8 +21,8 @@ GameClient::GameClient(int width, int height):
     }
     renderer = new Renderer(window);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load("body", "../client/assets/body.png");
-    hud = new Hud(renderer->get_sdl_renderer(), "../client/assets/font.ttf");
+    sprite_manager->load("body", "client/assets/body.png");
+    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
 }
 
 GameClient::~GameClient() {
@@ -97,7 +97,8 @@ void GameClient::run() {
         int screen_y = camera.get_screen_y(player_y);
 
         renderer->clear();
-        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y, frame_w, frame_h, screen_x, screen_y);
+        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y, frame_w, frame_h,
+                             screen_x, screen_y);
         hud->draw(100, 100, 50, 100, 1);
         renderer->present();
     }

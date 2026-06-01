@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "game_update.h"
@@ -30,7 +31,7 @@ class SnapshotUpdate: public GameUpdate {
     std::vector<PlayerSnapshot> players;
 
     SnapshotUpdate(uint32_t tick, std::vector<PlayerSnapshot> players):
-            tick(tick), players(std::move(players)) {}
+        tick(tick), players(std::move(players)) {}
 
     UpdateType get_type() const override {
         return UpdateType::SNAPSHOT;

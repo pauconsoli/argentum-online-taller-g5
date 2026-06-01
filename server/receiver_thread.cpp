@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include <sys/socket.h>
 
@@ -15,8 +16,11 @@
 #include "common/updates/match_list_update.h"
 #include "game/match.h"
 
+// ver validación de rangos con numeros mágicos en
+// void ReceiverThread::handle_select_race_class()
+
 ReceiverThread::ReceiverThread(Socket& sock, PlayerConnection& conn, ServerOps& ops):
-        socket(sock), protocol(sock), player_conn(conn), server_ops(ops), current_match(nullptr) {}
+    socket(sock), protocol(sock), player_conn(conn), server_ops(ops) {}
 
 void ReceiverThread::run() {
     try {
@@ -32,8 +36,7 @@ void ReceiverThread::run() {
                     if (op == ClientOpcode::LOGIN) {
                         handle_login();
                     } else {
-                        send_error(ProtocolError::COMMAND_NOT_ALLOWED,
-                                   "debés loguearte primero");
+                        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "debés loguearte primero");
                     }
                     break;
 
@@ -84,9 +87,8 @@ void ReceiverThread::run() {
 
     try {
         server_ops.disconnect(player_conn);
-    } catch (...) {
-        // No queremos que excepciones acá maten al thread - ya estamos saliendo.
-    }
+
+    } catch (...) {}
 }
 
 void ReceiverThread::handle_login() {
@@ -110,8 +112,7 @@ void ReceiverThread::handle_list_matches() {
 void ReceiverThread::handle_create_match() {
     auto payload = protocol.recv_create_match_payload();
     try {
-        uint32_t match_id =
-                server_ops.create_match(payload.name, payload.max_players, player_conn);
+        uint32_t match_id = server_ops.create_match(payload.name, payload.max_players, player_conn);
         player_conn.enqueue_update(std::make_unique<MatchCreatedUpdate>(match_id));
     } catch (const std::exception& e) {
         send_error(ProtocolError::INVALID_ARG, e.what());
@@ -120,45 +121,55 @@ void ReceiverThread::handle_create_match() {
 
 void ReceiverThread::handle_join_match() {
     uint32_t match_id = protocol.recv_join_match_payload();
-    Match* m = server_ops.join_match(match_id, player_conn);
+    const Match* m = server_ops.join_match(match_id, player_conn);
     if (m == nullptr) {
         send_error(ProtocolError::MATCH_NOT_FOUND, "match no existe o está lleno");
         return;
     }
-    current_match.store(m);
     player_conn.set_current_match_id(match_id);
     player_conn.set_state(PlayerConnection::State::IN_MATCH);
     player_conn.enqueue_update(
-            std::make_unique<MatchJoinedUpdate>(match_id, player_conn.get_player_id()));
+        std::make_unique<MatchJoinedUpdate>(match_id, player_conn.get_player_id()));
 }
 
 void ReceiverThread::handle_select_race_class() {
     auto payload = protocol.recv_select_race_class_payload();
-    Match* m = current_match.load();
-    if (m == nullptr) {
+
+    // validar que race y class sean valores válidos
+
+    if (payload.race > 3) {
+        send_error(ProtocolError::INVALID_ARG, "raza inválida");
+        return;
+    }
+    if (payload.klass > 3) {
+        send_error(ProtocolError::INVALID_ARG, "clase inválida");
+        return;
+    }
+
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
         send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
         return;
     }
-    // TODO lo subo como ClientCommand al match: Hasta que exista la clase
+    // TODO(paula): lo subo como ClientCommand al match: Hasta que exista la clase
     // SelectRaceClassCommand y su execute(World&), lo dejo pendiente
     // Pau decide la forma final
-    (void)payload;
+    (void) payload;
 }
 
 void ReceiverThread::handle_move() {
-    Match* m = current_match.load();
-    if (m == nullptr) {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
         protocol.recv_move_payload(player_conn.get_player_id());
         send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
         return;
     }
     auto cmd = protocol.recv_move_payload(player_conn.get_player_id());
-    m->push_command(std::move(cmd));
+    server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 
 void ReceiverThread::handle_leave_match() {
     server_ops.leave_match(player_conn);
-    current_match.store(nullptr);
     player_conn.set_current_match_id(0);
     player_conn.set_state(PlayerConnection::State::AUTHENTICATED);
 }

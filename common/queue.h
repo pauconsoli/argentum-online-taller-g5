@@ -7,6 +7,7 @@
 #include <mutex>
 #include <queue>
 #include <stdexcept>
+#include <utility>
 
 struct ClosedQueue: public std::runtime_error {
     ClosedQueue(): std::runtime_error("The queue is closed") {}
@@ -74,7 +75,7 @@ class Queue {
             is_not_full.notify_all();
         }
 
-        val = q.front();
+        val = std::move(q.front());
         q.pop();
         return true;
     }
@@ -130,7 +131,6 @@ class Queue {
             is_not_full.notify_all();
         }
 
-       //T const val = q.front();
         T val = std::move(q.front());
         q.pop();
 

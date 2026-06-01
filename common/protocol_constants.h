@@ -21,7 +21,7 @@ constexpr uint8_t CHAT = 0x20;
 
 constexpr uint8_t LEAVE_MATCH = 0xFE;
 constexpr uint8_t DISCONNECT = 0xFF;
-} 
+}  // namespace ClientOpcode
 
 namespace ServerOpcode {
 constexpr uint8_t LOGIN_OK = 0x81;
@@ -42,7 +42,7 @@ constexpr uint8_t INVENTORY = 0xA0;
 constexpr uint8_t CHAT_MSG = 0xB0;
 
 constexpr uint8_t ERROR = 0xEE;
-} 
+}  // namespace ServerOpcode
 
 namespace ProtocolError {
 constexpr uint8_t NICK_TAKEN = 0x01;
@@ -50,6 +50,6 @@ constexpr uint8_t MATCH_NOT_FOUND = 0x02;
 constexpr uint8_t MATCH_FULL = 0x03;
 constexpr uint8_t COMMAND_NOT_ALLOWED = 0x04;
 constexpr uint8_t INVALID_ARG = 0x05;
-}  
+}  // namespace ProtocolError
 
 #endif

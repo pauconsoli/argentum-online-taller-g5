@@ -5,12 +5,12 @@
 
 #include <sys/socket.h>
 
-#include "common/liberror.h"
 #include "client_handler.h"
+#include "common/liberror.h"
 #include "server.h"
 
 AcceptorThread::AcceptorThread(Socket& listener_sock, Server& srv):
-        listener(listener_sock), server(srv), clients() {}
+    listener(listener_sock), server(srv), clients() {}
 
 void AcceptorThread::reap() noexcept {
     clients.remove_if([this](ClientHandler* handler) {
@@ -29,7 +29,7 @@ void AcceptorThread::reap() noexcept {
 }
 
 void AcceptorThread::clear() noexcept {
-    for (ClientHandler* handler: clients) {
+    for (ClientHandler* handler : clients) {
         try {
             handler->hard_kill();
             handler->join_threads();
@@ -42,7 +42,9 @@ void AcceptorThread::clear() noexcept {
     clients.clear();
 }
 
-AcceptorThread::~AcceptorThread() { clear(); }
+AcceptorThread::~AcceptorThread() {
+    clear();
+}
 
 void AcceptorThread::run() {
     try {

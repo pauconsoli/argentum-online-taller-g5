@@ -35,6 +35,8 @@ class World {
 
     std::unique_ptr<GameUpdate> move_player(uint32_t player_id, Direction direction);
 
+    std::vector<std::unique_ptr<GameUpdate>> update();
+
     // solo lo uso para poner celdas bloqueantes en el mapa en los tests
     void set_cell(const Position& pos, const Cell& cell);
 };

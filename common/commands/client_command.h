@@ -18,6 +18,8 @@ class GameUpdate;
 
 class ClientCommand {
  public:
+    virtual uint32_t get_player_id() const = 0;
+
     virtual std::unique_ptr<GameUpdate> execute(World& world) = 0;
     virtual ~ClientCommand() = default;
 };
