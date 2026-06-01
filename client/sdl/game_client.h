@@ -2,11 +2,13 @@
 #define GAME_CLIENT_H
 
 #include <SDL2/SDL.h>
+#include <string>
 #include "renderer.h"
 #include "input_handler.h"
 #include "camera.h"
 #include "hud.h"
 #include "sprite_manager.h"
+#include "../client.h"
 
 class GameClient {
 private:
@@ -14,13 +16,15 @@ private:
     Renderer* renderer;
     Hud* hud;
     SpriteManager* sprite_manager;
+    Client client;
     InputHandler input_handler;
     Camera camera;
     int player_x;
     int player_y;
 
- public:
-    GameClient(int width, int height);
+public:
+    GameClient(int width, int height, 
+               const std::string& host, const std::string& port);
     ~GameClient();
 
     GameClient(const GameClient&) = delete;
