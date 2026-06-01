@@ -46,7 +46,7 @@ class Server: public ServerOps {
     std::unique_ptr<World> world;
 
  public:
-    explicit Server(const std::string& service_name);
+    Server(const std::string& service_name, std::unique_ptr<World> world);
 
     void run();
 

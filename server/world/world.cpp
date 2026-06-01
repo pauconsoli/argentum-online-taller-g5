@@ -10,6 +10,10 @@
 World::World(int width, int height):
     map(width, height), occupied(height, std::vector<bool>(width, false)) {}
 
+World::World(WorldMap world_map):
+    map(std::move(world_map)),
+    occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {}
+
 void World::add_player(std::unique_ptr<Player> player) {
     Position pos = player->get_position();  // obtengo pos
 

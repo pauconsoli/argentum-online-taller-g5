@@ -11,6 +11,7 @@ target_sources(taller_server
     sender_thread.cpp
     gameloop_thread.cpp
     commands/move_command.cpp
+    loader/world_map_loader.cpp
     PUBLIC
     # .h files
     server.h
@@ -23,4 +24,5 @@ target_sources(taller_server
     sender_thread.h
     gameloop_thread.h
     game/match.h
+    loader/world_map_loader.h
     )
