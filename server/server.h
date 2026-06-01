@@ -22,7 +22,7 @@
 class PlayerConnection;
 class ClientHandler;
 class AcceptorThread;
-class PlayerConnection;
+class World;
 
 class ClientCommand;
 class GameUpdate;
@@ -52,11 +52,11 @@ class Server: public ServerOps {
     void add_client(PlayerConnection* client);
     void remove_client(PlayerConnection* client);
 
-    void send_update_to_player(uint32_t player_id, std::shared_ptr<GameUpdate> update);
-    void broadcast_update_to_all(std::shared_ptr<GameUpdate> update);
+    void send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update);
+    void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update);
 
-    void broadcast_update_to_nearby(const Position& position, int range,
-                                    std::shared_ptr<GameUpdate> update);
+    void broadcast_update_to_nearby(World& world, uint32_t player_id, int range,
+                                    std::shared_ptr<const GameUpdate> update);
 
     bool is_running() const {
         return keep_running;

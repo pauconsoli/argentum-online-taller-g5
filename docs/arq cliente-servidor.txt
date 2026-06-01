@@ -1,0 +1,259 @@
+Multithreading
+
+Arquitectura server-client
+Un solo cliente:
+Espera un cliente (accept)
+Atiende ese cliente
+Recién después acepta otro
+
+Para atender más de un cliente al mismo tiempo (concurrencia) → threads!
+Pongo el accept (servidor) en un Thread separado
+
+class Acceptor : public Thread {
+    Socket& acceptor;
+
+    void run() {
+        while (...) {
+            Socket peer = acceptor.accept();
+            while (...) {
+                // recv/send
+            }
+            peer.close();
+        }
+    }
+};
+
+
+int main() {
+Socket socket;
+Acceptor acceptor(socket);
+acceptor.start();
+
+while (std::cin.getch() != 'q') {}
+
+socket.shutdown(SHUT_RDWR);
+socket.close();
+acceptor.join();
+}
+
+
+Separo lógica del server
+Manejo cierre del server por consola
+Sigue siendo secuencial por cliente
+
+Solución: un Thread por cliente
+
+class ClientHandler : public Thread {
+    Socket peer;
+
+    void run() {
+        // recv/send
+    }
+};
+
+class Acceptor : public Thread {
+    std::vector<ClientHandler*> clients;
+
+    void run() {
+        while (...) {
+            Socket peer = acceptor.accept();
+            auto* c = new ClientHandler(peer);
+            clients.push_back(c);
+            c->start();
+        }
+    }
+};
+
+Tenemos leaks. No se libera la memoria de cada cliente y el vector crece de forma indefinida
+¿Cómo liberamos los recursos de los clientes que se desconectaron?
+SOLUCIÓN: Cada vez que aceptamos a un nuevo cliente, hacemos un repaso y “limpiamos” del vector a los ClientHandler que ya se desconectaron
+Recorre clientes. Si terminó:
+join() → espera que termine
+delete → libera memoria
+
+class Acceptor : public Thread {
+void reap() {
+    clients.remove_if([] (auto* c) {
+        bool is_dead = c->is_dead();
+        if (is_dead) {
+            c->join();
+            delete c;
+        }
+        return is_dead;
+    });
+}
+}
+
+Al cerrar el server, tengo que ver que se liberen TODOS los recursos
+clear()
+Cierra TODO correctamente:
+mata threads
+espera que terminen
+libera memoria
+
+class Acceptor : public Thread {
+ 	void clear() {
+ 		for (auto* client : clients) {
+ 			client->kill();
+ 			client->join();
+ 			delete client;
+ 		}
+ 		clients.clear();
+ 	}
+
+void run() {
+ 	while (/* socket not closed */) {
+ 		Socket peer = acceptor.accept()
+ 		auto* c = new ClientHandler(peer);
+ 		reap();
+ 		clients.push_back(c);
+ 		c->start();
+ 	}
+ 	clear();
+ }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Control de vida de Threads
+std::atomic_bool keep_talking;
+std::atomic_bool is_alive;
+
+
+class ClientHandler : public Thread {
+Socket peer;
+std::atomic_bool keep_talking; // heredado
+std::atomic_bool is_alive; // heredado
+// ATOMIC: evita race condition entre threads
+
+void polite_kill() {  //deja terminar
+keep_talking = false;
+}
+
+void hard_kill() {  //fuerza cierre
+keep_talking = false;
+peer.shutdown(SHUT_RDWR);
+peer.close();
+}
+
+void run() {
+    is_alive = keep_talking = true;
+    while (keep_talking) {
+        // recv/send
+    }
+    is_alive = false;
+}
+}
+
+
+Problema: comunicación sincrónica
+En ClientHandler: recv → send → recv → send
+Todo bloqueante
+No podés enviar si estás esperando recv
+No podés recibir si estás enviando
+Si queremos recibir y enviar mensajes de forma diferida (sends independientes de recv y viceversa) (de forma async) necesitamos más hilos
+SOLUCIÓN: cada operación bloqueante tiene su thread
+
+
+
+
+
+
+Sender
+
+class Sender : public Thread {
+    Socket &peer;
+    Queue &queue;
+
+    void run() {
+        while (...) {
+            message = queue.pop();
+            peer.send(message);
+        }
+    }
+};
+
+
+
+El Sender espera mensajes a enviar
+Cada mensaje que le llega, lo serializa y lo envía por socket
+
+
+Receiver
+
+class Receiver : public Thread {
+    Socket &peer;
+    Queue &queue;
+
+    void run() {
+        while (...) {
+            messages = peer.recv();
+            queue.push(messages);
+        }
+    }
+};
+
+
+El Receiver espera mensajes por socket
+Los deserializa y envía los mensajes recibidos al hilo main
+
+
+
+
+
+Client
+
+class ChatClient {
+               void loop() {
+  while (...) {
+      user_input = read_keyboard_async();
+ 	if (user_input) {
+ 		sender_q.push(user_input);
+                         	            }
+ 	for msg in receiver_q.try_pop() {
+                              draw(msg); // constant rate loop
+}
+  }
+               }
+}
+
+
+UI no bloquea
+envío no bloquea
+recepción no bloquea
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

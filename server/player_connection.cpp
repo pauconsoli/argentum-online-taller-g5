@@ -3,7 +3,11 @@
 #include <utility>
 
 PlayerConnection::PlayerConnection():
-    player_id(0), nick(), current_match_id(0), state(State::CONNECTED), send_queue() {}
+    player_id(0),
+    nick(),
+    current_match_id(0),
+    state(State::CONNECTED),
+    send_queue(std::make_unique<Queue<std::shared_ptr<const GameUpdate>>>()) {}
 
 void PlayerConnection::set_player_id(uint32_t id) {
     player_id.store(id);
@@ -37,14 +41,14 @@ PlayerConnection::State PlayerConnection::get_state() const {
     return state.load();
 }
 
-void PlayerConnection::enqueue_update(std::shared_ptr<GameUpdate> update) {
-    send_queue.push(std::move(update));
+void PlayerConnection::enqueue_update(std::shared_ptr<const GameUpdate> update) {
+    send_queue->push(std::move(update));
 }
 
-bool PlayerConnection::try_enqueue_update(std::shared_ptr<GameUpdate> update) {
-    return send_queue.try_push(std::move(update));
+bool PlayerConnection::try_enqueue_update(std::shared_ptr<const GameUpdate> update) {
+    return send_queue->try_push(std::move(update));
 }
 
 void PlayerConnection::close_send_queue() {
-    send_queue.close();
+    send_queue->close();
 }

@@ -12,6 +12,7 @@
 #include "common/updates/game_update.h"
 #include "game/player.h"
 #include "player_connection.h"
+#include "world/world.h"
 
 constexpr char SERVER_STOP_COMMAND = 'q';
 
@@ -27,7 +28,7 @@ Server::Server(const std::string& service_name_):
 
 Server::~Server() = default;
 
-void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<GameUpdate> update) {
+void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
     auto it =
         std::find_if(clients.begin(), clients.end(), [player_id](const PlayerConnection* client) {
@@ -40,7 +41,7 @@ void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<GameUpdat
     }
 }
 
-void Server::broadcast_update_to_all(std::shared_ptr<GameUpdate> update) {
+void Server::broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
     for (auto* client : clients) {
         try {
@@ -49,16 +50,31 @@ void Server::broadcast_update_to_all(std::shared_ptr<GameUpdate> update) {
     }
 }
 
-void Server::broadcast_update_to_nearby(const Position& position, int range,
-                                        std::shared_ptr<GameUpdate> update) {
+void Server::broadcast_update_to_nearby(World& world, uint32_t player_id, int range,
+                                        std::shared_ptr<const GameUpdate> update) {
+    // Get origin player position from world
+    Player* origin_player = world.get_player(player_id);
+    if (!origin_player) {
+        return;  // Player not in world
+    }
+
+    Position origin_pos = origin_player->get_position();
+
     std::unique_lock<std::mutex> lock(clients_mutex);
     for (auto* client : clients) {
-        if (!client->get_player_id()) {
+        if (client->get_player_id() == 0) {
             continue;
         }
 
-        Position player_pos = client->get_player_id()->get_position();
-        int distance = std::abs(player_pos.x - position.x) + std::abs(player_pos.y - position.y);
+        // Get target player position from world
+        Player* target_player = world.get_player(client->get_player_id());
+        if (!target_player) {
+            continue;
+        }
+
+        Position target_pos = target_player->get_position();
+        int distance =
+            std::abs(target_pos.x - origin_pos.x) + std::abs(target_pos.y - origin_pos.y);
 
         if (distance <=
             range) {  // range es la distancia máxima para recibir el update de ese evento
