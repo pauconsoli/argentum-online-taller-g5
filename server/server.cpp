@@ -10,6 +10,7 @@
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/updates/game_update.h"
+#include "game/basic_match.h"  // BasicMatch
 #include "game/player.h"
 #include "player_connection.h"
 #include "world/world.h"
@@ -120,9 +121,11 @@ uint32_t Server::create_match(const std::string& name, uint8_t max_players,
     if (max_players == 0) {
         throw std::invalid_argument("max_players debe ser > 0");
     }
-    // TODO(Pau): acá poner tu Match concreto. Por ahora
-    // deje una exception para que se pueda detectar en el cliente.
-    throw std::runtime_error("create_match: Match concreto no implementado todavía (Pau)");
+    uint32_t match_id = next_match_id.fetch_add(1);
+    auto match = std::make_unique<BasicMatch>(match_id, name, max_players);
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    matches.emplace(match_id, std::move(match));
+    return match_id;
 }
 
 Match* Server::join_match(uint32_t match_id, PlayerConnection& conn) {

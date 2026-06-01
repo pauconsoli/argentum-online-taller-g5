@@ -2,6 +2,7 @@ target_sources(taller_game
     PRIVATE
     # .cpp files
     character.cpp
+    basic_match.cpp
     player.cpp
     game_config.cpp
     game_formulas.cpp
@@ -16,6 +17,7 @@ target_sources(taller_game
     PUBLIC
     # .h files
     character.h
+    basic_match.h
     player.h
     game_config.h
     game_formulas.h
