@@ -20,8 +20,6 @@ class ReceiverThread: public Thread {
     PlayerConnection& player_conn;
     ServerOps& server_ops;
 
-    std::atomic<Match*> current_match;
-
     void handle_login();
     void handle_list_matches();
     void handle_create_match();

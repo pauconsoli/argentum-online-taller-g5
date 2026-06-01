@@ -22,7 +22,9 @@
 
 ServerProtocol::ServerProtocol(Socket& socket): skt(socket) {}
 
-void ServerProtocol::put_u8(std::vector<uint8_t>& buf, uint8_t v) { buf.push_back(v); }
+void ServerProtocol::put_u8(std::vector<uint8_t>& buf, uint8_t v) {
+    buf.push_back(v);
+}
 
 void ServerProtocol::put_u16(std::vector<uint8_t>& buf, uint16_t v) {
     uint16_t be = htons(v);
@@ -112,9 +114,13 @@ std::string ServerProtocol::recv_string() {
     return out;
 }
 
-uint8_t ServerProtocol::recv_opcode() { return recv_u8(); }
+uint8_t ServerProtocol::recv_opcode() {
+    return recv_u8();
+}
 
-std::string ServerProtocol::recv_login_payload() { return recv_string(); }
+std::string ServerProtocol::recv_login_payload() {
+    return recv_string();
+}
 
 ServerProtocol::CreateMatchPayload ServerProtocol::recv_create_match_payload() {
     std::string name = recv_string();
@@ -122,7 +128,9 @@ ServerProtocol::CreateMatchPayload ServerProtocol::recv_create_match_payload() {
     return {std::move(name), max_players};
 }
 
-uint32_t ServerProtocol::recv_join_match_payload() { return recv_u32(); }
+uint32_t ServerProtocol::recv_join_match_payload() {
+    return recv_u32();
+}
 
 ServerProtocol::RaceClassPayload ServerProtocol::recv_select_race_class_payload() {
     uint8_t race = recv_u8();
@@ -191,7 +199,7 @@ void ServerProtocol::send_match_list(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::MATCH_LIST);
     put_u16(buf, static_cast<uint16_t>(u.matches.size()));
-    for (const auto& m: u.matches) {
+    for (const auto& m : u.matches) {
         put_u32(buf, m.id);
         put_string(buf, m.name);
         put_u8(buf, m.current_players);
@@ -247,7 +255,7 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
     put_u8(buf, ServerOpcode::SNAPSHOT);
     put_u32(buf, u.tick);
     put_u16(buf, static_cast<uint16_t>(u.players.size()));
-    for (const auto& p: u.players) {
+    for (const auto& p : u.players) {
         put_u32(buf, p.player_id);
         put_string(buf, p.nick);
         put_u8(buf, p.race);

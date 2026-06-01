@@ -20,7 +20,9 @@
 
 ClientProtocol::ClientProtocol(Socket& socket): skt(socket) {}
 
-void ClientProtocol::put_u8(std::vector<uint8_t>& buf, uint8_t v) { buf.push_back(v); }
+void ClientProtocol::put_u8(std::vector<uint8_t>& buf, uint8_t v) {
+    buf.push_back(v);
+}
 
 void ClientProtocol::put_u16(std::vector<uint8_t>& buf, uint16_t v) {
     uint16_t be = htons(v);

@@ -156,6 +156,15 @@ void Server::leave_match(PlayerConnection& conn) {
     it->second->remove_player(&conn);
 }
 
+void Server::push_command_to_match(uint32_t match_id, std::unique_ptr<ClientCommand> cmd) {
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    auto it = matches.find(match_id);
+    if (it == matches.end()) {
+        return;  // Match no existe
+    }
+    it->second->push_command(std::move(cmd));
+}
+
 void Server::disconnect(PlayerConnection& conn) {
     if (conn.get_state() == PlayerConnection::State::IN_MATCH) {
         leave_match(conn);

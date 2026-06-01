@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
 #include "common/position.h"
 #include "game_update.h"
@@ -12,12 +13,12 @@ class PlayerJoinedUpdate: public GameUpdate {
     uint32_t player_id;
     std::string nick;
     uint8_t race;
-    uint8_t klass; 
+    uint8_t klass;
     Position pos;
 
     PlayerJoinedUpdate(uint32_t player_id, std::string nick, uint8_t race, uint8_t klass,
                        Position pos):
-            player_id(player_id), nick(std::move(nick)), race(race), klass(klass), pos(pos) {}
+        player_id(player_id), nick(std::move(nick)), race(race), klass(klass), pos(pos) {}
 
     UpdateType get_type() const override {
         return UpdateType::PLAYER_JOINED;
