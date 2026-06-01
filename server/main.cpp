@@ -7,7 +7,7 @@
 #include "server.h"
 #include "world/world.h"
 
-static constexpr const char* MAP_CONFIG_PATH = "../common/config/map.toml";
+static constexpr const char* MAP_CONFIG_PATH = "common/config/map.toml";
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
