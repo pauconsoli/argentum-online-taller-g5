@@ -30,6 +30,8 @@ class BasicMatch: public Match {
 
     void push_command(std::unique_ptr<ClientCommand> cmd) override;
 
+    void tick(World& world) override;
+
     void start() override;
     void stop() override;
     void join() override;

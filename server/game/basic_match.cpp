@@ -6,6 +6,7 @@
 #include "common/commands/client_command.h"
 #include "common/updates/game_update.h"
 #include "player_connection.h"
+#include "world/world.h"
 
 BasicMatch::BasicMatch(uint32_t match_id, const std::string& name, uint8_t max_players):
     match_id(match_id), name(name), max_players(max_players), current_players(0) {}
@@ -52,16 +53,22 @@ void BasicMatch::push_command(std::unique_ptr<ClientCommand> cmd) {
     } catch (const ClosedQueue&) {}
 }
 
-void BasicMatch::start() {
-    // TODO(...): si necesitas un thread para procesar comandos, iniciarlo aquí
+void BasicMatch::tick(World& world) {
+    try {
+        std::unique_ptr<ClientCommand> cmd;
+        while (command_queue.try_pop(cmd)) {
+            if (cmd) {
+                auto update = cmd->execute(world);
+                if (update) {
+                    broadcast_update_to_all(std::shared_ptr<const GameUpdate>(std::move(update)));
+                }
+            }
+        }
+    } catch (const ClosedQueue&) {}
 }
 
 void BasicMatch::stop() {
     command_queue.close();
-}
-
-void BasicMatch::join() {
-    // TODO(...): si necesitas un thread para procesar comandos, hacerle join() aquí
 }
 
 void BasicMatch::broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) {

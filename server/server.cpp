@@ -10,8 +10,9 @@
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/updates/game_update.h"
-#include "game/basic_match.h"  // BasicMatch
+#include "game/basic_match.h"
 #include "game/player.h"
+#include "gameloop_thread.h"
 #include "player_connection.h"
 #include "world/world.h"
 
@@ -24,10 +25,14 @@ Server::Server(const std::string& service_name_):
     matches(),
     next_match_id(1),
     next_player_id(1),
-    gameloop_command_queue(),
-    keep_running(false) {}
+    keep_running(false),
+    world(std::make_unique<World>(100, 100)) {}  // PLACEHOLDER después iría por config
 
 Server::~Server() = default;
+
+World& Server::get_world() {
+    return *world;
+}
 
 void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
@@ -51,12 +56,11 @@ void Server::broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) {
     }
 }
 
-void Server::broadcast_update_to_nearby(World& world, uint32_t player_id, int range,
+void Server::broadcast_update_to_nearby(uint32_t player_id, int range,
                                         std::shared_ptr<const GameUpdate> update) {
-    // Get origin player position from world
-    Player* origin_player = world.get_player(player_id);
+    Player* origin_player = world->get_player(player_id);
     if (!origin_player) {
-        return;  // Player not in world
+        return;
     }
 
     Position origin_pos = origin_player->get_position();
@@ -67,8 +71,7 @@ void Server::broadcast_update_to_nearby(World& world, uint32_t player_id, int ra
             continue;
         }
 
-        // Get target player position from world
-        Player* target_player = world.get_player(client->get_player_id());
+        Player* target_player = world->get_player(client->get_player_id());
         if (!target_player) {
             continue;
         }
@@ -157,6 +160,7 @@ void Server::leave_match(PlayerConnection& conn) {
         return;
     }
     it->second->remove_player(&conn);
+    world->remove_player(conn.get_player_id());
 }
 
 void Server::push_command_to_match(uint32_t match_id, std::unique_ptr<ClientCommand> cmd) {
@@ -196,14 +200,27 @@ void Server::remove_client(PlayerConnection* conn) {
     }
 }
 
+void Server::for_each_match(std::function<void(Match&)> fn) {
+    std::vector<Match*> snapshot;
+    {
+        std::lock_guard<std::mutex> lk(matches_mutex);
+        snapshot.resize(matches.size());
+        std::transform(matches.begin(), matches.end(), snapshot.begin(),
+                       [](const auto& kv) { return kv.second.get(); });
+    }
+    for (Match* m : snapshot) {
+        fn(*m);
+    }
+}
+
 void Server::run() {
     try {
         Socket server_socket(service_name.c_str());
 
         keep_running = true;
 
-        AcceptorThread acceptor(*server_socket, *this);
-        GameLoopThread gameloop(gameloop_command_queue, *this);
+        AcceptorThread acceptor(server_socket, *this);
+        GameLoopThread gameloop(*this, *world);
 
         try {
             acceptor.start();

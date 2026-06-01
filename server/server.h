@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <functional>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -18,11 +19,11 @@
 #include "common/updates/match_list_update.h"
 #include "game/match.h"
 #include "server_ops.h"
+#include "world/world.h"
 
 class PlayerConnection;
 class ClientHandler;
 class AcceptorThread;
-class World;
 
 class ClientCommand;
 class GameUpdate;
@@ -42,7 +43,7 @@ class Server: public ServerOps {
 
     std::atomic<bool> keep_running;
 
-    Queue<std::unique_ptr<ClientCommand>> gameloop_command_queue;
+    std::unique_ptr<World> world;
 
  public:
     explicit Server(const std::string& service_name) noexcept;
@@ -55,8 +56,12 @@ class Server: public ServerOps {
     void send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update);
     void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update);
 
-    void broadcast_update_to_nearby(World& world, uint32_t player_id, int range,
+    void broadcast_update_to_nearby(uint32_t player_id, int range,
                                     std::shared_ptr<const GameUpdate> update);
+
+    void for_each_match(std::function<void(Match&)> fn);
+
+    World& get_world();
 
     bool is_running() const {
         return keep_running;

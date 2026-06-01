@@ -8,6 +8,7 @@
 #include "common/commands/client_command.h"
 
 class PlayerConnection;
+class World;
 
 class Match {
  public:
@@ -24,6 +25,8 @@ class Match {
     virtual void remove_player(PlayerConnection* conn) = 0;
 
     virtual void push_command(std::unique_ptr<ClientCommand> cmd) = 0;
+
+    virtual void tick(World& world) = 0;
 
     virtual void start() = 0;
     virtual void stop() = 0;
