@@ -2,18 +2,18 @@
 #define GAME_CLIENT_H
 
 #include <SDL2/SDL.h>
-
+#include "renderer.h"
+#include "input_handler.h"
 #include "camera.h"
 #include "hud.h"
-#include "input_handler.h"
-#include "renderer.h"
-
+#include "sprite_manager.h"
 
 class GameClient {
- private:
+private:
     SDL_Window* window;
     Renderer* renderer;
     Hud* hud;
+    SpriteManager* sprite_manager;
     InputHandler input_handler;
     Camera camera;
     int player_x;
