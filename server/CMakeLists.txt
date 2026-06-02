@@ -15,7 +15,6 @@ target_sources(taller_server
     commands/select_race_class_command.cpp
     # loaders
     loader/world_map_loader.cpp
-    loader/game_config_loader.cpp
     PUBLIC
     # .h files
     server.h
@@ -29,5 +28,4 @@ target_sources(taller_server
     gameloop_thread.h
     game/match.h
     loader/world_map_loader.h
-    loader/game_config_loader.h
     )

@@ -1,7 +1,19 @@
-# ============================================================
-#                      Argentum Online 
-#                            Map
-# ============================================================
+# Mapa de Argentum Online
+#
+# Leyenda de tiles (terreno + blocking):
+#   '.' = GRASS  (pasable)
+#   ',' = DIRT   (pasable)
+#   's' = SAND   (pasable)
+#   '~' = WATER  (bloqueante)
+#   '#' = STONE  (bloqueante — paredes, ruinas)
+#
+# Layout (40 x 25):
+#   - Borde exterior de paredes (#)
+#   - Esquina superior izquierda: pequeño edificio de piedra (#)
+#   - Centro: río de agua (~) que corre de norte a sur con curva
+#   - Derecha: franja de arena (s)
+#   - Centro-inferior: ruinas (#) al este del río
+#   - Caminos de tierra (,) cruzando el mapa horizontalmente
 
 [map]
 width = 40
