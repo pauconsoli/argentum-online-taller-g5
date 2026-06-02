@@ -53,6 +53,8 @@ void BasicMatch::push_command(std::unique_ptr<ClientCommand> cmd) {
     } catch (const ClosedQueue&) {}
 }
 
+// el game loop llama a tick() sobre cada partida activa, y cada partida procesa los comandos
+// recibidos para esa partida en su tick()
 void BasicMatch::tick(World& world) {
     try {
         std::unique_ptr<ClientCommand> cmd;
