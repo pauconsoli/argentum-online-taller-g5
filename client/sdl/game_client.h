@@ -21,6 +21,8 @@ private:
     Camera camera;
     int player_x;
     int player_y;
+    int width;
+    int height;
 
 public:
     GameClient(int width, int height, 
