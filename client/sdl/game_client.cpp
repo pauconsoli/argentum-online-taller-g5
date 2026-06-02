@@ -2,11 +2,13 @@
 
 #include <stdexcept>
 
-GameClient::GameClient(int width, int height):
+GameClient::GameClient(int width, int height,
+                       const std::string& host, const std::string& port):
     window(nullptr),
     renderer(nullptr),
     hud(nullptr),
     sprite_manager(nullptr),
+    client(host, port),
     camera(width, height),
     player_x(400),
     player_y(300) {
@@ -21,11 +23,15 @@ GameClient::GameClient(int width, int height):
     }
     renderer = new Renderer(window);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load("body", "client/assets/body.png");
-    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
+    sprite_manager->load("body", "../client/assets/body.png");
+    hud = new Hud(renderer->get_sdl_renderer(), "../client/assets/font.ttf");
+
+    client.start();
 }
 
 GameClient::~GameClient() {
+    client.stop();
+    client.join();
     delete hud;
     delete sprite_manager;
     delete renderer;
@@ -39,12 +45,8 @@ void GameClient::run() {
 
     int frame_w = 27;
     int frame_h = 47;
-    // cppcheck-suppress variableScope
-    // cppcheck-suppress unreadVariable
     int frame_x = 0;
     int frame_y = 0;
-    int speed = 3;
-
     int current_frame = 0;
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
@@ -59,25 +61,31 @@ void GameClient::run() {
         bool moving = false;
 
         if (keys[SDL_SCANCODE_UP]) {
-            player_y -= speed;
+            client.do_move(Direction::UP);
             frame_y = 47;
             total_frames = 6;
             moving = true;
         } else if (keys[SDL_SCANCODE_DOWN]) {
-            player_y += speed;
+            client.do_move(Direction::DOWN);
             frame_y = 0;
             total_frames = 6;
             moving = true;
         } else if (keys[SDL_SCANCODE_LEFT]) {
-            player_x -= speed;
+            client.do_move(Direction::LEFT);
             frame_y = 94;
             total_frames = 5;
             moving = true;
         } else if (keys[SDL_SCANCODE_RIGHT]) {
-            player_x += speed;
+            client.do_move(Direction::RIGHT);
             frame_y = 141;
             total_frames = 5;
             moving = true;
+        }
+
+        auto& update_queue = client.get_received_updates();
+        std::unique_ptr<GameUpdate> update;
+        while (update_queue.try_pop(update)) {
+            // 
         }
 
         if (moving) {
@@ -91,14 +99,13 @@ void GameClient::run() {
         }
 
         frame_x = current_frame * frame_w;
-
         camera.center_on(player_x, player_y);
         int screen_x = camera.get_screen_x(player_x);
         int screen_y = camera.get_screen_y(player_y);
 
         renderer->clear();
-        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y, frame_w, frame_h,
-                             screen_x, screen_y);
+        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y,
+                             frame_w, frame_h, screen_x, screen_y);
         hud->draw(100, 100, 50, 100, 1);
         renderer->present();
     }
