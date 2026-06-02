@@ -1,5 +1,6 @@
 #include "game_client.h"
 
+#include <memory>
 #include <stdexcept>
 
 GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
@@ -24,10 +25,10 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     }
     renderer = new Renderer(window);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load("body", "../client/assets/body.png");
-    sprite_manager->load("head", "../client/assets/head.png");
-    sprite_manager->load("grass", "../client/assets/grass.png");
-    hud = new Hud(renderer->get_sdl_renderer(), "../client/assets/font.ttf");
+    sprite_manager->load("body", "client/assets/body.png");
+    sprite_manager->load("head", "client/assets/head.png");
+    sprite_manager->load("grass", "client/assets/grass.png");
+    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
 
     client.start();
 }
@@ -141,8 +142,8 @@ void GameClient::run() {
 
         // Head: same x as body (both 27px wide), positioned so visible head
         // content (rows 16-37 of 64px frame) sits just above body content (row 17+)
-        int head_offset_x[] = {0, 0, 0, 0};
-        int head_offset_y[] = {-8, -15, -15, -15};
+        int const head_offset_x[] = {0, 0, 0, 0};
+        int const head_offset_y[] = {-8, -15, -15, -15};
         // down, up, left, right
 
         int head_x = screen_x + head_offset_x[direction];
