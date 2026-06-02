@@ -8,8 +8,6 @@
 #include "server/game/items/equipment_slot.h"
 #include "server/game/items/item.h"
 
-#define MAX_INVENTORY_ITEMS 20
-
 class Player;
 
 // InventorySlot: item con cantidad y flag de si está equipado
@@ -22,7 +20,6 @@ struct InventorySlot {
 
 class Inventory {
  private:
-    static constexpr size_t MAX_ITEMS = MAX_INVENTORY_ITEMS;
     std::vector<InventorySlot> slots;
 
     int find_item_by_ref(const Item& item) const;
