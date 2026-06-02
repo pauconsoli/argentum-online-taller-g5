@@ -18,7 +18,6 @@ void GameLoopThread::run() {
             // activa luego cada match.tick(world) se encarga de procesar los comandos recibidos
             // para esa partida y actualizar el estado de la partida y del mundo en consecuencia
 
-
             int sleep_ms = GameConfig::get_instance().get_server_game_loop_sleep_ms();
             std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
         }

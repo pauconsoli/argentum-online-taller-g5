@@ -10,38 +10,22 @@
 [race.human]
 hp_multiplier = 1.0
 mana_multiplier = 1.0
-recovery_factor = 1.0
-strength = 10
-agility = 10
-intelligence = 10
-constitution = 10
+recovery_factor = 1.0 
 
 [race.elf]
 hp_multiplier = 0.8
 mana_multiplier = 1.4
 recovery_factor = 1.2
-strength = 7
-agility = 14
-intelligence = 14
-constitution = 7
 
 [race.dwarf]
 hp_multiplier = 1.3
 mana_multiplier = 0.7
 recovery_factor = 0.9
-strength = 14
-agility = 6
-intelligence = 8
-constitution = 14
 
 [race.gnome]
 hp_multiplier = 1.1
 mana_multiplier = 1.3
-recovery_factor = 1.0
-strength = 8
-agility = 8
-intelligence = 13
-constitution = 12
+recovery_factor = 1.0 
 
 # ---------------------------------
 # Class 
@@ -51,45 +35,21 @@ constitution = 12
 hp_multiplier = 0.7
 mana_multiplier = 1.5
 meditation_factor = 1.5 
-strength_bonus = 0
-agility_bonus = 0
-intelligence_bonus = 4
-constitution_bonus = -2
 
 [class.cleric]
 hp_multiplier = 1.0
 mana_multiplier = 1.2
 meditation_factor = 1.0
-strength_bonus = 0
-agility_bonus = 0
-intelligence_bonus = 2
-constitution_bonus = 1
 
 [class.paladin]
 hp_multiplier = 1.3
 mana_multiplier = 0.7
 meditation_factor = 0.6
-strength_bonus = 3
-agility_bonus = 0
-intelligence_bonus = -2
-constitution_bonus = 2
 
 [class.warrior]
 hp_multiplier = 1.5
 mana_multiplier = 0.0
 meditation_factor = 0.0
-strength_bonus = 4
-agility_bonus = 1
-intelligence_bonus = -3
-constitution_bonus = 3
-
-# ---------------------------------
-# World 
-# ---------------------------------
-
-[world]
-spawn_x = 5
-spawn_y = 5
 
 # ---------------------------------
 # Inventory 
