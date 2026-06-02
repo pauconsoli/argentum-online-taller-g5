@@ -1,4 +1,5 @@
 #include "renderer.h"
+
 #include <stdexcept>
 
 Renderer::Renderer(SDL_Window* window) {
@@ -17,8 +18,8 @@ Renderer::~Renderer() {
     SDL_DestroyRenderer(sdl_renderer);
 }
 
-void Renderer::draw_frame(SDL_Texture* texture, int frame_x, int frame_y,
-                          int frame_w, int frame_h, int x, int y) {
+void Renderer::draw_frame(SDL_Texture* texture, int frame_x, int frame_y, int frame_w, int frame_h,
+                          int x, int y) {
     SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
     SDL_Rect dst = {x, y, frame_w, frame_h};
     SDL_RenderCopy(sdl_renderer, texture, &src, &dst);

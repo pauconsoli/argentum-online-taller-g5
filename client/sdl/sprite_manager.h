@@ -1,17 +1,18 @@
 #ifndef SPRITE_MANAGER_H
 #define SPRITE_MANAGER_H
 
-#include <SDL2/SDL.h>
-#include <SDL_image.h>
 #include <map>
 #include <string>
 
+#include <SDL2/SDL.h>
+#include <SDL_image.h>
+
 class SpriteManager {
-private:
+ private:
     SDL_Renderer* sdl_renderer;
     std::map<std::string, SDL_Texture*> textures;
 
-public:
+ public:
     explicit SpriteManager(SDL_Renderer* renderer);
     ~SpriteManager();
 
