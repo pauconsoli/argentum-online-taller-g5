@@ -27,6 +27,7 @@ class World {
 
  public:
     World(int width, int height);
+    explicit World(WorldMap map);  // para cargar un mapa ya creado
 
     void add_player(std::unique_ptr<Player> player);
     void remove_player(uint32_t player_id);

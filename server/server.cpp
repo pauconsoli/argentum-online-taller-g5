@@ -18,7 +18,8 @@
 
 constexpr char SERVER_STOP_COMMAND = 'q';
 
-Server::Server(const std::string& service_name_):
+
+Server::Server(const std::string& service_name_, std::unique_ptr<World> world_):
     service_name(service_name_),
     clients(),
     nicks_in_use(),
@@ -26,7 +27,7 @@ Server::Server(const std::string& service_name_):
     next_match_id(1),
     next_player_id(1),
     keep_running(false),
-    world(std::make_unique<World>(100, 100)) {}  // PLACEHOLDER después iría por config
+    world(std::move(world_)) {}
 
 Server::~Server() = default;
 

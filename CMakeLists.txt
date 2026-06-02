@@ -50,6 +50,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+# Fetch toml++ for TOML config file parsing
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG v3.4.0
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(tomlplusplus)
+
 # Define target: lib common between client, server and editor programs
 # HEY TODO XXX: change the name to something that you like
 add_library(taller_common STATIC)
@@ -194,7 +203,7 @@ if(TALLER_SERVER)
     set_project_warnings(taller_server ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
 
     # Link the taller_common, taller_game and taller_world lib targets
-    target_link_libraries(taller_server taller_common taller_game taller_world spdlog::spdlog)
+    target_link_libraries(taller_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus)
 endif()
 
 if(TALLER_EDITOR)

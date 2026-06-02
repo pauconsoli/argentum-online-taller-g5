@@ -1,8 +1,13 @@
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 
+#include "loader/world_map_loader.h"
 #include "server.h"
+#include "world/world.h"
+
+static constexpr const char* MAP_CONFIG_PATH = "common/config/map.toml";
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -13,7 +18,8 @@ int main(int argc, char* argv[]) {
     const std::string port = argv[1];
 
     try {
-        Server server(port);
+        auto world = std::make_unique<World>(WorldMapLoader::load(MAP_CONFIG_PATH));
+        Server server(port, std::move(world));
         server.run();
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
