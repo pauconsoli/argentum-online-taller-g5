@@ -29,8 +29,7 @@ static std::pair<TerrainType, bool> char_to_cell(char c) {
 WorldMap WorldMapLoader::load(const std::string& config_path) {
     auto config = toml::parse_file(config_path);
 
-    auto width_opt = config["map"]["width"].value<int>();  // si existe y es un int tiene valor, si
-                                                           // no existe o es otro tipo está vacío
+    auto width_opt = config["map"]["width"].value<int>();
     auto height_opt = config["map"]["height"].value<int>();
 
     if (!width_opt || !height_opt)
