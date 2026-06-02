@@ -201,18 +201,15 @@ void Server::remove_client(PlayerConnection* conn) {
     }
 }
 
-// para evitar deadlocks, se obtiene una copia de los punteros a los matches y luego se llama a la
-// función pasada por parámetro sin mantener el lock (esto es necesario porque la función pasada por
-// parámetro puede querer obtener el lock de matches_mutex, por ejemplo para llamar a list_matches())
 void Server::for_each_match(std::function<void(Match&)> fn) {
-    std::vector<Match*> active_matches;
+    std::vector<Match*> snapshot;
     {
         std::lock_guard<std::mutex> lk(matches_mutex);
-        active_matches.resize(matches.size());
-        std::transform(matches.begin(), matches.end(), active_matches.begin(),
+        snapshot.resize(matches.size());
+        std::transform(matches.begin(), matches.end(), snapshot.begin(),
                        [](const auto& kv) { return kv.second.get(); });
     }
-    for (Match* m : active_matches) {
+    for (Match* m : snapshot) {
         fn(*m);
     }
 }

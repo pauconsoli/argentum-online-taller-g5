@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "server/game/game_config.h"
 #include "server/game/items/item.h"
 #include "server/game/player.h"
 
@@ -104,7 +103,7 @@ std::unique_ptr<Item> Inventory::remove_item(
 }
 
 bool Inventory::is_full() const {
-    return static_cast<int>(slots.size()) >= GameConfig::get_instance().get_max_inventory_items();
+    return slots.size() >= MAX_ITEMS;
 }
 
 size_t Inventory::get_size() const {
