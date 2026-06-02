@@ -12,7 +12,9 @@
 static std::pair<TerrainType, bool> char_to_cell(char c) {
     switch (c) {
         case '.':
-            return {TerrainType::GRASS, false};
+            return {TerrainType::GRASS, false};  // pasto solo
+        case 'T':
+            return {TerrainType::GRASS, true};  // árbol
         case ',':
             return {TerrainType::DIRT, false};
         case 's':
@@ -21,6 +23,7 @@ static std::pair<TerrainType, bool> char_to_cell(char c) {
             return {TerrainType::WATER, true};
         case '#':
             return {TerrainType::STONE, true};
+
         default:
             throw std::runtime_error(std::string("Tile desconocido en el mapa: '") + c + "'");
     }
