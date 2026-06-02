@@ -1,7 +1,8 @@
 #include "sprite_manager.h"
+
 #include <stdexcept>
 
-SpriteManager::SpriteManager(SDL_Renderer* renderer) : sdl_renderer(renderer) {}
+SpriteManager::SpriteManager(SDL_Renderer* renderer): sdl_renderer(renderer) {}
 
 SpriteManager::~SpriteManager() {
     for (auto& pair : textures) {

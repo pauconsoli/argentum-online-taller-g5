@@ -2,8 +2,7 @@
 
 #include <stdexcept>
 
-GameClient::GameClient(int width, int height,
-                       const std::string& host, const std::string& port):
+GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
     window(nullptr),
     renderer(nullptr),
     hud(nullptr),
@@ -132,29 +131,25 @@ void GameClient::run() {
             for (int col = start_col; col <= end_col; col++) {
                 int tx = camera.get_screen_x(col * tile_w);
                 int ty = camera.get_screen_y(row * tile_h);
-                renderer->draw_frame(sprite_manager->get("grass"),
-                                     0, 0, tile_w, tile_h, tx, ty);
+                renderer->draw_frame(sprite_manager->get("grass"), 0, 0, tile_w, tile_h, tx, ty);
             }
         }
 
         // Body
-        renderer->draw_frame(sprite_manager->get("body"),
-                             frame_x, frame_y, frame_w, frame_h,
+        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y, frame_w, frame_h,
                              screen_x, screen_y);
 
         // Head: same x as body (both 27px wide), positioned so visible head
         // content (rows 16-37 of 64px frame) sits just above body content (row 17+)
         int head_offset_x[] = {0, 0, 0, 0};
-        int head_offset_y[] = {-8, -15, -15, -15}; 
+        int head_offset_y[] = {-8, -15, -15, -15};
         // down, up, left, right
 
         int head_x = screen_x + head_offset_x[direction];
         int head_y = screen_y + head_offset_y[direction];
 
-        renderer->draw_frame(sprite_manager->get("head"),
-                            current_frame * head_frame_w, head_frame_y,
-                            head_frame_w, head_frame_h,
-                            head_x, head_y);
+        renderer->draw_frame(sprite_manager->get("head"), current_frame * head_frame_w,
+                             head_frame_y, head_frame_w, head_frame_h, head_x, head_y);
 
         hud->draw(100, 100, 50, 100, 1);
         renderer->present();

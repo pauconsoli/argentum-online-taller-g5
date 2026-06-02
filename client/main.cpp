@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+
 #include "sdl/game_client.h"
 
 int main(int argc, char* argv[]) {
