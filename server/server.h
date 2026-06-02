@@ -22,7 +22,6 @@
 #include "world/world.h"
 
 class PlayerConnection;
-class ClientHandler;
 class AcceptorThread;
 
 class ClientCommand;
