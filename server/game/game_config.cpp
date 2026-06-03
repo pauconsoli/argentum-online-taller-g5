@@ -43,6 +43,20 @@ static float lookup(const std::map<PlayerClass, float>& m, PlayerClass key, cons
     return it->second;
 }
 
+static int lookup(const std::map<PlayerRace, int>& m, PlayerRace key, const char* field) {
+    auto it = m.find(key);
+    if (it == m.end())
+        throw std::runtime_error(std::string("GameConfig: raza sin '") + field + "' cargado");
+    return it->second;
+}
+
+static int lookup(const std::map<PlayerClass, int>& m, PlayerClass key, const char* field) {
+    auto it = m.find(key);
+    if (it == m.end())
+        throw std::runtime_error(std::string("GameConfig: clase sin '") + field + "' cargado");
+    return it->second;
+}
+
 
 GameConfig& GameConfig::get_instance() {
     static GameConfig instance;
@@ -69,6 +83,46 @@ float GameConfig::get_race_mana_multiplier(PlayerRace race) const {
 float GameConfig::get_race_recovery_factor(PlayerRace race) const {
     check_loaded(loaded);
     return lookup(race_recovery, race, "recovery_factor");
+}
+
+int GameConfig::get_race_base_strength(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_strength, race, "base_strength");
+}
+
+int GameConfig::get_race_base_agility(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_agility, race, "base_agility");
+}
+
+int GameConfig::get_race_base_intelligence(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_intelligence, race, "base_intelligence");
+}
+
+int GameConfig::get_race_base_constitution(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_constitution, race, "base_constitution");
+}
+
+int GameConfig::get_class_bonus_strength(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_strength, cls, "bonus_strength");
+}
+
+int GameConfig::get_class_bonus_agility(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_agility, cls, "bonus_agility");
+}
+
+int GameConfig::get_class_bonus_intelligence(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_intelligence, cls, "bonus_intelligence");
+}
+
+int GameConfig::get_class_bonus_constitution(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_constitution, cls, "bonus_constitution");
 }
 
 float GameConfig::get_class_hp_multiplier(PlayerClass cls) const {

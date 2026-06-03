@@ -88,6 +88,13 @@ std::vector<std::pair<EquipmentSlot, Item*>> Player::get_equipment() const {
     return inventory->get_equipped_items();
 }
 
+void Player::set_initial_stats(int hp, int mana) {
+    this->max_hp = hp;
+    this->current_hp = hp;
+    this->max_mana = mana;
+    this->current_mana = mana;
+}
+
 void Player::restore_health(int amount) {
     (void) amount;
     // TODO(Pau)
