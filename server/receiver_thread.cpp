@@ -87,7 +87,12 @@ void ReceiverThread::run() {
 
     try {
         server_ops.disconnect(player_conn);
+    } catch (...) {}
 
+    // para asegurar que el sender thread termine si el cliente se desconectó inesperadamente sin
+    // pasar por disconnect()
+    try {
+        player_conn.close_send_queue();
     } catch (...) {}
 }
 
