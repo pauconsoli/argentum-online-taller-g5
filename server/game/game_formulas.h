@@ -4,6 +4,10 @@
 #include <memory>
 #include <string>
 
+#include "common/position.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
+
 class Player;
 
 struct BaseStats {
@@ -23,9 +27,9 @@ class GameFormulas {
 
     static BaseStats calculate_base_stats(PlayerRace race, PlayerClass klass);
 
-    std::unique_ptr<Player> create_initial_player(uint32_t id, const std::string& name,
-                                                  PlayerRace race, PlayerClass klass,
-                                                  const Position& pos);
+    static std::unique_ptr<Player> create_initial_player(uint32_t id, const std::string& name,
+                                                         PlayerRace race, PlayerClass klass,
+                                                         const Position& pos);
 };
 
 #endif
