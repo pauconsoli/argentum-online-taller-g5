@@ -21,6 +21,16 @@ class GameConfig {
     std::map<PlayerRace, float> race_mana_mult;
     std::map<PlayerRace, float> race_recovery;
 
+    std::map<PlayerRace, int> race_base_strength;
+    std::map<PlayerRace, int> race_base_agility;
+    std::map<PlayerRace, int> race_base_intelligence;
+    std::map<PlayerRace, int> race_base_constitution;
+
+    std::map<PlayerClass, int> class_bonus_strength;
+    std::map<PlayerClass, int> class_bonus_agility;
+    std::map<PlayerClass, int> class_bonus_intelligence;
+    std::map<PlayerClass, int> class_bonus_constitution;
+
     std::map<PlayerClass, float> class_hp_mult;
     std::map<PlayerClass, float> class_mana_mult;
     std::map<PlayerClass, float> class_meditation;
@@ -59,6 +69,16 @@ class GameConfig {
     float get_race_hp_multiplier(PlayerRace race) const;
     float get_race_mana_multiplier(PlayerRace race) const;
     float get_race_recovery_factor(PlayerRace race) const;
+
+    int get_race_base_strength(PlayerRace race) const;
+    int get_race_base_agility(PlayerRace race) const;
+    int get_race_base_intelligence(PlayerRace race) const;
+    int get_race_base_constitution(PlayerRace race) const;
+
+    int get_class_bonus_strength(PlayerClass cls) const;
+    int get_class_bonus_agility(PlayerClass cls) const;
+    int get_class_bonus_intelligence(PlayerClass cls) const;
+    int get_class_bonus_constitution(PlayerClass cls) const;
 
     float get_class_hp_multiplier(PlayerClass cls) const;
     float get_class_mana_multiplier(PlayerClass cls) const;

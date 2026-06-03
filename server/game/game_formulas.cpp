@@ -1,6 +1,8 @@
 #include "game_formulas.h"
 
 #include <cmath>
+#include <memory>
+#include <string>
 
 #include "game_config.h"
 #include "player.h"
@@ -35,4 +37,31 @@ int GameFormulas::calculate_max_gold(const Player& player) {
     const GameConfig& config = GameConfig::get_instance();
     return static_cast<int>(config.get_gold_max_safe_base() *
                             std::pow(player.get_level(), config.get_gold_max_safe_exp()));
+}
+
+BaseStats GameFormulas::calculate_base_stats(PlayerRace race, PlayerClass klass) {
+    const GameConfig& config = GameConfig::get_instance();
+    return {config.get_race_base_strength(race) + config.get_class_bonus_strength(klass),
+            config.get_race_base_agility(race) + config.get_class_bonus_agility(klass),
+            config.get_race_base_intelligence(race) + config.get_class_bonus_intelligence(klass),
+            config.get_race_base_constitution(race) + config.get_class_bonus_constitution(klass)};
+}
+
+std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const std::string& name,
+                                                            PlayerRace race, PlayerClass klass,
+                                                            const Position& pos) {
+    BaseStats stats = calculate_base_stats(race, klass);
+
+    int new_player_level = 1;  // ver de extraerlo al config
+
+    auto player =
+        std::make_unique<Player>(id, name, race, klass, new_player_level, 0, 0, stats.strength,
+                                 stats.agility, stats.intelligence, stats.constitution, pos);
+
+    int max_hp = calculate_max_hp(*player);
+    int max_mana = calculate_max_mana(*player);
+
+    player->set_initial_stats(max_hp <= 0 ? 1 : max_hp, max_mana);
+
+    return player;
 }
