@@ -28,17 +28,27 @@ option(TALLER_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (UBSAN)." OFF)
 message(CMAKE_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
 
 # Configure sanitizers
+# NOTE: We do NOT use add_compile_options/add_link_options here because that
+# would apply ASAN/UBSAN to all FetchContent dependencies (SDL2, etc.) causing
+# undefined references to ASAN runtime symbols when linking shared libraries.
+# Instead, we collect the flags and apply them per-target using a helper macro.
+set(TALLER_SANITIZER_FLAGS "")
 if(TALLER_ENABLE_ASAN)
     message(STATUS "ASAN enabled")
-    add_compile_options(-fsanitize=address)
-    add_link_options(-fsanitize=address)
+    list(APPEND TALLER_SANITIZER_FLAGS -fsanitize=address)
 endif()
 
 if(TALLER_ENABLE_UBSAN)
     message(STATUS "UBSAN enabled")
-    add_compile_options(-fsanitize=undefined)
-    add_link_options(-fsanitize=undefined)
+    list(APPEND TALLER_SANITIZER_FLAGS -fsanitize=undefined)
 endif()
+
+macro(taller_apply_sanitizers target)
+    if(TALLER_SANITIZER_FLAGS)
+        target_compile_options(${target} PRIVATE ${TALLER_SANITIZER_FLAGS})
+        target_link_options(${target} PRIVATE ${TALLER_SANITIZER_FLAGS})
+    endif()
+endmacro()
 
 # Fetch spdlog for logging
 include(FetchContent)
@@ -80,6 +90,9 @@ include(cmake/CompilerWarnings.cmake)
 set_project_warnings(taller_common ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
 set_project_warnings(taller_game ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
 set_project_warnings(taller_world ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+taller_apply_sanitizers(taller_common)
+taller_apply_sanitizers(taller_game)
+taller_apply_sanitizers(taller_world)
 
 # Disable -Werror=format-nonliteral for taller_common because of warning in liberror.cpp
 target_compile_options(taller_common PRIVATE -Wno-error=format-nonliteral)
@@ -164,6 +177,7 @@ if(TALLER_CLIENT)
     add_subdirectory(client)
 
     set_project_warnings(taller_client ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(taller_client)
 
     # add libSDL2pp's headers
     target_include_directories(taller_client PRIVATE ${libSDL2pp_SOURCE_DIR})
@@ -186,6 +200,7 @@ if(TALLER_CLIENT_CLI)
     )
     add_dependencies(taller_client_cli taller_common)
     set_project_warnings(taller_client_cli ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(taller_client_cli)
     target_link_libraries(taller_client_cli taller_common spdlog::spdlog)
 endif()
 
@@ -201,6 +216,7 @@ if(TALLER_SERVER)
     add_subdirectory(server)
 
     set_project_warnings(taller_server ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(taller_server)
 
     # Link the taller_common, taller_game and taller_world lib targets
     target_link_libraries(taller_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus)
@@ -218,6 +234,7 @@ if(TALLER_EDITOR)
     add_subdirectory(editor)
 
     set_project_warnings(taller_editor ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(taller_editor)
 
     # add libSDL2pp's headers
     target_include_directories(taller_editor PRIVATE ${libSDL2pp_SOURCE_DIR})
@@ -262,6 +279,7 @@ if(TALLER_TESTS)
 
     # Set the compiler warnings to the tests target (but be a little lesser strict)
     set_project_warnings(taller_tests ${TALLER_MAKE_WARNINGS_AS_ERRORS} TRUE)
+    taller_apply_sanitizers(taller_tests)
 
     # Say where googletest headers can be found
     target_include_directories(taller_tests
