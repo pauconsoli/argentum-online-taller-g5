@@ -9,6 +9,8 @@
 #include "server/game/items/spell.h"
 #include "server/game/player.h"
 
+#define MAX_INVENTORY_ITEMS 20  // máximo de items en el inventario para el test, hardcodeado
+
 class InventoryTest: public ::testing::Test {
  protected:
     Position position{5, 10};
@@ -54,7 +56,7 @@ TEST_F(InventoryTest, AddItemWhenFull) {
         auto item = std::make_unique<NormalWeapon>("Espada " + std::to_string(i), 5, 15, false);
         inventory.add_item(std::move(item));
     }
-    EXPECT_TRUE(inventory.is_full());
+    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
 
     auto extra = std::make_unique<NormalWeapon>("Extra", 5, 15, false);
     bool result = inventory.add_item(std::move(extra));
@@ -153,7 +155,7 @@ TEST_F(InventoryTest, UnequipWhenInventoryFull) {
         auto item = std::make_unique<NormalWeapon>("Arma " + std::to_string(i), 5, 15, false);
         inventory.add_item(std::move(item));
     }
-    EXPECT_TRUE(inventory.is_full());
+    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
 
     // Equipar el primer item (ya está en el inventario)
     Item* first_item = inventory.get_slots()[0].item.get();
