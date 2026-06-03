@@ -64,7 +64,7 @@ uint8_t ClientProtocol::recv_u8() {
 }
 
 uint16_t ClientProtocol::recv_u16() {
-    uint8_t b[2];
+    uint8_t b[2] = {};
     if (skt.recvall(b, 2) == 0) {
         throw LibError(0, "%s", "ClientProtocol::recv_u16: server closed connection");
     }
@@ -74,7 +74,7 @@ uint16_t ClientProtocol::recv_u16() {
 }
 
 uint32_t ClientProtocol::recv_u32() {
-    uint8_t b[4];
+    uint8_t b[4] = {};
     if (skt.recvall(b, 4) == 0) {
         throw LibError(0, "%s", "ClientProtocol::recv_u32: server closed connection");
     }
@@ -112,12 +112,16 @@ void ClientProtocol::send_login(const std::string& nick) {
     std::vector<uint8_t> buf;
     put_u8(buf, ClientOpcode::LOGIN);
     put_string(buf, nick);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_login: server closed connection");
+    }
 }
 
 void ClientProtocol::send_list_matches() {
     uint8_t op = ClientOpcode::LIST_MATCHES;
-    skt.sendall(&op, 1);
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_list_matches: server closed connection");
+    }
 }
 
 void ClientProtocol::send_create_match(const std::string& match_name, uint8_t max_players) {
@@ -125,14 +129,18 @@ void ClientProtocol::send_create_match(const std::string& match_name, uint8_t ma
     put_u8(buf, ClientOpcode::CREATE_MATCH);
     put_string(buf, match_name);
     put_u8(buf, max_players);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_create_match: server closed connection");
+    }
 }
 
 void ClientProtocol::send_join_match(uint32_t match_id) {
     std::vector<uint8_t> buf;
     put_u8(buf, ClientOpcode::JOIN_MATCH);
     put_u32(buf, match_id);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_join_match: server closed connection");
+    }
 }
 
 void ClientProtocol::send_select_race_class(uint8_t race, uint8_t klass) {
@@ -140,24 +148,32 @@ void ClientProtocol::send_select_race_class(uint8_t race, uint8_t klass) {
     put_u8(buf, ClientOpcode::SELECT_RACE_CLASS);
     put_u8(buf, race);
     put_u8(buf, klass);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_select_race_class: server closed connection");
+    }
 }
 
 void ClientProtocol::send_move(Direction dir) {
     std::vector<uint8_t> buf;
     put_u8(buf, ClientOpcode::MOVE);
     put_u8(buf, static_cast<uint8_t>(dir));
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_move: server closed connection");
+    }
 }
 
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
-    skt.sendall(&op, 1);
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_disconnect: server closed connection");
+    }
 }
 
 void ClientProtocol::send_leave_match() {
     uint8_t op = ClientOpcode::LEAVE_MATCH;
-    skt.sendall(&op, 1);
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_leave_match: server closed connection");
+    }
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {

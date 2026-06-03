@@ -195,9 +195,13 @@ void Server::add_client(PlayerConnection* conn) {
 void Server::remove_client(PlayerConnection* conn) {
     std::lock_guard<std::mutex> lk(clients_mutex);
     clients.remove(conn);
-    const std::string& nick = conn->get_nick();
-    if (!nick.empty()) {
-        nicks_in_use.erase(nick);
+    if (conn->get_state() !=
+        PlayerConnection::State::DISCONNECTING) {  // si el cliente se desconectó inesperadamente
+                                                   // sin pasar por disconnect()
+        const std::string& nick = conn->get_nick();
+        if (!nick.empty()) {
+            nicks_in_use.erase(nick);
+        }
     }
 }
 
@@ -243,11 +247,13 @@ void Server::run() {
         }
 
         keep_running = false;
-        acceptor.stop();
-        gameloop.stop();
 
-        acceptor.join();
+        gameloop.stop();
         gameloop.join();
+
+        acceptor.stop();
+        acceptor.join();
+
     } catch (const std::exception& e) {
         std::cerr << "[SERVER] Error: " << e.what() << "\n";
         keep_running = false;

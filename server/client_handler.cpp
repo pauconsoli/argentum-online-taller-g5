@@ -22,9 +22,13 @@ void ClientHandler::hard_kill() noexcept {
     stop_threads();
     try {
         peer.shutdown(SHUT_RDWR);
+    } catch (const std::exception& e) {
+        std::cerr << "[CLIENT_HANDLER] Error en hard_kill (shutdown): " << e.what() << "\n";
+    }
+    try {
         peer.close();
     } catch (const std::exception& e) {
-        std::cerr << "[CLIENT_HANDLER] Error en hard_kill: " << e.what() << "\n";
+        std::cerr << "[CLIENT_HANDLER] Error en hard_kill (close): " << e.what() << "\n";
     }
 }
 

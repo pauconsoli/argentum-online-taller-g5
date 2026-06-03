@@ -87,7 +87,12 @@ void ReceiverThread::run() {
 
     try {
         server_ops.disconnect(player_conn);
+    } catch (...) {}
 
+    // para asegurar que el sender thread termine si el cliente se desconectó inesperadamente sin
+    // pasar por disconnect()
+    try {
+        player_conn.close_send_queue();
     } catch (...) {}
 }
 
@@ -95,8 +100,6 @@ void ReceiverThread::handle_login() {
     std::string nick = protocol.recv_login_payload();
     try {
         uint32_t pid = server_ops.login(player_conn, nick);
-        player_conn.set_player_id(pid);
-        player_conn.set_nick(nick);
         player_conn.set_state(PlayerConnection::State::AUTHENTICATED);
         player_conn.enqueue_update(std::make_unique<LoginOkUpdate>(pid));
     } catch (const std::exception& e) {

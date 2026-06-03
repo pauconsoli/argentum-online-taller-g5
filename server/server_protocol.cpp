@@ -57,9 +57,6 @@ void ServerProtocol::put_string(std::vector<uint8_t>& buf, const std::string& s)
     buf.insert(buf.end(), s.begin(), s.end());
 }
 
-// ===========================
-// Helpers de deserialización
-// ===========================
 
 uint8_t ServerProtocol::recv_u8() {
     uint8_t v;
@@ -70,7 +67,7 @@ uint8_t ServerProtocol::recv_u8() {
 }
 
 uint16_t ServerProtocol::recv_u16() {
-    uint8_t b[2];
+    uint8_t b[2] = {};
     if (skt.recvall(b, 2) == 0) {
         throw LibError(0, "%s", "ServerProtocol::recv_u16: client closed connection");
     }
@@ -80,7 +77,7 @@ uint16_t ServerProtocol::recv_u16() {
 }
 
 uint32_t ServerProtocol::recv_u32() {
-    uint8_t b[4];
+    uint8_t b[4] = {};
     if (skt.recvall(b, 4) == 0) {
         throw LibError(0, "%s", "ServerProtocol::recv_u32: client closed connection");
     }
@@ -188,7 +185,9 @@ void ServerProtocol::send_login_ok(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::LOGIN_OK);
     put_u32(buf, u.player_id);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_login_ok: client closed connection");
+    }
 }
 
 void ServerProtocol::send_match_list(const GameUpdate& update) {
@@ -205,7 +204,9 @@ void ServerProtocol::send_match_list(const GameUpdate& update) {
         put_u8(buf, m.current_players);
         put_u8(buf, m.max_players);
     }
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_match_list: client closed connection");
+    }
 }
 
 void ServerProtocol::send_match_created(const GameUpdate& update) {
@@ -213,7 +214,9 @@ void ServerProtocol::send_match_created(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::MATCH_CREATED);
     put_u32(buf, u.match_id);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_match_created: client closed connection");
+    }
 }
 
 void ServerProtocol::send_match_joined(const GameUpdate& update) {
@@ -222,7 +225,9 @@ void ServerProtocol::send_match_joined(const GameUpdate& update) {
     put_u8(buf, ServerOpcode::MATCH_JOINED);
     put_u32(buf, u.match_id);
     put_u32(buf, u.your_player_id);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_match_joined: client closed connection");
+    }
 }
 
 void ServerProtocol::send_player_joined(const GameUpdate& update) {
@@ -235,7 +240,9 @@ void ServerProtocol::send_player_joined(const GameUpdate& update) {
     put_u8(buf, u.klass);
     put_i32(buf, u.pos.x);
     put_i32(buf, u.pos.y);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_player_joined: client closed connection");
+    }
 }
 
 void ServerProtocol::send_player_left(const GameUpdate& update) {
@@ -243,7 +250,9 @@ void ServerProtocol::send_player_left(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::PLAYER_LEFT);
     put_u32(buf, u.player_id);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_player_left: client closed connection");
+    }
 }
 
 void ServerProtocol::send_snapshot(const GameUpdate& update) {
@@ -271,7 +280,9 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         put_u16(buf, p.level);
         put_u8(buf, p.is_ghost ? 1 : 0);
     }
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_snapshot: client closed connection");
+    }
 }
 
 void ServerProtocol::send_moved(const GameUpdate& update) {
@@ -281,7 +292,9 @@ void ServerProtocol::send_moved(const GameUpdate& update) {
     put_u32(buf, u.get_player_id());
     put_i32(buf, u.get_pos().x);
     put_i32(buf, u.get_pos().y);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_moved: client closed connection");
+    }
 }
 
 void ServerProtocol::send_error(const GameUpdate& update) {
@@ -290,5 +303,7 @@ void ServerProtocol::send_error(const GameUpdate& update) {
     put_u8(buf, ServerOpcode::ERROR);
     put_u8(buf, u.code);
     put_string(buf, u.detail);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_error: client closed connection");
+    }
 }

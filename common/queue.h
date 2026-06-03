@@ -142,7 +142,7 @@ class Queue {
         std::unique_lock<std::mutex> lck(mtx);
 
         if (closed) {
-            throw std::runtime_error("The queue is already closed.");
+            return;
         }
 
         closed = true;
@@ -255,7 +255,7 @@ class Queue<void*> {
         std::unique_lock<std::mutex> lck(mtx);
 
         if (closed) {
-            throw std::runtime_error("The queue is already closed.");
+            return;
         }
 
         closed = true;
