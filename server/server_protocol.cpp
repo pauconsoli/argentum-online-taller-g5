@@ -57,9 +57,6 @@ void ServerProtocol::put_string(std::vector<uint8_t>& buf, const std::string& s)
     buf.insert(buf.end(), s.begin(), s.end());
 }
 
-// ===========================
-// Helpers de deserialización
-// ===========================
 
 uint8_t ServerProtocol::recv_u8() {
     uint8_t v;
