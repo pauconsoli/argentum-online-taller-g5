@@ -70,7 +70,7 @@ uint8_t ServerProtocol::recv_u8() {
 }
 
 uint16_t ServerProtocol::recv_u16() {
-    uint8_t b[2];
+    uint8_t b[2] = {};
     if (skt.recvall(b, 2) == 0) {
         throw LibError(0, "%s", "ServerProtocol::recv_u16: client closed connection");
     }
@@ -80,7 +80,7 @@ uint16_t ServerProtocol::recv_u16() {
 }
 
 uint32_t ServerProtocol::recv_u32() {
-    uint8_t b[4];
+    uint8_t b[4] = {};
     if (skt.recvall(b, 4) == 0) {
         throw LibError(0, "%s", "ServerProtocol::recv_u32: client closed connection");
     }
