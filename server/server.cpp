@@ -247,11 +247,13 @@ void Server::run() {
         }
 
         keep_running = false;
-        acceptor.stop();
-        gameloop.stop();
 
-        acceptor.join();
+        gameloop.stop();
         gameloop.join();
+
+        acceptor.stop();
+        acceptor.join();
+
     } catch (const std::exception& e) {
         std::cerr << "[SERVER] Error: " << e.what() << "\n";
         keep_running = false;
