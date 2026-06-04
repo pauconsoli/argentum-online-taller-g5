@@ -26,7 +26,7 @@ target_sources(taller_common
     updates/match_created_update.h
     updates/match_joined_update.h
     updates/match_list_update.h
-    updates/move_update.h
+    updates/moved_update.h
     updates/player_joined_update.h
     updates/player_left_update.h
     updates/snapshot_update.h

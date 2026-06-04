@@ -14,6 +14,7 @@ enum class UpdateType : uint8_t {
     ERROR,
 
     SNAPSHOT,
+    SPAWNED,
     MOVED,
     STATS,
     DEATH,

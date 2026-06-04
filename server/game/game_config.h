@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include "common/position.h"
 #include "player_class.h"
 #include "player_race.h"
 
@@ -37,6 +38,8 @@ class GameConfig {
 
     int max_inventory_items;
 
+    Position spawn_position;
+
     float gold_max_safe_base;
     float gold_max_safe_exp;
     float gold_excess_factor;
@@ -70,10 +73,10 @@ class GameConfig {
     float get_race_mana_multiplier(PlayerRace race) const;
     float get_race_recovery_factor(PlayerRace race) const;
 
-    int get_race_base_strength(PlayerRace race) const;
-    int get_race_base_agility(PlayerRace race) const;
-    int get_race_base_intelligence(PlayerRace race) const;
-    int get_race_base_constitution(PlayerRace race) const;
+    int get_race_strength(PlayerRace race) const;
+    int get_race_agility(PlayerRace race) const;
+    int get_race_intelligence(PlayerRace race) const;
+    int get_race_constitution(PlayerRace race) const;
 
     int get_class_bonus_strength(PlayerClass cls) const;
     int get_class_bonus_agility(PlayerClass cls) const;
@@ -85,6 +88,8 @@ class GameConfig {
     float get_class_meditation_factor(PlayerClass cls) const;
 
     int get_max_inventory_items() const;
+
+    Position get_spawn_position() const;
 
     float get_gold_max_safe_base() const;
     float get_gold_max_safe_exp() const;
