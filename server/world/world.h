@@ -34,6 +34,8 @@ class World {
     Player* get_player(uint32_t player_id);
     bool player_exists(uint32_t player_id) const;
 
+    Position get_spawn_position() const;
+
     std::unique_ptr<GameUpdate> move_player(uint32_t player_id, Direction direction);
 
     std::vector<std::unique_ptr<GameUpdate>> update();

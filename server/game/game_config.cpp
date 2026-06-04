@@ -8,6 +8,7 @@
 GameConfig::GameConfig():
     loaded(false),
     max_inventory_items(0),
+    spawn_position{},
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
@@ -43,6 +44,20 @@ static float lookup(const std::map<PlayerClass, float>& m, PlayerClass key, cons
     return it->second;
 }
 
+static int lookup(const std::map<PlayerRace, int>& m, PlayerRace key, const char* field) {
+    auto it = m.find(key);
+    if (it == m.end())
+        throw std::runtime_error(std::string("GameConfig: raza sin '") + field + "' cargado");
+    return it->second;
+}
+
+static int lookup(const std::map<PlayerClass, int>& m, PlayerClass key, const char* field) {
+    auto it = m.find(key);
+    if (it == m.end())
+        throw std::runtime_error(std::string("GameConfig: clase sin '") + field + "' cargado");
+    return it->second;
+}
+
 
 GameConfig& GameConfig::get_instance() {
     static GameConfig instance;
@@ -71,6 +86,46 @@ float GameConfig::get_race_recovery_factor(PlayerRace race) const {
     return lookup(race_recovery, race, "recovery_factor");
 }
 
+int GameConfig::get_race_strength(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_strength, race, "base_strength");
+}
+
+int GameConfig::get_race_agility(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_agility, race, "base_agility");
+}
+
+int GameConfig::get_race_intelligence(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_intelligence, race, "base_intelligence");
+}
+
+int GameConfig::get_race_constitution(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_constitution, race, "base_constitution");
+}
+
+int GameConfig::get_class_bonus_strength(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_strength, cls, "bonus_strength");
+}
+
+int GameConfig::get_class_bonus_agility(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_agility, cls, "bonus_agility");
+}
+
+int GameConfig::get_class_bonus_intelligence(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_intelligence, cls, "bonus_intelligence");
+}
+
+int GameConfig::get_class_bonus_constitution(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_constitution, cls, "bonus_constitution");
+}
+
 float GameConfig::get_class_hp_multiplier(PlayerClass cls) const {
     check_loaded(loaded);
     return lookup(class_hp_mult, cls, "hp_multiplier");
@@ -84,6 +139,11 @@ float GameConfig::get_class_mana_multiplier(PlayerClass cls) const {
 float GameConfig::get_class_meditation_factor(PlayerClass cls) const {
     check_loaded(loaded);
     return lookup(class_meditation, cls, "meditation_factor");
+}
+
+Position GameConfig::get_spawn_position() const {
+    check_loaded(loaded);
+    return spawn_position;
 }
 
 int GameConfig::get_max_inventory_items() const {

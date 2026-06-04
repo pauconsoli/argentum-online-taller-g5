@@ -40,6 +40,10 @@ void GameConfigLoader::load(const std::string& config_path) {
         gc.race_hp_mult[race] = require_float(*subtable, section, "hp_multiplier");
         gc.race_mana_mult[race] = require_float(*subtable, section, "mana_multiplier");
         gc.race_recovery[race] = require_float(*subtable, section, "recovery_factor");
+        gc.race_base_strength[race] = require_int(*subtable, section, "strength");
+        gc.race_base_agility[race] = require_int(*subtable, section, "agility");
+        gc.race_base_intelligence[race] = require_int(*subtable, section, "intelligence");
+        gc.race_base_constitution[race] = require_int(*subtable, section, "constitution");
     };
 
     auto load_class = [&](PlayerClass cls, std::string_view key) {
@@ -51,6 +55,10 @@ void GameConfigLoader::load(const std::string& config_path) {
         gc.class_hp_mult[cls] = require_float(*subtable, section, "hp_multiplier");
         gc.class_mana_mult[cls] = require_float(*subtable, section, "mana_multiplier");
         gc.class_meditation[cls] = require_float(*subtable, section, "meditation_factor");
+        gc.class_bonus_strength[cls] = require_int(*subtable, section, "strength_bonus");
+        gc.class_bonus_agility[cls] = require_int(*subtable, section, "agility_bonus");
+        gc.class_bonus_intelligence[cls] = require_int(*subtable, section, "intelligence_bonus");
+        gc.class_bonus_constitution[cls] = require_int(*subtable, section, "constitution_bonus");
     };
 
     load_race(PlayerRace::HUMAN, "human");
@@ -67,6 +75,14 @@ void GameConfigLoader::load(const std::string& config_path) {
     if (!inv)
         throw std::runtime_error("game_config.toml: falta la sección [inventory]");
     gc.max_inventory_items = require_int(*inv, "inventory", "max_items");
+
+
+    const auto* world = root["world"].as_table();
+    if (!world)
+        throw std::runtime_error("game_config.toml: falta la sección [world]");
+    gc.spawn_position.x = require_int(*world, "world", "spawn_x");
+    gc.spawn_position.y = require_int(*world, "world", "spawn_y");
+
 
     const auto* gold = root["gold"].as_table();
     if (!gold)

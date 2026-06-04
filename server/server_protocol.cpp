@@ -15,10 +15,12 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
-#include "common/updates/move_update.h"
+#include "common/updates/moved_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
 
 ServerProtocol::ServerProtocol(Socket& socket): skt(socket) {}
 
@@ -111,6 +113,39 @@ std::string ServerProtocol::recv_string() {
     return out;
 }
 
+
+// funciones de casteo para raza/clase que son ENUM
+static PlayerRace to_race(uint8_t v) {
+    switch (v) {
+        case 0:
+            return PlayerRace::HUMAN;
+        case 1:
+            return PlayerRace::ELF;
+        case 2:
+            return PlayerRace::DWARF;
+        case 3:
+            return PlayerRace::GNOME;
+        default:
+            throw LibError(0, "raza inválida: %d", v);
+    }
+}
+
+static PlayerClass to_class(uint8_t v) {
+    switch (v) {
+        case 0:
+            return PlayerClass::MAGE;
+        case 1:
+            return PlayerClass::CLERIC;
+        case 2:
+            return PlayerClass::PALADIN;
+        case 3:
+            return PlayerClass::WARRIOR;
+        default:
+            throw LibError(0, "clase inválida: %d", v);
+    }
+}
+
+
 uint8_t ServerProtocol::recv_opcode() {
     return recv_u8();
 }
@@ -132,7 +167,7 @@ uint32_t ServerProtocol::recv_join_match_payload() {
 ServerProtocol::RaceClassPayload ServerProtocol::recv_select_race_class_payload() {
     uint8_t race = recv_u8();
     uint8_t klass = recv_u8();
-    return {race, klass};
+    return {to_race(race), to_class(klass)};
 }
 
 std::unique_ptr<ClientCommand> ServerProtocol::recv_move_payload(uint32_t player_id) {
