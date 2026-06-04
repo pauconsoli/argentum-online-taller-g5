@@ -1,0 +1,35 @@
+target_sources(taller_game
+    PRIVATE
+    # .cpp files
+    character.cpp
+    basic_match.cpp
+    player.cpp
+    game_config.cpp
+    game_formulas.cpp
+    inventory.cpp
+    items/item.cpp
+    items/weapon.cpp
+    items/normal_weapon.cpp
+    items/magic_weapon.cpp
+    items/spell.cpp
+    items/defensive_item.cpp
+    items/consumable_item.cpp
+    PUBLIC
+    # .h files
+    character.h
+    basic_match.h
+    player.h
+    game_config.h
+    game_formulas.h
+    player_class.h
+    player_race.h
+    inventory.h
+    items/item.h
+    items/weapon.h
+    items/normal_weapon.h
+    items/magic_weapon.h
+    items/spell.h
+    items/defensive_item.h
+    items/equipment_slot.h
+    items/consumable_item.h
+    )

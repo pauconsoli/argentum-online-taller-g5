@@ -1,7 +1,21 @@
 target_sources(taller_client
     PRIVATE
-    # .cpp files
     main.cpp
+    client.cpp
+    client_protocol.cpp
+    sdl/game_client.cpp
+    sdl/renderer.cpp
+    sdl/input_handler.cpp
+    sdl/camera.cpp
+    sdl/hud.cpp
+    sdl/sprite_manager.cpp
     PUBLIC
-    # .h files
+    client.h
+    client_protocol.h
+    sdl/game_client.h
+    sdl/renderer.h
+    sdl/input_handler.h
+    sdl/camera.h
+    sdl/hud.h
+    sdl/sprite_manager.h
     )

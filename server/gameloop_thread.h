@@ -1,19 +1,20 @@
 #ifndef GAMELOOP_THREAD_H
 #define GAMELOOP_THREAD_H
 
-#include "../common/queue.h"
-#include "../common/thread.h"
+#include "common/thread.h"
 
+class Server;
+class World;
 
 class GameLoopThread: public Thread {
-private:
-    //...
+ private:
+    World& world;
+    Server& server;
 
-public:
+ public:
+    GameLoopThread(Server& server, World& world);
 
-    //...
     void run() override;
-
     ~GameLoopThread() = default;
 };
 
