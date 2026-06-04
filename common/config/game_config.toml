@@ -91,6 +91,9 @@ constitution_bonus = 3
 spawn_x = 5
 spawn_y = 5
 
+[level]
+initial_player_level = 1
+
 # ---------------------------------
 # Inventory 
 # ---------------------------------
