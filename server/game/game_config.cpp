@@ -7,8 +7,8 @@
 // loader
 GameConfig::GameConfig():
     loaded(false),
-    spawn_position{},
     max_inventory_items(0),
+    spawn_position{},
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
