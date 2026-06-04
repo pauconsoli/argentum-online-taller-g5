@@ -11,6 +11,8 @@
 #include "common/updates/game_update.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/snapshot_update.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
 
 class ServerProtocol {
  private:
@@ -52,8 +54,8 @@ class ServerProtocol {
     CreateMatchPayload recv_create_match_payload();
     uint32_t recv_join_match_payload();
     struct RaceClassPayload {
-        uint8_t race;
-        uint8_t klass;
+        PlayerRace race;
+        PlayerClass klass;
     };
     RaceClassPayload recv_select_race_class_payload();
 

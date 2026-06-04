@@ -11,10 +11,10 @@ enum class UpdateType : uint8_t {
     MATCH_JOINED,
     PLAYER_JOINED,
     PLAYER_LEFT,
+    PLAYER_SPAWNED,
     ERROR,
 
     SNAPSHOT,
-    SPAWNED,
     MOVED,
     STATS,
     DEATH,
