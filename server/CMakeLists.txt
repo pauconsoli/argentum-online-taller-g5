@@ -10,7 +10,10 @@ target_sources(taller_server
     receiver_thread.cpp
     sender_thread.cpp
     gameloop_thread.cpp
+    # commands
     commands/move_command.cpp
+    commands/select_race_class_command.cpp
+    # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp
     PUBLIC
