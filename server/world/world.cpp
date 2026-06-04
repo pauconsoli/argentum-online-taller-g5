@@ -3,7 +3,8 @@
 #include <stdexcept>
 #include <utility>
 
-#include "common/updates/move_update.h"
+#include "common/updates/moved_update.h"
+#include "server/game/game_config.h"
 
 // TODO(Pau): más verificaciones/excepciones/logging
 
@@ -68,6 +69,34 @@ Position World::calculate_destination(const Position& current, Direction directi
 
 bool World::is_position_occupied(const Position& position) const {
     return occupied[position.y][position.x];
+}
+
+// devuelve la posición de spawn para un nuevo jugador, que es la posición configurada en GameConfig
+// pero si está ocupada, da la siguiente posición libre más cercana da la siguiente posición libre
+// más cercana
+Position World::get_spawn_position() const {
+    const Position base_spawn = GameConfig::get_instance().get_spawn_position();
+
+    for (int y = base_spawn.y; y < map.get_height(); ++y) {
+        int x_start = (y == base_spawn.y) ? base_spawn.x : 0;  //
+        for (int x = x_start; x < map.get_width(); ++x) {
+            Position spawn{x, y};
+            if (!map.is_position_blocked(spawn) && !is_position_occupied(spawn)) {
+                return spawn;
+            }
+        }
+    }
+
+    for (int y = 0; y < base_spawn.y; ++y) {
+        for (int x = 0; x < map.get_width(); ++x) {
+            Position spawn{x, y};
+            if (!map.is_position_blocked(spawn) && !is_position_occupied(spawn)) {
+                return spawn;
+            }
+        }
+    }
+
+    throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
 std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction direction) {

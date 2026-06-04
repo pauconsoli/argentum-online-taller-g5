@@ -15,7 +15,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
-#include "common/updates/move_update.h"
+#include "common/updates/moved_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"

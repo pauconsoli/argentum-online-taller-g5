@@ -7,6 +7,7 @@
 // loader
 GameConfig::GameConfig():
     loaded(false),
+    spawn_position{},
     max_inventory_items(0),
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
@@ -85,22 +86,22 @@ float GameConfig::get_race_recovery_factor(PlayerRace race) const {
     return lookup(race_recovery, race, "recovery_factor");
 }
 
-int GameConfig::get_race_base_strength(PlayerRace race) const {
+int GameConfig::get_race_strength(PlayerRace race) const {
     check_loaded(loaded);
     return lookup(race_base_strength, race, "base_strength");
 }
 
-int GameConfig::get_race_base_agility(PlayerRace race) const {
+int GameConfig::get_race_agility(PlayerRace race) const {
     check_loaded(loaded);
     return lookup(race_base_agility, race, "base_agility");
 }
 
-int GameConfig::get_race_base_intelligence(PlayerRace race) const {
+int GameConfig::get_race_intelligence(PlayerRace race) const {
     check_loaded(loaded);
     return lookup(race_base_intelligence, race, "base_intelligence");
 }
 
-int GameConfig::get_race_base_constitution(PlayerRace race) const {
+int GameConfig::get_race_constitution(PlayerRace race) const {
     check_loaded(loaded);
     return lookup(race_base_constitution, race, "base_constitution");
 }
@@ -138,6 +139,11 @@ float GameConfig::get_class_mana_multiplier(PlayerClass cls) const {
 float GameConfig::get_class_meditation_factor(PlayerClass cls) const {
     check_loaded(loaded);
     return lookup(class_meditation, cls, "meditation_factor");
+}
+
+Position GameConfig::get_spawn_position() const {
+    check_loaded(loaded);
+    return spawn_position;
 }
 
 int GameConfig::get_max_inventory_items() const {

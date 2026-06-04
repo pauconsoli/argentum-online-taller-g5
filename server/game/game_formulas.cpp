@@ -41,10 +41,10 @@ int GameFormulas::calculate_max_gold(const Player& player) {
 
 BaseStats GameFormulas::calculate_base_stats(PlayerRace race, PlayerClass klass) {
     const GameConfig& config = GameConfig::get_instance();
-    return {config.get_race_base_strength(race) + config.get_class_bonus_strength(klass),
-            config.get_race_base_agility(race) + config.get_class_bonus_agility(klass),
-            config.get_race_base_intelligence(race) + config.get_class_bonus_intelligence(klass),
-            config.get_race_base_constitution(race) + config.get_class_bonus_constitution(klass)};
+    return {config.get_race_strength(race) + config.get_class_bonus_strength(klass),
+            config.get_race_agility(race) + config.get_class_bonus_agility(klass),
+            config.get_race_intelligence(race) + config.get_class_bonus_intelligence(klass),
+            config.get_race_constitution(race) + config.get_class_bonus_constitution(klass)};
 }
 
 std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const std::string& name,
