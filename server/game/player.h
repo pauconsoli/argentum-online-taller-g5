@@ -68,12 +68,11 @@ class Player: public Character {
 
     std::vector<std::pair<EquipmentSlot, Item*>> get_equipment() const;
 
-    void equip(Item& item);  // implementar
+    void equip(Item& item);
 
     void set_initial_stats(int hp, int mana);
 
-    void restore_health(int amount);  // implementar
-    void restore_mana(int amount);    // implementar
+    void restore_mana(int amount);
 };
 
 #endif
