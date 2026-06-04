@@ -39,6 +39,30 @@ int GameFormulas::calculate_max_gold(const Player& player) {
                             std::pow(player.get_level(), config.get_gold_max_safe_exp()));
 }
 
+int GameFormulas::calculate_health_recovery(const Player& player, float seconds) {
+    const GameConfig& config = GameConfig::get_instance();
+    float recovery_factor = config.get_race_recovery_factor(player.get_race());
+    return static_cast<int>(recovery_factor * seconds);
+}
+
+int GameFormulas::calculate_time_mana_recovery(const Player& player, float seconds) {
+    if (!player.can_cast_magic()) {
+        return 0;
+    }
+    const GameConfig& config = GameConfig::get_instance();
+    float recovery_factor = config.get_race_recovery_factor(player.get_race());
+    return static_cast<int>(recovery_factor * seconds);
+}
+
+int GameFormulas::calculate_meditation_mana_recovery(const Player& player, float seconds) {
+    if (!player.can_cast_magic()) {
+        return 0;
+    }
+    const GameConfig& config = GameConfig::get_instance();
+    float meditation_factor = config.get_class_meditation_factor(player.get_class());
+    return static_cast<int>(meditation_factor * player.get_intelligence() * seconds);
+}
+
 BaseStats GameFormulas::calculate_base_stats(PlayerRace race, PlayerClass klass) {
     const GameConfig& config = GameConfig::get_instance();
     return {config.get_race_strength(race) + config.get_class_bonus_strength(klass),

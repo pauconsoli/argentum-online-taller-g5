@@ -25,6 +25,12 @@ class GameFormulas {
 
     static int calculate_max_gold(const Player& player);
 
+    static int calculate_health_recovery(const Player& player, float seconds);
+
+    static int calculate_time_mana_recovery(const Player& player, float seconds);
+
+    static int calculate_meditation_mana_recovery(const Player& player, float seconds);
+
     static BaseStats calculate_base_stats(PlayerRace race, PlayerClass klass);
 
     static std::unique_ptr<Player> create_initial_player(uint32_t id, const std::string& name,
