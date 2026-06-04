@@ -9,6 +9,7 @@ GameConfig::GameConfig():
     loaded(false),
     max_inventory_items(0),
     spawn_position{},
+    initial_player_level(0),
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
@@ -149,6 +150,11 @@ Position GameConfig::get_spawn_position() const {
 int GameConfig::get_max_inventory_items() const {
     check_loaded(loaded);
     return max_inventory_items;
+}
+
+int GameConfig::get_initial_player_level() const {
+    check_loaded(loaded);
+    return initial_player_level;
 }
 
 float GameConfig::get_gold_max_safe_base() const {

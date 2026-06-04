@@ -76,7 +76,8 @@ std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const s
                                                             const Position& pos) {
     BaseStats stats = calculate_base_stats(race, klass);
 
-    int new_player_level = 1;  // ver de extraerlo al config
+    const GameConfig& config = GameConfig::get_instance();
+    int new_player_level = config.get_initial_player_level();
 
     auto player =
         std::make_unique<Player>(id, name, race, klass, new_player_level, 0, 0, stats.strength,
@@ -85,7 +86,9 @@ std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const s
     int max_hp = calculate_max_hp(*player);
     int max_mana = calculate_max_mana(*player);
 
-    player->set_initial_stats(max_hp <= 0 ? 1 : max_hp, max_mana);
+    player->set_initial_stats(
+        max_hp <= 0 ? 1 : max_hp,
+        max_mana);  // asegurar que el jugador tenga al menos 1 de hp para no morir al crearse
 
     return player;
 }

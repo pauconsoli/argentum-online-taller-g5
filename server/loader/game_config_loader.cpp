@@ -76,12 +76,16 @@ void GameConfigLoader::load(const std::string& config_path) {
         throw std::runtime_error("game_config.toml: falta la sección [inventory]");
     gc.max_inventory_items = require_int(*inv, "inventory", "max_items");
 
-
     const auto* world = root["world"].as_table();
     if (!world)
         throw std::runtime_error("game_config.toml: falta la sección [world]");
     gc.spawn_position.x = require_int(*world, "world", "spawn_x");
     gc.spawn_position.y = require_int(*world, "world", "spawn_y");
+
+    const auto* level = root["level"].as_table();
+    if (!level)
+        throw std::runtime_error("game_config.toml: falta la sección [level]");
+    gc.initial_player_level = require_int(*level, "level", "initial_player_level");
 
 
     const auto* gold = root["gold"].as_table();

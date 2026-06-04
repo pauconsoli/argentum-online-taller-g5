@@ -40,6 +40,8 @@ class GameConfig {
 
     Position spawn_position;
 
+    int initial_player_level;
+
     float gold_max_safe_base;
     float gold_max_safe_exp;
     float gold_excess_factor;
@@ -90,6 +92,8 @@ class GameConfig {
     int get_max_inventory_items() const;
 
     Position get_spawn_position() const;
+
+    int get_initial_player_level() const;
 
     float get_gold_max_safe_base() const;
     float get_gold_max_safe_exp() const;
