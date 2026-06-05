@@ -314,6 +314,7 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         put_u64(buf, p.gold);
         put_u16(buf, p.level);
         put_u8(buf, p.is_ghost ? 1 : 0);
+        put_u8(buf, p.is_meditating ? 1 : 0);
     }
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_snapshot: client closed connection");

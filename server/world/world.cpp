@@ -5,6 +5,7 @@
 
 #include "common/updates/moved_update.h"
 #include "server/game/game_config.h"
+#include "server/game/game_formulas.h"
 
 // TODO(Pau): más verificaciones/excepciones/logging
 
@@ -136,10 +137,25 @@ void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
 
-std::vector<std::unique_ptr<GameUpdate>> World::update() {
+std::vector<std::unique_ptr<GameUpdate>> World::update(float tick_seconds) {
     std::vector<std::unique_ptr<GameUpdate>> events;
 
-    // TODO(Pau): Update player health/mana regeneration
+    for (auto& [id, player] : players) {
+        if (player->is_dead())
+            continue;
+
+        // HP
+        int hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
+        player->heal(hp_regen);
+
+        // Maná — meditando o por tiempo
+        int mana_regen =
+            player->is_meditating() ?
+                GameFormulas::calculate_meditation_mana_recovery(*player, tick_seconds) :
+                GameFormulas::calculate_time_mana_recovery(*player, tick_seconds);
+        player->restore_mana(mana_regen);
+    }
+
     // TODO(Pau): Update NPC states
     // TODO(Pau): Process world events (respawns, item drops, etc)
 
