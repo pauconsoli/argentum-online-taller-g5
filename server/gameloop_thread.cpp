@@ -16,11 +16,13 @@ GameLoopThread::GameLoopThread(Server& server, World& world): world(world), serv
 void GameLoopThread::run() {
     try {
         uint32_t tick_id = 0;
+
+        int sleep_ms = GameConfig::get_instance().get_server_game_loop_sleep_ms();
+        float tick_seconds =
+            sleep_ms /
+            1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
+
         while (should_keep_running()) {
-            int sleep_ms = GameConfig::get_instance().get_server_game_loop_sleep_ms();
-            float tick_seconds =
-                sleep_ms /
-                1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
 
             // en cada iteración del game loop se llama a match.tick(world) sobre cada partida
             // activa, luego cada match.tick(world) se encarga de procesar los comandos recibidos
