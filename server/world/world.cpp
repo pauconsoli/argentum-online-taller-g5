@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "common/updates/moved_update.h"
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 
@@ -100,10 +99,10 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
-std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction direction) {
+bool World::move_player(uint32_t player_id, Direction direction) {
     auto it = players.find(player_id);
     if (it == players.end()) {
-        return nullptr;
+        return false;
     }
 
     Player* player = it->second.get();
@@ -111,16 +110,16 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
     Position next = calculate_destination(current, direction);
 
     if (!map.is_valid_position(
-            next)) {     // si la posición destino no es válida, no se mueve (ej fuera del mapa)
-        return nullptr;  // update: no cambio nada
+            next)) {  // si la posición destino no es válida, no se mueve (ej fuera del mapa)
+        return false;
     }
 
     if (map.is_position_blocked(next)) {  // si la celda destino es bloqueante, no se mueve
-        return nullptr;                   // update: no cambio nada
+        return false;
     }
 
     if (is_position_occupied(next)) {  // si hay otro personaje en la posición destino, no se mueve
-        return nullptr;                // update: no cambio nada
+        return false;
     }
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
@@ -128,8 +127,7 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
     player->set_position(next);
     occupied[next.y][next.x] = true;
 
-    // update: devuelvo un update con la nueva posición del jugador
-    return std::make_unique<MovedUpdate>(player_id, next);
+    return true;
 }
 
 // SOLO PARA TESTS
@@ -137,6 +135,11 @@ void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
 
+
+// refactor futuro: para que queden bien separadas las responsabilidades, esto no tendría que
+// devolver Updates podría devolver un struct con los cambios que se hicieron (ej hp/mana
+// recuperados, personajes que murieron, etc) y el Gameloop o el Match se encargaría de convertir
+// eso en Updates para enviar a los clientes
 std::vector<std::unique_ptr<GameUpdate>> World::update(float tick_seconds) {
     std::vector<std::unique_ptr<GameUpdate>> events;
 
