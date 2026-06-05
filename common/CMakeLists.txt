@@ -20,6 +20,7 @@ target_sources(taller_common
     commands/client_command.h
     commands/move_command.h
     commands/select_race_class_command.h
+    commands/meditate_command.h
     # updates
     updates/error_update.h
     updates/game_update.h
