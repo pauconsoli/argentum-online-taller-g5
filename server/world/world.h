@@ -36,7 +36,7 @@ class World {
 
     Position get_spawn_position() const;
 
-    std::unique_ptr<GameUpdate> move_player(uint32_t player_id, Direction direction);
+    bool move_player(uint32_t player_id, Direction direction);
 
     std::vector<std::unique_ptr<GameUpdate>> update(float tick_seconds);
 
