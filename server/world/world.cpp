@@ -43,6 +43,15 @@ Player* World::get_player(uint32_t player_id) {
     return nullptr;
 }
 
+std::vector<Player*> World::get_players() {
+    std::vector<Player*> active_players;
+    active_players.reserve(players.size());
+    for (auto& [id, player] : players) {
+        active_players.push_back(player.get());
+    }
+    return active_players;
+}
+
 bool World::player_exists(uint32_t player_id) const {
     return players.find(player_id) != players.end();
 }
@@ -140,9 +149,7 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 // devolver Updates podría devolver un struct con los cambios que se hicieron (ej hp/mana
 // recuperados, personajes que murieron, etc) y el Gameloop o el Match se encargaría de convertir
 // eso en Updates para enviar a los clientes
-std::vector<std::unique_ptr<GameUpdate>> World::update(float tick_seconds) {
-    std::vector<std::unique_ptr<GameUpdate>> events;
-
+void World::update(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())
             continue;
@@ -151,7 +158,7 @@ std::vector<std::unique_ptr<GameUpdate>> World::update(float tick_seconds) {
         int hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
         player->heal(hp_regen);
 
-        // Maná — meditando o por tiempo
+        // Mana (meditando o por tiempo)
         int mana_regen =
             player->is_meditating() ?
                 GameFormulas::calculate_meditation_mana_recovery(*player, tick_seconds) :
@@ -161,6 +168,4 @@ std::vector<std::unique_ptr<GameUpdate>> World::update(float tick_seconds) {
 
     // TODO(Pau): Update NPC states
     // TODO(Pau): Process world events (respawns, item drops, etc)
-
-    return events;
 }

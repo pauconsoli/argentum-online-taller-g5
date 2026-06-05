@@ -83,7 +83,7 @@ TEST_F(WorldTest, MovePlayerUp) {
     world.add_player(create_player(1, 50, 50));
     auto update = world.move_player(1, Direction::UP);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 49);
 }
@@ -92,7 +92,7 @@ TEST_F(WorldTest, MovePlayerDown) {
     world.add_player(create_player(1, 50, 50));
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 51);
 }
@@ -101,7 +101,7 @@ TEST_F(WorldTest, MovePlayerLeft) {
     world.add_player(create_player(1, 50, 50));
     auto update = world.move_player(1, Direction::LEFT);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     EXPECT_EQ(world.get_player(1)->get_position().x, 49);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
 }
@@ -110,7 +110,7 @@ TEST_F(WorldTest, MovePlayerRight) {
     world.add_player(create_player(1, 50, 50));
     auto update = world.move_player(1, Direction::RIGHT);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     EXPECT_EQ(world.get_player(1)->get_position().x, 51);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
 }
@@ -130,7 +130,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsUp) {
     world.add_player(create_player(1, 50, 0));
     auto update = world.move_player(1, Direction::UP);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 0);
@@ -140,7 +140,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsDown) {
     world.add_player(create_player(1, 50, 79));  // valido de 0 a 79
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 79);
@@ -150,7 +150,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsLeft) {
     world.add_player(create_player(1, 0, 50));
     auto update = world.move_player(1, Direction::LEFT);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 0);
     EXPECT_EQ(pos.y, 50);
@@ -160,7 +160,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsRight) {
     world.add_player(create_player(1, 99, 50));  // valido de 0 a 99
     auto update = world.move_player(1, Direction::RIGHT);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 99);
     EXPECT_EQ(pos.y, 50);
@@ -168,13 +168,13 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsRight) {
 
 TEST_F(WorldTest, MovePlayerAtAllCorners) {
     world.add_player(create_player(1, 0, 0));
-    EXPECT_EQ(world.move_player(1, Direction::UP), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::LEFT), nullptr);
+    EXPECT_FALSE(world.move_player(1, Direction::UP));
+    EXPECT_FALSE(world.move_player(1, Direction::LEFT));
 
     world.remove_player(1);
     world.add_player(create_player(2, 99, 79));
-    EXPECT_EQ(world.move_player(2, Direction::DOWN), nullptr);
-    EXPECT_EQ(world.move_player(2, Direction::RIGHT), nullptr);
+    EXPECT_FALSE(world.move_player(2, Direction::DOWN));
+    EXPECT_FALSE(world.move_player(2, Direction::RIGHT));
 }
 
 TEST_F(WorldTest, MovePlayerBlockingTerrain) {
@@ -184,7 +184,7 @@ TEST_F(WorldTest, MovePlayerBlockingTerrain) {
 
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -197,7 +197,7 @@ TEST_F(WorldTest, MovePlayerNonBlockingTerrain) {
 
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 51);
 }
@@ -208,7 +208,7 @@ TEST_F(WorldTest, MovePlayerCollisionWithAnotherPlayer) {
 
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -220,7 +220,7 @@ TEST_F(WorldTest, MovePlayerNoCollisionWhenPathClear) {
 
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 51);
@@ -233,10 +233,10 @@ TEST_F(WorldTest, MovePlayerSurrounded) {
     world.add_player(create_player(4, 50, 49));
     world.add_player(create_player(5, 50, 51));
 
-    EXPECT_EQ(world.move_player(1, Direction::UP), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::DOWN), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::LEFT), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::RIGHT), nullptr);
+    EXPECT_FALSE(world.move_player(1, Direction::UP));
+    EXPECT_FALSE(world.move_player(1, Direction::DOWN));
+    EXPECT_FALSE(world.move_player(1, Direction::LEFT));
+    EXPECT_FALSE(world.move_player(1, Direction::RIGHT));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -249,7 +249,7 @@ TEST_F(WorldTest, MovePlayerCollisionAfterRemoval) {
     world.remove_player(2);
     auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 51);
@@ -257,7 +257,7 @@ TEST_F(WorldTest, MovePlayerCollisionAfterRemoval) {
 
 TEST_F(WorldTest, MovePlayerNonExistent) {
     auto update = world.move_player(999, Direction::UP);
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
 }
 
 TEST_F(WorldTest, MovePlayerCombinedBoundsAndTerrain) {
@@ -266,7 +266,7 @@ TEST_F(WorldTest, MovePlayerCombinedBoundsAndTerrain) {
     world.set_cell(Position{50, 1}, blocking);
 
     auto update = world.move_player(1, Direction::DOWN);
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
 }
 
 TEST_F(WorldTest, MovePlayerCombinedTerrainAndCollision) {
@@ -276,7 +276,7 @@ TEST_F(WorldTest, MovePlayerCombinedTerrainAndCollision) {
     world.set_cell(Position{49, 50}, blocking);
 
     auto update = world.move_player(1, Direction::LEFT);
-    EXPECT_EQ(update, nullptr);
+    EXPECT_FALSE(update);
 }
 
 TEST_F(WorldTest, PositionMapConsistencyMultipleMoves) {
@@ -300,15 +300,15 @@ TEST_F(WorldTest, LargeWorld) {
     World large(1000, 800);
     large.add_player(create_player(1, 999, 799));
 
-    EXPECT_EQ(large.move_player(1, Direction::DOWN), nullptr);
-    EXPECT_EQ(large.move_player(1, Direction::RIGHT), nullptr);
+    EXPECT_FALSE(large.move_player(1, Direction::DOWN));
+    EXPECT_FALSE(large.move_player(1, Direction::RIGHT));
 }
 
 TEST_F(WorldTest, SmallWorldMovement) {
     World small(3, 3);
     small.add_player(create_player(1, 1, 1));
 
-    EXPECT_NE(small.move_player(1, Direction::UP), nullptr);
+    EXPECT_TRUE(small.move_player(1, Direction::UP));
     auto pos = small.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 1);
     EXPECT_EQ(pos.y, 0);
@@ -338,7 +338,7 @@ TEST_F(WorldTest, PlayerRemovalDoesNotAffectOthers) {
     world.remove_player(1);
     auto update = world.move_player(2, Direction::UP);
 
-    EXPECT_NE(update, nullptr);
+    EXPECT_TRUE(update);
     auto pos = world.get_player(2)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
