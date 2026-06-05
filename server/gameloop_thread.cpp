@@ -13,13 +13,15 @@ GameLoopThread::GameLoopThread(Server& server, World& world): world(world), serv
 void GameLoopThread::run() {
     try {
         while (should_keep_running()) {
-            server.for_each_match([this](Match& match) { match.tick(world); });  //
+            int sleep_ms = GameConfig::get_instance().get_server_game_loop_sleep_ms();
+            float tick_seconds = sleep_ms / 1000.0f;  // ver esto
+
             // en cada iteración del game loop se llama a match.tick(world) sobre cada partida
             // activa luego cada match.tick(world) se encarga de procesar los comandos recibidos
             // para esa partida y actualizar el estado de la partida y del mundo en consecuencia
+            server.for_each_match([this](Match& match) { match.tick(world); });
 
-
-            int sleep_ms = GameConfig::get_instance().get_server_game_loop_sleep_ms();
+            world.update(tick_seconds);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
         }
     } catch (const std::exception& e) {
