@@ -18,6 +18,7 @@ enum class UpdateType : uint8_t {
     MOVED,
     STATS,
     DEATH,
+    ATTACKED,
     REVIVE,
     INVENTORY,
     CHAT_MSG,
