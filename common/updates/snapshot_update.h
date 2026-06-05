@@ -23,6 +23,7 @@ struct PlayerSnapshot {
     uint64_t gold;
     uint16_t level;
     bool is_ghost;
+    bool is_meditating;
 };
 
 class SnapshotUpdate: public GameUpdate {

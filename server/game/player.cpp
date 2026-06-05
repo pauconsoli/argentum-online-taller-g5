@@ -95,12 +95,12 @@ void Player::set_initial_stats(int hp, int mana) {
     this->current_mana = mana;
 }
 
-void Player::restore_health(int amount) {
-    (void) amount;
-    // TODO(Pau)
-}
-
 void Player::restore_mana(int amount) {
-    (void) amount;
-    // TODO(Pau)
+    if (amount <= 0 || is_dead() || !can_cast_magic()) {
+        return;
+    }
+    current_mana += amount;
+    if (current_mana > max_mana) {
+        current_mana = max_mana;
+    }
 }

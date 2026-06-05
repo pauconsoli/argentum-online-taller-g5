@@ -48,7 +48,7 @@ class Character {
 
     uint32_t get_id() const;
 
-    int get_level() const;
+    int get_level() const;  // npc tiene level? lo dejo por las dudas
 
     int get_current_hp() const;
     int get_max_hp() const;

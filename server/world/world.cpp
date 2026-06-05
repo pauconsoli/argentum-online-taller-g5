@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include <utility>
 
-#include "common/updates/moved_update.h"
 #include "server/game/game_config.h"
+#include "server/game/game_formulas.h"
 
 // TODO(Pau): más verificaciones/excepciones/logging
 
@@ -41,6 +41,15 @@ Player* World::get_player(uint32_t player_id) {
         return it->second.get();
     }
     return nullptr;
+}
+
+std::vector<Player*> World::get_players() {
+    std::vector<Player*> active_players;
+    active_players.reserve(players.size());
+    for (auto& [id, player] : players) {
+        active_players.push_back(player.get());
+    }
+    return active_players;
 }
 
 bool World::player_exists(uint32_t player_id) const {
@@ -99,10 +108,10 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
-std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction direction) {
+bool World::move_player(uint32_t player_id, Direction direction) {
     auto it = players.find(player_id);
     if (it == players.end()) {
-        return nullptr;
+        return false;
     }
 
     Player* player = it->second.get();
@@ -110,16 +119,16 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
     Position next = calculate_destination(current, direction);
 
     if (!map.is_valid_position(
-            next)) {     // si la posición destino no es válida, no se mueve (ej fuera del mapa)
-        return nullptr;  // update: no cambio nada
+            next)) {  // si la posición destino no es válida, no se mueve (ej fuera del mapa)
+        return false;
     }
 
     if (map.is_position_blocked(next)) {  // si la celda destino es bloqueante, no se mueve
-        return nullptr;                   // update: no cambio nada
+        return false;
     }
 
     if (is_position_occupied(next)) {  // si hay otro personaje en la posición destino, no se mueve
-        return nullptr;                // update: no cambio nada
+        return false;
     }
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
@@ -127,8 +136,7 @@ std::unique_ptr<GameUpdate> World::move_player(uint32_t player_id, Direction dir
     player->set_position(next);
     occupied[next.y][next.x] = true;
 
-    // update: devuelvo un update con la nueva posición del jugador
-    return std::make_unique<MovedUpdate>(player_id, next);
+    return true;
 }
 
 // SOLO PARA TESTS
@@ -136,12 +144,28 @@ void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
 
-std::vector<std::unique_ptr<GameUpdate>> World::update() {
-    std::vector<std::unique_ptr<GameUpdate>> events;
 
-    // TODO(Pau): Update player health/mana regeneration
+// refactor futuro: para que queden bien separadas las responsabilidades, esto no tendría que
+// devolver Updates podría devolver un struct con los cambios que se hicieron (ej hp/mana
+// recuperados, personajes que murieron, etc) y el Gameloop o el Match se encargaría de convertir
+// eso en Updates para enviar a los clientes
+void World::update(float tick_seconds) {
+    for (auto& [id, player] : players) {
+        if (player->is_dead())
+            continue;
+
+        // HP
+        int hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
+        player->heal(hp_regen);
+
+        // Mana (meditando o por tiempo)
+        int mana_regen =
+            player->is_meditating() ?
+                GameFormulas::calculate_meditation_mana_recovery(*player, tick_seconds) :
+                GameFormulas::calculate_time_mana_recovery(*player, tick_seconds);
+        player->restore_mana(mana_regen);
+    }
+
     // TODO(Pau): Update NPC states
     // TODO(Pau): Process world events (respawns, item drops, etc)
-
-    return events;
 }
