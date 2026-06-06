@@ -42,7 +42,7 @@ class World {
 
     Position get_spawn_position() const;
 
-    bool move_player(uint32_t player_id, Direction direction);
+    void move_player(uint32_t player_id, Direction direction);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
 

@@ -139,35 +139,32 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
-bool World::move_player(uint32_t player_id, Direction direction) {
+void World::move_player(uint32_t player_id, Direction direction) {
     auto it = players.find(player_id);
     if (it == players.end()) {
-        return false;
+        throw std::runtime_error("World::move_player: jugador no encontrado");
     }
 
     Player* player = it->second.get();
     Position current = player->get_position();
     Position next = calculate_destination(current, direction);
 
-    if (!map.is_valid_position(
-            next)) {  // si la posición destino no es válida, no se mueve (ej fuera del mapa)
-        return false;
+    if (!map.is_valid_position(next)) {
+        throw std::runtime_error("World::move_player: no podes avanzar en esa dirección.");
     }
 
     if (map.is_position_blocked(next)) {  // si la celda destino es bloqueante, no se mueve
-        return false;
+        throw std::runtime_error("World::move_player: el paso está bloqueado");
     }
 
-    if (is_position_occupied(next)) {  // si hay otro personaje en la posición destino, no se mueve
-        return false;
+    if (is_position_occupied(next)) {
+        throw std::runtime_error("World::move_player: hay alguien ocupando esa posición");
     }
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
     occupied[current.y][current.x] = false;
     player->set_position(next);
     occupied[next.y][next.x] = true;
-
-    return true;
 }
 
 // SOLO PARA TESTS
