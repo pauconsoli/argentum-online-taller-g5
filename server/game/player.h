@@ -40,6 +40,10 @@ class Player: public Character {
 
     bool can_cast_magic() const override;
 
+    int get_defense() const override;
+
+    bool validate_attack_from(int attacker_level) const override;
+
     void move(const Position& new_position);
 
     void add_gold(uint64_t amount);

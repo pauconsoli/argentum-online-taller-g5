@@ -8,6 +8,7 @@
 
 #include "game_config.h"
 #include "player.h"
+#include "server/game/character.h"
 #include "server/game/items/defensive_item.h"
 #include "server/game/items/weapon.h"
 
@@ -137,6 +138,18 @@ std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const s
 
 // ATAQUE
 
+bool GameFormulas::can_attack_by_level(int attacker_level, int target_level) {
+    const GameConfig& config = GameConfig::get_instance();
+    int newbie_max_level = config.get_newbie_max_level();
+    int max_level_difference = config.get_max_level_difference();
+
+    if (attacker_level <= newbie_max_level || target_level <= newbie_max_level) {
+        return false;
+    }
+
+    return std::abs(attacker_level - target_level) <= max_level_difference;
+}
+
 // esta fórmula es inventada
 int GameFormulas::get_hand_combat_damage(const Player& attacker) {
     return static_cast<int>(
@@ -167,7 +180,7 @@ int GameFormulas::calculate_damage(const Player& attacker) {
 }
 
 // Esquivar si rand(0, 1) ^ Agilidad < 0.001
-bool GameFormulas::calculate_evasion(const Player& target) {
+bool GameFormulas::calculate_evasion(const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
     float evasion_threshold = config.get_evasion_threshold();
     float evade = std::pow(get_random_float(0.0, 1.0), target.get_agility());
@@ -200,16 +213,17 @@ int GameFormulas::calculate_defense(const Player& target) {
 }
 
 // Exp = Daño * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_attack_experience_gain(const Player& attacker, const Player& target) {
+int GameFormulas::calculate_attack_experience_gain(const Player& attacker,
+                                                   const Character& target) {
     int damage = calculate_damage(attacker);
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
     return static_cast<int>(damage * level_multiplier);
 }
 
 // Exp = rand(0, 0.1) * VidaMaxDelOtro * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const Player& target) {
+int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
-    int target_max_hp = calculate_max_hp(target);
+    int target_max_hp = target.get_max_hp();
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
 
     float random_factor = get_random_float(0.0, config.get_kill_bonus_factor());

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "common/position.h"
+#include "server/game/character.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
@@ -45,12 +46,13 @@ class GameFormulas {
 
     // ATAQUE
 
+    static bool can_attack_by_level(int attacker_level, int target_level);
     static int calculate_damage(const Player& attacker);
     static bool calculate_critical_attack();
-    static bool calculate_evasion(const Player& target);
+    static bool calculate_evasion(const Character& target);
     static int calculate_defense(const Player& target);
-    static int calculate_attack_experience_gain(const Player& attacker, const Player& target);
-    static int calculate_kill_experience_gain(const Player& attacker, const Player& target);
+    static int calculate_attack_experience_gain(const Player& attacker, const Character& target);
+    static int calculate_kill_experience_gain(const Player& attacker, const Character& target);
 
     static int get_hand_combat_damage(const Player& attacker);
 };

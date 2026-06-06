@@ -59,6 +59,14 @@ bool World::player_exists(uint32_t player_id) const {
     return players.find(player_id) != players.end();
 }
 
+Character* World::get_character(uint32_t id) {
+    if (Player* p = get_player(id)) {
+        return p;
+    }
+    // TODO(Pau): buscar en mapa de NPCs cuando existan
+    return nullptr;
+}
+
 // (0,0) es la esquina superior izquierda, x aumenta hacia la derecha e y hacia abajo
 Position World::calculate_destination(const Position& current, Direction direction) const {
     Position dest = current;
@@ -83,7 +91,7 @@ bool World::is_position_occupied(const Position& position) const {
     return occupied[position.y][position.x];
 }
 
-bool World::is_in_range_for_attack(const Player* attacker, const Player* target) const {
+bool World::is_in_range_for_attack(const Player* attacker, const Character* target) const {
     bool is_ranged = false;
     Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
     if (equipped_weapon) {
@@ -169,32 +177,25 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 
 
 // TODO(Pau): clanes y zonas seguras
-AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
+AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Player* attacker = get_player(attacker_id);
-    Player* target = get_player(target_id);
+    Character* target = get_character(target_id);
 
-    int newbie_max_level = GameConfig::get_instance().get_newbie_max_level();
-    int max_level_difference = GameConfig::get_instance().get_max_level_difference();
-
+    if (!attacker || !target) {
+        throw std::runtime_error("World::attack: atacante o objetivo no existe");
+    }
 
     if (attacker->is_dead() || target->is_dead()) {
-        throw std::runtime_error("World::attack_player: jugador muerto, no se puede atacar");
+        throw std::runtime_error("World::attack: jugador u objetivo muertos, no se puede atacar");
     }
 
-    if (attacker->get_level() <= newbie_max_level || target->get_level() <= newbie_max_level) {
+    if (!target->validate_attack_from(attacker->get_level())) {
         throw std::runtime_error(
-            "World::attack_player: nivel insuficiente para atacar o ser atacado");
-    }
-
-    if (std::abs(attacker->get_level() - target->get_level()) > max_level_difference) {
-        throw std::runtime_error(
-            "World::attack_player: diferencia de niveles no puede ser mayor a " +
-            std::to_string(max_level_difference));
+            "World::attack: nivel insuficiente o diferencia de niveles no permitida");
     }
 
     if (!is_in_range_for_attack(attacker, target)) {
-        throw std::runtime_error(
-            "World::attack_player: el objetivo está fuera de rango para el ataque");
+        throw std::runtime_error("World::attack: el objetivo está fuera de rango para el ataque");
     }
 
     Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
@@ -206,7 +207,7 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
 
         if (mana_cost > 0) {
             if (attacker->get_current_mana() < mana_cost) {
-                throw std::runtime_error("World::attack_player: maná insuficiente para atacar");
+                throw std::runtime_error("World::attack: maná insuficiente para atacar");
             }
             attacker->consume_mana(mana_cost);
         }
@@ -224,7 +225,7 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
     int real_damage = 0;
     if (!evaded) {
 
-        int defense = GameFormulas::calculate_defense(*target);
+        int defense = target->get_defense();
         real_damage = std::max(0, damage - defense);
         target->receive_damage(real_damage);
 

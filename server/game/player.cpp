@@ -1,5 +1,7 @@
 #include "player.h"
 
+#include <cmath>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -21,6 +23,14 @@ Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClas
 bool Player::can_cast_magic() const {
     return p_class != PlayerClass::WARRIOR;
 }  // si no es guerrero, puede usar magia
+
+int Player::get_defense() const {
+    return GameFormulas::calculate_defense(*this);
+}
+
+bool Player::validate_attack_from(int attacker_level) const {
+    return GameFormulas::can_attack_by_level(attacker_level, this->get_level());
+}
 
 void Player::move(const Position& new_position) {
     position = new_position;
