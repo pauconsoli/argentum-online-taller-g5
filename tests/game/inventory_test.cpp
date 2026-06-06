@@ -2,14 +2,13 @@
 
 #include "common/position.h"
 #include "gtest/gtest.h"
+#include "server/game/game_config.h"
 #include "server/game/items/consumable_item.h"
 #include "server/game/items/defensive_item.h"
 #include "server/game/items/magic_weapon.h"
 #include "server/game/items/spell.h"
 #include "server/game/items/weapon.h"
 #include "server/game/player.h"
-
-#define MAX_INVENTORY_ITEMS 20  // máximo de items en el inventario para el test, hardcodeado
 
 class InventoryTest: public ::testing::Test {
  protected:
@@ -52,16 +51,17 @@ TEST_F(InventoryTest, AddMultipleItems) {
 }
 
 TEST_F(InventoryTest, AddItemWhenFull) {
-    for (int i = 0; i < MAX_INVENTORY_ITEMS; i++) {
+    int max_items = GameConfig::get_instance().get_max_inventory_items();
+    for (int i = 0; i < max_items; i++) {
         auto item = std::make_unique<Weapon>("Espada " + std::to_string(i), 5, 15, false);
         inventory.add_item(std::move(item));
     }
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
+    EXPECT_EQ(inventory.get_size(), max_items);
 
     auto extra = std::make_unique<Weapon>("Extra", 5, 15, false);
     bool result = inventory.add_item(std::move(extra));
     EXPECT_FALSE(result);
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
+    EXPECT_EQ(inventory.get_size(), max_items);
 }
 
 TEST_F(InventoryTest, EquipItemFromInventory) {
@@ -113,7 +113,8 @@ TEST_F(InventoryTest, SwapEquippedItem) {
 }
 
 TEST_F(InventoryTest, SwapWhenInventoryFull) {
-    for (int i = 0; i < MAX_INVENTORY_ITEMS - 1; i++) {
+    int max_items = GameConfig::get_instance().get_max_inventory_items();
+    for (int i = 0; i < max_items - 1; i++) {
         auto item = std::make_unique<Weapon>("Espada " + std::to_string(i), 5, 15, false);
         inventory.add_item(std::move(item));
     }
@@ -121,15 +122,15 @@ TEST_F(InventoryTest, SwapWhenInventoryFull) {
     auto sword = std::make_unique<Weapon>("Mi Espada", 5, 15, false);
     Item* sword_ptr = sword.get();
     inventory.add_item(std::move(sword));
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
+    EXPECT_EQ(inventory.get_size(), max_items);
 
     inventory.equip(*sword_ptr, player);  // se marca como equipado, sigue en inventario
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
+    EXPECT_EQ(inventory.get_size(), max_items);
 
     auto axe = std::make_unique<Weapon>("Hacha", 8, 20, false);
     bool result = inventory.add_item(std::move(axe));
     EXPECT_FALSE(result);  // no hay espacio
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
+    EXPECT_EQ(inventory.get_size(), max_items);
 }
 
 TEST_F(InventoryTest, UnequipToEmptyInventory) {
@@ -151,11 +152,12 @@ TEST_F(InventoryTest, UnequipFromEmptySlot) {
 }
 
 TEST_F(InventoryTest, UnequipWhenInventoryFull) {
-    for (int i = 0; i < MAX_INVENTORY_ITEMS; i++) {
+    int max_items = GameConfig::get_instance().get_max_inventory_items();
+    for (int i = 0; i < max_items; i++) {
         auto item = std::make_unique<Weapon>("Arma " + std::to_string(i), 5, 15, false);
         inventory.add_item(std::move(item));
     }
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);
+    EXPECT_EQ(inventory.get_size(), max_items);
 
     // Equipar el primer item (ya está en el inventario)
     Item* first_item = inventory.get_slots()[0].item.get();
@@ -165,7 +167,7 @@ TEST_F(InventoryTest, UnequipWhenInventoryFull) {
     // Desquipar simplemente desmarca el item (sigue en inventario)
     bool result = inventory.unequip(EquipmentSlot::WEAPON);
     EXPECT_TRUE(result);
-    EXPECT_EQ(inventory.get_size(), MAX_INVENTORY_ITEMS);  // el inventario sigue lleno
+    EXPECT_EQ(inventory.get_size(), max_items);  // el inventario sigue lleno
     EXPECT_FALSE(inventory.slot_has_item(EquipmentSlot::WEAPON));
 }
 
@@ -375,4 +377,31 @@ TEST_F(InventoryTest, GetEquippedItemsAfterUnequip) {
 
     auto equipped_after = inventory.get_equipped_items();
     EXPECT_EQ(equipped_after.size(), 0);
+}
+
+TEST_F(InventoryTest, EquippableItemsDoNotStack) {
+    // Agregamos dos armas completamente idénticas
+    auto sword1 = std::make_unique<Weapon>("Espada", 5, 15, false);
+    auto sword2 = std::make_unique<Weapon>("Espada", 5, 15, false);
+
+    EXPECT_TRUE(inventory.add_item(std::move(sword1)));
+    EXPECT_TRUE(inventory.add_item(std::move(sword2)));
+
+    // Como tienen un EquipmentSlot, nuestro diseño dicta que NO deben apilarse
+    EXPECT_EQ(inventory.get_size(), 2);
+    EXPECT_EQ(inventory.get_slots()[0].quantity, 1);
+    EXPECT_EQ(inventory.get_slots()[1].quantity, 1);
+}
+
+TEST_F(InventoryTest, EquipAlreadyEquippedItemDoesNotUnequip) {
+    auto sword = std::make_unique<Weapon>("Espada", 5, 15, false);
+    Item* ptr = sword.get();
+    inventory.add_item(std::move(sword));
+
+    // Equipamos y volvemos a equipar (comprobando que NO hace toggle)
+    EXPECT_TRUE(inventory.equip(*ptr, player));
+    EXPECT_TRUE(inventory.equip(*ptr, player));
+
+    EXPECT_TRUE(inventory.slot_has_item(EquipmentSlot::WEAPON));
+    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::WEAPON), ptr);
 }
