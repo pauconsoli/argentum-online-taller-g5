@@ -64,6 +64,7 @@ class Character {
     const Position& get_position() const;
 
     void set_position(const Position& new_position);
+    void set_level(int new_level);
 };
 
 #endif

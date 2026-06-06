@@ -204,12 +204,11 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
 
         int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target);
         attacker->add_experience(exp);
-        // TODO(Pau): LEVEL UP CON LA EXPERIENCIA
     }
 
     bool died = target->is_dead();
     if (died) {
-        int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker);
+        int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker, *target);
         attacker->add_experience(bonus_exp);
         // TODO(Pau): drop de oro e items del atacado
     }

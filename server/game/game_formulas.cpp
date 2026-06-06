@@ -23,6 +23,13 @@ int GameFormulas::get_random_int(int min, int max) {
     return distrib(gen);
 }
 
+float GameFormulas::get_random_float(float min, float max) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> distrib(min, max);
+    return distrib(gen);
+}
+
 // STATS
 
 // VidaMax = Constitución * FClaseVida * FRazaVida * Nivel
@@ -56,6 +63,13 @@ int GameFormulas::calculate_max_gold(const Player& player) {
     const GameConfig& config = GameConfig::get_instance();
     return static_cast<int>(config.get_gold_max_safe_base() *
                             std::pow(player.get_level(), config.get_gold_max_safe_exp()));
+}
+
+// Limite = 1000 * Nivel^1.8
+uint64_t GameFormulas::calculate_level_up_limit(int level) {
+    const GameConfig& config = GameConfig::get_instance();
+    return static_cast<uint64_t>(config.get_level_limit_base() *
+                                 std::pow(level, config.get_level_limit_exp()));
 }
 
 BaseStats GameFormulas::calculate_base_stats(PlayerRace race, PlayerClass klass) {
@@ -185,8 +199,11 @@ int GameFormulas::calculate_attack_experience_gain(const Player& attacker, const
 }
 
 // Exp = rand(0, 0.1) * VidaMaxDelOtro * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_kill_experience_gain(const Player& target) {
+int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const Player& target) {
+    const GameConfig& config = GameConfig::get_instance();
     int target_max_hp = calculate_max_hp(target);
-    int level_multiplier = std::max(target.get_level() - target.get_level() + 10, 0);
-    return static_cast<int>(get_random_int(0, 0.1) * target_max_hp * level_multiplier);
+    int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
+
+    float random_factor = get_random_float(0.0, config.get_kill_bonus_factor());
+    return static_cast<int>(random_factor * target_max_hp * level_multiplier);
 }

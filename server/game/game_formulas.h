@@ -20,6 +20,7 @@ struct BaseStats {
 class GameFormulas {
  private:
     static int get_random_int(int min, int max);
+    static float get_random_float(float min, float max);
 
  public:
     // STATS
@@ -27,6 +28,7 @@ class GameFormulas {
     static int calculate_max_hp(const Player& player);
     static int calculate_max_mana(const Player& player);
     static int calculate_max_gold(const Player& player);
+    static uint64_t calculate_level_up_limit(int level);
     static BaseStats calculate_base_stats(PlayerRace race, PlayerClass klass);
 
     // CÁLCULOS DE RECUPERACIÓN
@@ -47,7 +49,7 @@ class GameFormulas {
     static bool calculate_evasion(const Player& attacker, const Player& target);
     static int calculate_defense(const Player& target);
     static int calculate_attack_experience_gain(const Player& attacker, const Player& target);
-    static int calculate_kill_experience_gain(const Player& target);
+    static int calculate_kill_experience_gain(const Player& attacker, const Player& target);
 
     static int get_hand_combat_damage(const Player& attacker);
 };

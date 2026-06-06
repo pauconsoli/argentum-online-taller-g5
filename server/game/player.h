@@ -48,6 +48,8 @@ class Player: public Character {
 
     void add_experience(uint64_t amount);
 
+    void level_up();
+
     void start_meditating();
 
     void stop_meditating();
