@@ -66,6 +66,8 @@ class Player: public Character {
 
     Inventory& get_inventory();
 
+    const Inventory& get_inventory() const;
+
     std::vector<std::pair<EquipmentSlot, Item*>> get_equipment() const;
 
     void equip(Item& item);

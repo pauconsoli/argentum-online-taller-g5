@@ -76,7 +76,13 @@ uint64_t Player::get_experience() const {
     return experience;
 }
 
+// SOBRECARGA: una por si quiero modificar el inventario, otra solo para lectura(ej la uso en las
+// fórmulas)
 Inventory& Player::get_inventory() {
+    return *inventory;
+}
+
+const Inventory& Player::get_inventory() const {
     return *inventory;
 }
 

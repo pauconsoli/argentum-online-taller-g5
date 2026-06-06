@@ -8,7 +8,7 @@
 struct AttackResult {
     uint32_t attacker_id;
     uint32_t target_id;
-    int damage;  // 0 si lo esquivo
+    int damage;  // 0 si lo esquiva
     bool evaded;
     bool target_died;
 };

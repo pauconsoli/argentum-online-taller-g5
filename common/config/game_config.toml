@@ -126,7 +126,7 @@ kill_bonus_factor = 0.1
 
 [combat]
 critical_chance = 0.05
-dodge_threshold = 0.001
+evasion_threshold = 0.001
 newbie_max_level = 12    
 max_level_difference = 10
 
