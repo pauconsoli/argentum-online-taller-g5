@@ -161,7 +161,7 @@ int GameFormulas::calculate_damage(const Player& attacker) {
 }
 
 // Esquivar si rand(0, 1) ^ Agilidad < 0.001
-bool GameFormulas::calculate_evasion(const Player& attacker, const Player& target) {
+bool GameFormulas::calculate_evasion(const Player& target) {
     const GameConfig& config = GameConfig::get_instance();
     float evasion_threshold = config.get_evasion_threshold();
     float evade = std::pow(get_random_int(0, 1), target.get_agility());

@@ -5,8 +5,6 @@
 Weapon::Weapon(const std::string& name, int min_damage, int max_damage, bool ranged):
     Item(name), min_damage(min_damage), max_damage(max_damage), ranged(ranged) {}
 
-Weapon::~Weapon() = default;
-
 std::optional<EquipmentSlot> Weapon::get_slot() const {
     return EquipmentSlot::WEAPON;
 }

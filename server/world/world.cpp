@@ -193,7 +193,7 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
     }
 
     int damage = GameFormulas::calculate_damage(*attacker);
-    bool evaded = GameFormulas::calculate_evasion(*attacker, *target);
+    bool evaded = GameFormulas::calculate_evasion(*target);
 
     int real_damage = 0;
     if (!evaded) {

@@ -16,7 +16,7 @@ class MagicWeapon: public Weapon {
  public:
     MagicWeapon(const std::string& name, std::unique_ptr<Spell> spell, int mana_cost);
 
-    ~MagicWeapon() override;
+    ~MagicWeapon() override = default;
 
     const Spell& get_spell() const;
 
