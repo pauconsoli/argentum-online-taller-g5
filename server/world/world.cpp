@@ -173,18 +173,23 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
     Player* attacker = get_player(attacker_id);
     Player* target = get_player(target_id);
 
+    int newbie_max_level = GameConfig::get_instance().get_newbie_max_level();
+    int max_level_difference = GameConfig::get_instance().get_max_level_difference();
+
+
     if (attacker->is_dead() || target->is_dead()) {
         throw std::runtime_error("World::attack_player: jugador muerto, no se puede atacar");
     }
 
-    if (attacker->get_level() <= 12 || target->get_level() <= 12) {
+    if (attacker->get_level() <= newbie_max_level || target->get_level() <= newbie_max_level) {
         throw std::runtime_error(
-            "World::attack_player: jugadores de nivel 12 o menos no pueden atacarse entre sí");
+            "World::attack_player: nivel insuficiente para atacar o ser atacado");
     }
 
-    if (std::abs(attacker->get_level() - target->get_level()) > 10) {
+    if (std::abs(attacker->get_level() - target->get_level()) > max_level_difference) {
         throw std::runtime_error(
-            "World::attack_player: diferencia de niveles no puede ser mayor a 10");
+            "World::attack_player: diferencia de niveles no puede ser mayor a " +
+            std::to_string(max_level_difference));
     }
 
     if (!is_in_range_for_attack(attacker, target)) {
