@@ -26,6 +26,8 @@ class World {
 
     bool is_position_occupied(const Position& position) const;
 
+    bool is_in_range_for_attack(const Player* attacker, const Player* target) const;
+
  public:
     World(int width, int height);
     explicit World(WorldMap map);  // para cargar un mapa ya creado

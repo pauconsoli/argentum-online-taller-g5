@@ -1,11 +1,13 @@
 #include "world.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <utility>
 
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
+#include "server/game/items/weapon.h"
 
 // TODO(Pau): más verificaciones/excepciones/logging
 
@@ -81,6 +83,26 @@ bool World::is_position_occupied(const Position& position) const {
     return occupied[position.y][position.x];
 }
 
+bool World::is_in_range_for_attack(const Player* attacker, const Player* target) const {
+    bool is_ranged = false;
+    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
+    if (equipped_weapon) {
+        Weapon* weapon = static_cast<Weapon*>(
+            equipped_weapon);  // mismo caso que en el cálculo de daño, el item equipado en ese slot
+                               // tiene que ser un arma sí o sí
+        is_ranged = weapon->is_ranged();
+    }
+
+    if (!is_ranged) {
+        Position attacker_pos = attacker->get_position();
+        Position target_pos = target->get_position();
+        int dif_x = std::abs(attacker_pos.x - target_pos.x);
+        int dif_y = std::abs(attacker_pos.y - target_pos.y);
+        return dif_x <= 1 && dif_y <= 1;  // estoy adyacente
+    }
+    return true;  // a dist, rango ilimitado (visibilidad del objetivo)
+}
+
 // devuelve la posición de spawn para un nuevo jugador, que es la posición configurada en GameConfig
 // pero si está ocupada, da la siguiente posición libre más cercana da la siguiente posición libre
 // más cercana
@@ -145,6 +167,7 @@ void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
 
+
 // TODO(Pau): clanes y zonas seguras
 AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
     Player* attacker = get_player(attacker_id);
@@ -154,8 +177,20 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
         throw std::runtime_error("World::attack_player: jugador muerto, no se puede atacar");
     }
 
-    // checks de rango de ataque y verificaciones de niveles
+    if (attacker->get_level() <= 12 || target->get_level() <= 12) {
+        throw std::runtime_error(
+            "World::attack_player: jugadores de nivel 12 o menos no pueden atacarse entre sí");
+    }
 
+    if (std::abs(attacker->get_level() - target->get_level()) > 10) {
+        throw std::runtime_error(
+            "World::attack_player: diferencia de niveles no puede ser mayor a 10");
+    }
+
+    if (!is_in_range_for_attack(attacker, target)) {
+        throw std::runtime_error(
+            "World::attack_player: el objetivo está fuera de rango para el ataque");
+    }
 
     int damage = GameFormulas::calculate_damage(*attacker);
     bool evaded = GameFormulas::calculate_evasion(*attacker, *target);
