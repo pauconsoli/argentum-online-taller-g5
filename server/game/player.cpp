@@ -129,3 +129,13 @@ void Player::restore_mana(int amount) {
         current_mana = max_mana;
     }
 }
+
+void Player::consume_mana(int amount) {
+    if (amount <= 0 || is_dead() || !can_cast_magic()) {
+        return;
+    }
+    current_mana -= amount;
+    if (current_mana < 0) {
+        current_mana = 0;
+    }
+}

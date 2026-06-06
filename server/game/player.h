@@ -77,6 +77,8 @@ class Player: public Character {
     void set_initial_stats(int hp, int mana);
 
     void restore_mana(int amount);
+
+    void consume_mana(int amount);
 };
 
 #endif

@@ -20,7 +20,7 @@ class MagicWeapon: public Weapon {
 
     const Spell& get_spell() const;
 
-    int get_mana_cost() const;
+    int get_mana_cost() const override;
 };
 
 #endif

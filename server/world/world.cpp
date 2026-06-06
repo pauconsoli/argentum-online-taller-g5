@@ -197,6 +197,21 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
             "World::attack_player: el objetivo está fuera de rango para el ataque");
     }
 
+    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
+    if (equipped_weapon) {  // igual ver casteo
+        Weapon* weapon =
+            static_cast<Weapon*>(equipped_weapon);  // yo se que el item equipado en ese slot tiene
+                                                    // que ser un arma sí o sí
+        int mana_cost = weapon->get_mana_cost();
+
+        if (mana_cost > 0) {
+            if (attacker->get_current_mana() < mana_cost) {
+                throw std::runtime_error("World::attack_player: maná insuficiente para atacar");
+            }
+            attacker->consume_mana(mana_cost);
+        }
+    }
+
     int damage = GameFormulas::calculate_damage(*attacker);
     bool evaded = GameFormulas::calculate_evasion(*target);
 

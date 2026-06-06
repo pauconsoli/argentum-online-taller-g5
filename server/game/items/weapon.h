@@ -24,6 +24,8 @@ class Weapon: public Item {
     int get_max_damage() const;
 
     virtual bool is_ranged() const;
+
+    virtual int get_mana_cost() const;
 };
 
 #endif

@@ -24,3 +24,7 @@ int Weapon::get_max_damage() const {
 bool Weapon::is_ranged() const {
     return ranged;
 }
+
+int Weapon::get_mana_cost() const {
+    return 0;  // por defecto no consumen maná
+}
