@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "common/attack_result.h"
 #include "common/direction.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
@@ -38,6 +39,8 @@ class World {
     Position get_spawn_position() const;
 
     bool move_player(uint32_t player_id, Direction direction);
+
+    AttackResult attack_player(uint32_t attacker_id, uint32_t target_id);
 
     void update(float tick_seconds);
 

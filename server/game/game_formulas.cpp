@@ -12,7 +12,7 @@
 #include "server/game/items/weapon.h"
 
 // casteo a int porque tiene más sentido que los resultados sean enteros, pero se puede cambiar
-
+// TODO(PAu): ATAQUE CRÍTICO
 
 // UTILS
 

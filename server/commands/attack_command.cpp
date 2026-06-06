@@ -11,10 +11,8 @@ std::unique_ptr<GameUpdate> AttackCommand::execute(World& world) {
 
     if (!attacker || !target)
         return nullptr;
-    if (attacker->is_dead() || target->is_dead())
-        return nullptr;
 
-    // AttackResult result = world.attack_player(player_id, target_id);
+    AttackResult result = world.attack_player(player_id, target_id);
 
-    // return std::make_unique<AttackUpdate>(result);
+    return std::make_unique<AttackUpdate>(result);
 }

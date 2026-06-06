@@ -1,5 +1,6 @@
 #include "world.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -144,11 +145,44 @@ void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
 
+// TODO(Pau): clanes y zonas seguras
+AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
+    Player* attacker = get_player(attacker_id);
+    Player* target = get_player(target_id);
 
-// refactor futuro: para que queden bien separadas las responsabilidades, esto no tendría que
-// devolver Updates podría devolver un struct con los cambios que se hicieron (ej hp/mana
-// recuperados, personajes que murieron, etc) y el Gameloop o el Match se encargaría de convertir
-// eso en Updates para enviar a los clientes
+    if (attacker->is_dead() || target->is_dead()) {
+        throw std::runtime_error("World::attack_player: jugador muerto, no se puede atacar");
+    }
+
+    // checks de rango de ataque y verificaciones de niveles
+
+
+    int damage = GameFormulas::calculate_damage(*attacker);
+    bool evaded = GameFormulas::calculate_evasion(*attacker, *target);
+
+    int real_damage = 0;
+    if (!evaded) {
+
+        int defense = GameFormulas::calculate_defense(*target);
+        real_damage = std::max(0, damage - defense);
+        target->receive_damage(real_damage);
+
+        int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target);
+        attacker->add_experience(exp);
+        // TODO(Pau): LEVEL UP CON LA EXPERIENCIA
+    }
+
+    bool died = target->is_dead();
+    if (died) {
+        int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker);
+        attacker->add_experience(bonus_exp);
+        // TODO(Pau): drop de oro e items del atacado
+    }
+
+    return AttackResult{attacker_id, target_id, real_damage, evaded, died};
+}
+
+
 void World::update(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())

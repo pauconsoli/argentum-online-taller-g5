@@ -3,15 +3,8 @@
 
 #include <cstdint>
 
+#include "common/attack_result.h"
 #include "game_update.h"
-
-struct AttackResult {
-    uint32_t attacker_id;
-    uint32_t target_id;
-    int damage;  // 0 si lo esquiva
-    bool evaded;
-    bool target_died;
-};
 
 class AttackUpdate: public GameUpdate {
  private:
