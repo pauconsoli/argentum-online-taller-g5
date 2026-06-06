@@ -213,7 +213,13 @@ AttackResult World::attack_player(uint32_t attacker_id, uint32_t target_id) {
     }
 
     int damage = GameFormulas::calculate_damage(*attacker);
-    bool evaded = GameFormulas::calculate_evasion(*target);
+    bool is_critical = GameFormulas::calculate_critical_attack();
+
+    if (is_critical) {
+        damage *= 2;
+    }
+
+    bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
 
     int real_damage = 0;
     if (!evaded) {

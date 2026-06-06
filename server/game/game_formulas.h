@@ -46,6 +46,7 @@ class GameFormulas {
     // ATAQUE
 
     static int calculate_damage(const Player& attacker);
+    static bool calculate_critical_attack();
     static bool calculate_evasion(const Player& target);
     static int calculate_defense(const Player& target);
     static int calculate_attack_experience_gain(const Player& attacker, const Player& target);

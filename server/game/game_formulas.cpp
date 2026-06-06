@@ -12,7 +12,6 @@
 #include "server/game/items/weapon.h"
 
 // casteo a int porque tiene más sentido que los resultados sean enteros, pero se puede cambiar
-// TODO(PAu): ATAQUE CRÍTICO
 
 // UTILS
 
@@ -144,6 +143,12 @@ int GameFormulas::get_hand_combat_damage(const Player& attacker) {
         attacker.get_strength());  // daño base por combate sin arma, se puede ajustar
 }
 
+// Crítico si rand(0, 1) < ProbCritico
+bool GameFormulas::calculate_critical_attack() {
+    const GameConfig& config = GameConfig::get_instance();
+    return get_random_float(0.0, 1.0) < config.get_critical_chance();
+}
+
 // Daño = Fuerza * rand(DañoArmaMin, DañoArmaMax)
 int GameFormulas::calculate_damage(const Player& attacker) {
     Item* item = attacker.get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
@@ -155,7 +160,8 @@ int GameFormulas::calculate_damage(const Player& attacker) {
     int min_dmg = weapon ? weapon->get_min_damage() : get_hand_combat_damage(attacker);
     int max_dmg = weapon ? weapon->get_max_damage() : get_hand_combat_damage(attacker);
 
-    int weapon_damage = get_random_int(min_dmg, max_dmg);
+    int weapon_damage =
+        get_random_int(min_dmg, max_dmg);  // ver si usar el get_random_int o get_random_float
 
     return attacker.get_strength() * weapon_damage;
 }
@@ -164,7 +170,7 @@ int GameFormulas::calculate_damage(const Player& attacker) {
 bool GameFormulas::calculate_evasion(const Player& target) {
     const GameConfig& config = GameConfig::get_instance();
     float evasion_threshold = config.get_evasion_threshold();
-    float evade = std::pow(get_random_int(0, 1), target.get_agility());
+    float evade = std::pow(get_random_float(0.0, 1.0), target.get_agility());
     return evade < evasion_threshold;
 }
 
@@ -179,8 +185,10 @@ int GameFormulas::calculate_defense(const Player& target) {
             DefensiveItem* defensive_item = static_cast<DefensiveItem*>(
                 item);  // ya sé que el item equipado ahí va a ser un item defensivo si o si, lo
                         // garantiza mi diseño
-            total_defense += get_random_int(defensive_item->get_min_defense(),
-                                            defensive_item->get_max_defense());
+            total_defense += get_random_int(
+                defensive_item->get_min_defense(),
+                defensive_item
+                    ->get_max_defense());  // ver si usar el get_random_int o get_random_float
         }
     };
 
