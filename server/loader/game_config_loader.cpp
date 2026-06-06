@@ -107,7 +107,7 @@ void GameConfigLoader::load(const std::string& config_path) {
     if (!combat)
         throw std::runtime_error("game_config.toml: falta la sección [combat]");
     gc.critical_chance = require_float(*combat, "combat", "critical_chance");
-    gc.dodge_threshold = require_float(*combat, "combat", "dodge_threshold");
+    gc.evasion_threshold = require_float(*combat, "combat", "evasion_threshold");
     gc.newbie_max_level = require_int(*combat, "combat", "newbie_max_level");
     gc.max_level_difference = require_int(*combat, "combat", "max_level_difference");
 

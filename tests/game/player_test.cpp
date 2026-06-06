@@ -130,3 +130,43 @@ TEST_F(PlayerTest, CanDieAndBecomeGhost) {
     mage.receive_damage(100);
     EXPECT_TRUE(mage.is_dead());
 }
+
+TEST_F(PlayerTest, SetInitialStats) {
+    mage.set_initial_stats(200, 150);
+    EXPECT_EQ(mage.get_max_hp(), 200);
+    EXPECT_EQ(mage.get_current_hp(), 200);
+    EXPECT_EQ(mage.get_max_mana(), 150);
+    EXPECT_EQ(mage.get_current_mana(), 150);
+}
+
+TEST_F(PlayerTest, RestoreAndConsumeMana) {
+    mage.set_initial_stats(100, 100);
+    mage.consume_mana(30);
+    EXPECT_EQ(mage.get_current_mana(), 70);
+
+    mage.consume_mana(100);
+    EXPECT_EQ(mage.get_current_mana(), 0);
+
+    mage.restore_mana(20);
+    EXPECT_EQ(mage.get_current_mana(), 20);
+
+    mage.restore_mana(100);
+    EXPECT_EQ(mage.get_current_mana(), 100);
+}
+
+TEST_F(PlayerTest, WarriorCannotRestoreOrConsumeMana) {
+    warrior.set_initial_stats(100, 0);
+    warrior.restore_mana(10);
+    EXPECT_EQ(warrior.get_current_mana(), 0);
+    warrior.consume_mana(10);
+    EXPECT_EQ(warrior.get_current_mana(), 0);
+}
+
+TEST_F(PlayerTest, ValidateAttackFrom) {
+    // mage nivel 5 (newbie)
+    EXPECT_FALSE(mage.validate_attack_from(15));
+
+    mage.set_level(20);
+    EXPECT_TRUE(mage.validate_attack_from(25));   // Válido
+    EXPECT_FALSE(mage.validate_attack_from(35));  // Diferencia de nivel > 10
+}

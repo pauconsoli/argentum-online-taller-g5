@@ -14,6 +14,7 @@ target_sources(taller_server
     commands/move_command.cpp
     commands/select_race_class_command.cpp
     commands/meditate_command.cpp
+    commands/attack_command.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp

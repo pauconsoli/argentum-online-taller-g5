@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "common/attack_result.h"
 #include "common/direction.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
@@ -25,6 +26,8 @@ class World {
 
     bool is_position_occupied(const Position& position) const;
 
+    bool is_in_range_for_attack(const Player* attacker, const Character* target) const;
+
  public:
     World(int width, int height);
     explicit World(WorldMap map);  // para cargar un mapa ya creado
@@ -35,9 +38,13 @@ class World {
     std::vector<Player*> get_players();
     bool player_exists(uint32_t player_id) const;
 
+    Character* get_character(uint32_t id);
+
     Position get_spawn_position() const;
 
-    bool move_player(uint32_t player_id, Direction direction);
+    void move_player(uint32_t player_id, Direction direction);
+
+    AttackResult attack(uint32_t attacker_id, uint32_t target_id);
 
     void update(float tick_seconds);
 
