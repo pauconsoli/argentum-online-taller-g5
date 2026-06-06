@@ -11,7 +11,6 @@ class Spell;
 class MagicWeapon: public Weapon {
  private:
     std::unique_ptr<Spell> spell;
-
     int mana_cost;
 
  public:
