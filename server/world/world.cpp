@@ -9,8 +9,6 @@
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
 
-// TODO(Pau): más verificaciones/excepciones/logging
-
 World::World(int width, int height):
     map(width, height), occupied(height, std::vector<bool>(width, false)) {}
 
@@ -18,15 +16,34 @@ World::World(WorldMap world_map):
     map(std::move(world_map)),
     occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {}
 
-void World::add_player(std::unique_ptr<Player> player) {
-    Position pos = player->get_position();  // obtengo pos
 
-    if (is_position_occupied(pos)) {
-        return;  // acá iría una excepción
+void World::add_player(std::unique_ptr<Player> player) {
+    if (!player) {
+        throw std::invalid_argument("World::add_player: intento de agregar un jugador nulo");
     }
 
-    occupied[pos.y][pos.x] = true;                  // marco la posición como ocupada
-    players[player->get_id()] = std::move(player);  // agrego el player al map de players
+    uint32_t id = player->get_id();
+    if (player_exists(id)) {
+        throw std::runtime_error("World::add_player: ya existe un jugador con ese ID");
+    }
+
+    Position pos = player->get_position();  // obtengo pos
+
+    if (!map.is_valid_position(pos)) {
+        throw std::out_of_range("World::add_player: la posición de spawn es inválida");
+    }
+
+    if (map.is_position_blocked(pos)) {
+        throw std::runtime_error(
+            "World::add_player: la posición de spawn está bloqueada por el terreno");
+    }
+
+    if (is_position_occupied(pos)) {
+        throw std::runtime_error("World::add_player: la posición de spawn está ocupada");
+    }
+
+    occupied[pos.y][pos.x] = true;    // marco la posición como ocupada
+    players[id] = std::move(player);  // agrego el player al map de players
 }
 
 void World::remove_player(uint32_t player_id) {
@@ -139,6 +156,9 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
+
+// REFACTOR FUTURO.
+// TODO(Pau): que se use Character* para poder usarlo para NPCs cuando existan
 void World::move_player(uint32_t player_id, Direction direction) {
     auto it = players.find(player_id);
     if (it == players.end()) {

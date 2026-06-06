@@ -91,7 +91,7 @@ class ConfigEnvironment: public ::testing::Environment {
         config.class_bonus_constitution[PlayerClass::WARRIOR] = 3;
 
         // World
-        config.spawn_position = Position{5, 5};
+        config.spawn_position = Position{11, 5};
         config.initial_player_level = 1;
 
         // Inventory
