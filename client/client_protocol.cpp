@@ -17,6 +17,7 @@
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/spawned_update.h"
 
 ClientProtocol::ClientProtocol(Socket& socket): skt(socket) {}
 
@@ -191,6 +192,14 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_player_joined();
         case ServerOpcode::PLAYER_LEFT:
             return recv_player_left();
+        case ServerOpcode::PLAYER_SPAWNED:
+            return recv_player_spawned();
+        case ServerOpcode::ATTACKED:
+            return recv_attacked();
+        case ServerOpcode::DEATH:
+            return recv_death();
+        case ServerOpcode::INVENTORY:
+            return recv_inventory();
         case ServerOpcode::SNAPSHOT:
             return recv_snapshot();
         case ServerOpcode::MOVED:
@@ -246,6 +255,49 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     uint32_t pid = recv_u32();
     return std::make_unique<PlayerLeftUpdate>(pid);
+}
+
+
+// Cuando Chiari conecte SDL, estos métodos deben construir los GameUpdate
+// concretos (AttackUpdate, DeathUpdate, InventoryUpdate).
+std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
+    recv_u32();  // attacker_id
+    recv_u32();  // target_id
+    recv_i32();  // damage
+    recv_u8();   // evaded
+    recv_u8();   // target_died
+    return nullptr;
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
+    recv_u32();  // dead_id
+    recv_u32();  // killer_id
+    return nullptr;
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
+    recv_u32();              // target_player_id
+    uint16_t n = recv_u16();
+    for (uint16_t i = 0; i < n; ++i) {
+        recv_string();  // item_name
+        recv_u32();     // quantity
+        recv_u8();      // is_equipped
+    }
+    recv_u64();  // gold
+    return nullptr;
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_player_spawned() {
+    // TODO Chiari: cuando integres SDL, quizá quieras un SpawnedUpdate
+    // verdadero del lado cliente con info adicional. Por ahora basta con
+    // que el server pueda mandar el opcode sin que el cliente se queje.
+    uint32_t pid = recv_u32();
+    std::string nick = recv_string();
+    uint8_t race = recv_u8();
+    uint8_t klass = recv_u8();
+    int32_t x = recv_i32();
+    int32_t y = recv_i32();
+    return std::make_unique<PlayerJoinedUpdate>(pid, std::move(nick), race, klass, Position{x, y});
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {

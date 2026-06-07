@@ -38,8 +38,12 @@ class ServerProtocol {
     void send_match_joined(const GameUpdate& update);
     void send_player_joined(const GameUpdate& update);
     void send_player_left(const GameUpdate& update);
+    void send_player_spawned(const GameUpdate& update);
     void send_snapshot(const GameUpdate& update);
     void send_moved(const GameUpdate& update);
+    void send_attacked(const GameUpdate& update);
+    void send_death(const GameUpdate& update);
+    void send_inventory(const GameUpdate& update);
     void send_error(const GameUpdate& update);
 
  public:

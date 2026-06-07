@@ -1,15 +1,16 @@
 #ifndef QT_MAIN_WINDOW_H
 #define QT_MAIN_WINDOW_H
 
-#include <cstdint>
 #include <memory>
 
+#include <QCloseEvent>
 #include <QMainWindow>
 #include <QString>
 
 #include "client/client.h"
 
 class QStackedWidget;
+class QLabel;
 
 class ConnectionWidget;
 class LobbyWidget;
@@ -25,6 +26,9 @@ class MainWindow: public QMainWindow {
  signals:
     //void gameStartRequested(std::unique_ptr<Client> client); => me rompe cuando compilo
 
+ protected:
+    void closeEvent(QCloseEvent* event) override;
+
  private slots:
     void handle_connect_requested(const QString& host, const QString& port,
                                   const QString& nick);
@@ -34,6 +38,8 @@ class MainWindow: public QMainWindow {
     void handle_join_match_requested(uint32_t match_id);
     void handle_confirm_race_class(uint8_t race, uint8_t klass);
 
+    void handle_logout_requested();
+    void handle_back_to_lobby_requested();
 
  private:
     enum Page { PAGE_CONNECTION = 0, PAGE_LOBBY = 1, PAGE_RACE_CLASS = 2 };
@@ -44,9 +50,14 @@ class MainWindow: public QMainWindow {
     RaceClassWidget* race_class_page;
 
     std::unique_ptr<Client> client;
+    QString current_nick; 
+
+    QLabel* status_user_label; 
 
     void show_error_in_current_page(const QString& msg);
     void connect_client_signals();
+    void update_status_bar();
+    void teardown_session();
 };
 
 #endif

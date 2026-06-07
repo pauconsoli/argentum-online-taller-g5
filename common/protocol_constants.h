@@ -31,11 +31,13 @@ constexpr uint8_t MATCH_JOINED = 0x84;
 constexpr uint8_t SNAPSHOT = 0x85;
 constexpr uint8_t PLAYER_JOINED = 0x86;
 constexpr uint8_t PLAYER_LEFT = 0x87;
+constexpr uint8_t PLAYER_SPAWNED = 0x88;  // jugador eligió raza/clase y se spawneó
 
 constexpr uint8_t MOVED = 0x90;
 constexpr uint8_t STATS = 0x91;
 constexpr uint8_t DEATH = 0x92;
 constexpr uint8_t REVIVE = 0x93;
+constexpr uint8_t ATTACKED = 0x94;
 
 constexpr uint8_t INVENTORY = 0xA0;
 
@@ -50,6 +52,6 @@ constexpr uint8_t MATCH_NOT_FOUND = 0x02;
 constexpr uint8_t MATCH_FULL = 0x03;
 constexpr uint8_t COMMAND_NOT_ALLOWED = 0x04;
 constexpr uint8_t INVALID_ARG = 0x05;
-}  // namespace ProtocolError
+}
 
 #endif

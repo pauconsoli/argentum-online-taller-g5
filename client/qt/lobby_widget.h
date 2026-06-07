@@ -28,11 +28,13 @@ class LobbyWidget: public QWidget {
     void refreshRequested();
     void createMatchRequested(const QString& name, uint8_t max_players);
     void joinMatchRequested(uint32_t match_id);
+    void logoutRequested();
 
  private slots:
     void on_refresh_clicked();
     void on_create_clicked();
     void on_join_clicked();
+    void on_logout_clicked();
 
  private:
     QTableWidget* table;
@@ -41,6 +43,7 @@ class LobbyWidget: public QWidget {
     QLineEdit* new_name_input;
     QSpinBox* new_max_input;
     QPushButton* create_button;
+    QPushButton* logout_button;
     QLabel* status_label;
 };
 

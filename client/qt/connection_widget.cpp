@@ -1,9 +1,12 @@
 #include "connection_widget.h"
 
+#include <QFont>
 #include <QFormLayout>
+#include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 ConnectionWidget::ConnectionWidget(QWidget* parent):
@@ -11,30 +14,92 @@ ConnectionWidget::ConnectionWidget(QWidget* parent):
         host_input(new QLineEdit("127.0.0.1", this)),
         port_input(new QLineEdit("47474", this)),
         nick_input(new QLineEdit(this)),
-        connect_button(new QPushButton(tr("Conectar"), this)),
-        error_label(new QLabel(this)) {
+        connect_button(new QPushButton(tr("ENTRAR"), this)),
+        error_label(new QLabel(this)),
+        options_toggle(new QToolButton(this)),
+        options_panel(new QFrame(this)) {
 
-    nick_input->setPlaceholderText(tr("nombre de jugador"));
+    auto* title = new QLabel(tr("ARGENTUM ONLINE"), this);
+    auto* subtitle = new QLabel(tr("— G5 —"), this);
+    title->setAlignment(Qt::AlignCenter);
+    subtitle->setAlignment(Qt::AlignCenter);
+    {
+        QFont f = title->font();
+        f.setPointSize(36);
+        f.setBold(true);
+        title->setFont(f);
+        title->setStyleSheet("color: #f0c870; letter-spacing: 4px;");
+    }
+    {
+        QFont f = subtitle->font();
+        f.setPointSize(14);
+        f.setItalic(true);
+        subtitle->setFont(f);
+        subtitle->setStyleSheet("color: #c89b3c;");
+    }
 
-    error_label->setStyleSheet("color: #c00;");
+    // ===== Campo nick =====
+    nick_input->setPlaceholderText(tr("tu nombre..."));
+    nick_input->setAlignment(Qt::AlignCenter);
+    nick_input->setMinimumHeight(40);
+    {
+        QFont f = nick_input->font();
+        f.setPointSize(18);
+        nick_input->setFont(f);
+    }
+
+    connect_button->setMinimumHeight(50);
+    {
+        QFont f = connect_button->font();
+        f.setPointSize(18);
+        f.setBold(true);
+        connect_button->setFont(f);
+    }
+
+    error_label->setStyleSheet("color: #ff6b6b; font-weight: bold;");
+    error_label->setAlignment(Qt::AlignCenter);
     error_label->setVisible(false);
     error_label->setWordWrap(true);
 
-    auto* form = new QFormLayout;
-    form->addRow(tr("Host"), host_input);
-    form->addRow(tr("Puerto"), port_input);
-    form->addRow(tr("Nick"), nick_input);
+    options_toggle->setText(tr("  Opciones de conexión"));
+    options_toggle->setCheckable(true);
+    options_toggle->setChecked(false);
+    options_toggle->setArrowType(Qt::RightArrow);
+    options_toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    options_toggle->setStyleSheet(
+            "QToolButton { background: transparent; border: none; color: #c89b3c; }");
+
+    options_panel->setFrameShape(QFrame::StyledPanel);
+    options_panel->setVisible(false);
+    auto* opt_form = new QFormLayout(options_panel);
+    opt_form->addRow(tr("Host:"), host_input);
+    opt_form->addRow(tr("Puerto:"), port_input);
+
+    connect(options_toggle, &QToolButton::toggled, this,
+            &ConnectionWidget::on_toggle_advanced_options);
 
     auto* root = new QVBoxLayout(this);
-    root->addStretch();
-    root->addLayout(form);
+    root->addStretch(2);
+    root->addWidget(title);
+    root->addWidget(subtitle);
+    root->addSpacing(40);
+    root->addWidget(nick_input);
+    root->addSpacing(12);
     root->addWidget(connect_button);
     root->addWidget(error_label);
-    root->addStretch();
+    root->addStretch(1);
+    root->addWidget(options_toggle, 0, Qt::AlignLeft);
+    root->addWidget(options_panel);
+    root->setContentsMargins(80, 40, 80, 40);
 
     connect(connect_button, &QPushButton::clicked, this, &ConnectionWidget::on_connect_clicked);
     // Enter en el nick también dispara connect.
     connect(nick_input, &QLineEdit::returnPressed, this, &ConnectionWidget::on_connect_clicked);
+}
+
+void ConnectionWidget::on_toggle_advanced_options(bool checked) {
+    options_panel->setVisible(checked);
+    options_toggle->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
 }
 
 void ConnectionWidget::on_connect_clicked() {
@@ -42,8 +107,12 @@ void ConnectionWidget::on_connect_clicked() {
     const QString port = port_input->text().trimmed();
     const QString nick = nick_input->text().trimmed();
 
-    if (host.isEmpty() || port.isEmpty() || nick.isEmpty()) {
-        show_error(tr("Completá host, puerto y nick."));
+    if (nick.isEmpty()) {
+        show_error(tr("Ingresá tu nombre."));
+        return;
+    }
+    if (host.isEmpty() || port.isEmpty()) {
+        show_error(tr("Host o puerto inválidos. Mirá las opciones de conexión."));
         return;
     }
 
