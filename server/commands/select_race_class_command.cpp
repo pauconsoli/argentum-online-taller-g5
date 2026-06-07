@@ -26,7 +26,17 @@ std::vector<std::unique_ptr<GameUpdate>> SelectRaceClassCommand::execute(World& 
         auto player = GameFormulas::create_initial_player(player_id, nick, race, klass, spawn);
 
         uint64_t initial_gold = player->get_gold();
-        std::vector<InventorySlotData> items_data;  // vacío al spawnear
+
+        // inventario inicial (vacío) --> estructura de red para el cliente
+        std::vector<InventorySlotData> items_data;
+        for (const auto& slot : player->get_inventory().get_slots()) {
+            if (slot.item) {
+                items_data.push_back({slot.item->get_name(), static_cast<uint32_t>(slot.quantity),
+                                      slot.equipped_slot.has_value()});
+            } else {
+                items_data.push_back({"", 0, false});
+            }
+        }
 
         world.add_player(std::move(player));
 
