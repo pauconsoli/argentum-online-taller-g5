@@ -20,6 +20,7 @@
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
+#include "common/updates/world_map_update.h"
 
 ClientProtocol::ClientProtocol(Socket& socket): skt(socket) {}
 
@@ -228,6 +229,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_player_left();
         case ServerOpcode::PLAYER_SPAWNED:
             return recv_player_spawned();
+        case ServerOpcode::WORLD_MAP:
+            return recv_world_map();
         case ServerOpcode::ATTACKED:
             return recv_attacked();
         case ServerOpcode::DEATH:
@@ -333,6 +336,21 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_spawned() {
     int32_t x = recv_i32();
     int32_t y = recv_i32();
     return std::make_unique<PlayerJoinedUpdate>(pid, std::move(nick), race, klass, Position{x, y});
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_world_map() {
+    uint16_t width = recv_u16();
+    uint16_t height = recv_u16();
+    const size_t total = static_cast<size_t>(width) * static_cast<size_t>(height);
+    std::vector<MapCellData> cells;
+    cells.reserve(total);
+    for (size_t i = 0; i < total; ++i) {
+        MapCellData c;
+        c.terrain_type = recv_u8();
+        c.blocking = (recv_u8() != 0);
+        cells.push_back(c);
+    }
+    return std::make_unique<WorldMapUpdate>(width, height, std::move(cells));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {

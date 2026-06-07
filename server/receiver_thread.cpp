@@ -145,6 +145,13 @@ void ReceiverThread::handle_join_match() {
     player_conn.set_state(PlayerConnection::State::IN_MATCH);
     player_conn.enqueue_update(
         std::make_unique<MatchJoinedUpdate>(match_id, player_conn.get_player_id()));
+
+    try {
+        server_ops.send_world_map_to(player_conn);
+    } catch (const std::exception& e) {
+        std::cerr << "[RECEIVER] No se pudo mandar el mapa a "
+                  << player_conn.get_nick() << ": " << e.what() << "\n";
+    }
 }
 
 void ReceiverThread::handle_select_race_class() {

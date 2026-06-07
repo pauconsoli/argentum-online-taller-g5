@@ -48,6 +48,8 @@ class World {
     World(int width, int height);
     explicit World(WorldMap map);  // para cargar un mapa ya creado
 
+    const WorldMap& get_map() const { return map; }
+
     void add_player(std::unique_ptr<Player> player);
     void remove_player(uint32_t player_id);
     Player* get_player(uint32_t player_id);

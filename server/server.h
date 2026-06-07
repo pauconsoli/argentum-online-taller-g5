@@ -76,6 +76,7 @@ class Server: public ServerOps {
     Match* join_match(uint32_t match_id, PlayerConnection& conn) override;
     void leave_match(PlayerConnection& conn) override;
     void push_command_to_match(uint32_t match_id, std::unique_ptr<ClientCommand> cmd) override;
+    void send_world_map_to(PlayerConnection& conn) override;
     void disconnect(PlayerConnection& conn) override;
 
     ~Server() override;

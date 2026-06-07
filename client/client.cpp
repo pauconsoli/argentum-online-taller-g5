@@ -4,6 +4,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/world_map_update.h"
 
 #include <iostream>
 #include <memory>
@@ -68,6 +69,12 @@ class ClientReceiverThread: public Thread {
                 case UpdateType::ATTACKED: {
                     auto* u = static_cast<AttackUpdate*>(update.get());
                     emit client->attackReceived(u->get_result());
+                    break;
+                }
+
+                case UpdateType::WORLD_MAP: {
+                    auto* u = static_cast<WorldMapUpdate*>(update.get());
+                    emit client->worldMapReceived(u->width, u->height, u->cells);
                     break;
                 }
 

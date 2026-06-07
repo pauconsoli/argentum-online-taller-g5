@@ -13,6 +13,7 @@
 #include <QMetaType>
 #include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/world_map_update.h"
 
 #include "main_window.h"
 
@@ -21,6 +22,8 @@ int main(int argc, char* argv[]) {
     qRegisterMetaType<std::vector<MatchInfo>>("std::vector<MatchInfo>");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<AttackResult>("AttackResult");
+    qRegisterMetaType<std::vector<MapCellData>>("std::vector<MapCellData>");
+    qRegisterMetaType<uint16_t>("uint16_t");
     app.setStyleSheet(R"(
         QMainWindow {
             background-color: #2b2118;
