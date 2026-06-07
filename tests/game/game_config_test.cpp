@@ -107,6 +107,7 @@ class ConfigEnvironment: public ::testing::Environment {
         config.level_limit_base = 1000.0f;
         config.level_limit_exp = 1.8f;
         config.kill_bonus_factor = 0.1f;
+        config.death_exp_loss_mult = 0.4f;
 
         // Combat
         config.critical_chance = 0.05f;
@@ -239,6 +240,7 @@ TEST_F(GameConfigTest, RecoveryAndLimits) {
     EXPECT_FLOAT_EQ(config.get_level_limit_base(), 1000.0f);
     EXPECT_FLOAT_EQ(config.get_level_limit_exp(), 1.8f);
     EXPECT_FLOAT_EQ(config.get_kill_bonus_factor(), 0.1f);
+    EXPECT_FLOAT_EQ(config.get_death_exp_loss_mult(), 0.4f);
 }
 
 TEST_F(GameConfigTest, ClassMeditationFactor) {
