@@ -11,6 +11,7 @@
 
 #include <QApplication>
 #include <QMetaType>
+#include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
 
 #include "main_window.h"
@@ -19,6 +20,7 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     qRegisterMetaType<std::vector<MatchInfo>>("std::vector<MatchInfo>");
     qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<AttackResult>("AttackResult");
     app.setStyleSheet(R"(
         QMainWindow {
             background-color: #2b2118;

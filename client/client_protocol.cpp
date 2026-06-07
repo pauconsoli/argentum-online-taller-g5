@@ -6,8 +6,10 @@
 
 #include <arpa/inet.h>
 
+#include "common/attack_result.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
+#include "common/updates/attack_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
@@ -163,6 +165,38 @@ void ClientProtocol::send_move(Direction dir) {
     }
 }
 
+void ClientProtocol::send_attack(uint32_t target_id) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::ATTACK);
+    put_u32(buf, target_id);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_attack: server closed connection");
+    }
+}
+
+void ClientProtocol::send_meditate() {
+    uint8_t op = ClientOpcode::MEDITATE;
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_meditate: server closed connection");
+    }
+}
+
+void ClientProtocol::send_pick_up() {
+    uint8_t op = ClientOpcode::PICK_UP;
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_pick_up: server closed connection");
+    }
+}
+
+void ClientProtocol::send_drop_item(uint8_t slot_index) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::DROP_ITEM);
+    put_u8(buf, slot_index);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_drop_item: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
@@ -261,12 +295,13 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
 // Cuando Chiari conecte SDL, estos métodos deben construir los GameUpdate
 // concretos (AttackUpdate, DeathUpdate, InventoryUpdate).
 std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
-    recv_u32();  // attacker_id
-    recv_u32();  // target_id
-    recv_i32();  // damage
-    recv_u8();   // evaded
-    recv_u8();   // target_died
-    return nullptr;
+    AttackResult r;
+    r.attacker_id = recv_u32();
+    r.target_id = recv_u32();
+    r.damage = recv_i32();
+    r.evaded = (recv_u8() != 0);
+    r.target_died = (recv_u8() != 0);
+    return std::make_unique<AttackUpdate>(r);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {

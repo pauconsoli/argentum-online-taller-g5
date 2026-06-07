@@ -64,6 +64,10 @@ class ServerProtocol {
     RaceClassPayload recv_select_race_class_payload();
 
     std::unique_ptr<ClientCommand> recv_move_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_attack_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_meditate_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_pick_up_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_drop_item_payload(uint32_t player_id);
 
     void send_update(const GameUpdate& update);
 
