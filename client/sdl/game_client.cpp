@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "client_map.h"
+#include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
@@ -13,6 +14,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     window(nullptr),
     renderer(nullptr),
     hud(nullptr),
+    mini_chat(nullptr),
     sprite_manager(nullptr),
     client(host, port),
     camera(width, height),
@@ -36,6 +38,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     sprite_manager->load("head", "client/assets/head.png");
     sprite_manager->load_terrain_textures("client/assets");
     hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
+    mini_chat = new MiniChat(renderer->get_sdl_renderer(), "client/assets/font.ttf");
 
     client.start();
 }
@@ -44,6 +47,7 @@ GameClient::~GameClient() {
     client.stop();
     client.join();
     delete hud;
+    delete mini_chat;
     delete sprite_manager;
     delete renderer;
     SDL_DestroyWindow(window);
@@ -129,6 +133,10 @@ void GameClient::run() {
 
     ClientMap client_map = build_sample_client_map();
 
+    // PRUEBA DE MINI CHAT
+    mini_chat->add_message("Minichat funcionando");
+    mini_chat->add_message("segundo mensaje de prueba");
+
 
     int direction = 0;
     int current_frame = 0;
@@ -176,7 +184,17 @@ void GameClient::run() {
 
         auto& update_queue = client.get_received_updates();
         std::unique_ptr<GameUpdate> update;
-        while (update_queue.try_pop(update)) {}
+        while (update_queue.try_pop(update)) {
+            switch (update->get_type()) {
+                case UpdateType::ERROR: {
+                    const auto& eu = static_cast<const ErrorUpdate&>(*update);
+                    mini_chat->add_message("Error: " + eu.detail);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
 
         if (moving) {
             Uint32 now = SDL_GetTicks();
@@ -235,6 +253,7 @@ void GameClient::run() {
                              head_frame_y, head_frame_w, head_frame_h, head_x, head_y);
 
         hud->draw(100, 100, 50, 100, 1);
+        mini_chat->draw();
         renderer->present();
 
         Uint32 elapsed = SDL_GetTicks() - frame_start;

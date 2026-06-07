@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "hud.h"
 #include "input_handler.h"
+#include "mini_chat.h"
 #include "renderer.h"
 #include "sprite_manager.h"
 
@@ -18,6 +19,7 @@ class GameClient {
     SDL_Window* window;
     Renderer* renderer;
     Hud* hud;
+    MiniChat* mini_chat;
     SpriteManager* sprite_manager;
     Client client;
     InputHandler input_handler;
