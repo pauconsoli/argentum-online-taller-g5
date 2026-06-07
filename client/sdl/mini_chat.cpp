@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-MiniChat::MiniChat(SDL_Renderer* renderer, const std::string& font_path):
-    sdl_renderer(renderer), font(nullptr) {
+MiniChat::MiniChat(SDL_Renderer* renderer, const std::string& font_path, int win_width):
+    sdl_renderer(renderer), font(nullptr), window_width(win_width) {
     if (TTF_Init() < 0) {
         throw std::runtime_error(TTF_GetError());
     }
@@ -19,7 +19,7 @@ MiniChat::~MiniChat() {
 }
 
 void MiniChat::draw_text(const std::string& text, int x, int y, SDL_Color color) {
-    SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), color);
+    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), color);
     if (surface == nullptr)
         return;
 
@@ -43,12 +43,21 @@ void MiniChat::add_message(const std::string& msg) {
 }
 
 void MiniChat::draw() {
+    if (messages.empty())
+        return;
+
     SDL_Color color = {255, 220, 100, 255};
-    constexpr int x = 10;
-    constexpr int line_height = 18;
-    int y = 80;
+    int strip_w = window_width * 6 / 10;
+    int strip_h = static_cast<int>(messages.size()) * LINE_HEIGHT + 2 * PADDING;
+
+    SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 180);
+    SDL_Rect strip = {0, 0, strip_w, strip_h};
+    SDL_RenderFillRect(sdl_renderer, &strip);
+
+    int y = PADDING;
     for (const auto& msg : messages) {
-        draw_text(msg, x, y, color);
-        y += line_height;
+        draw_text(msg, 10, y, color);
+        y += LINE_HEIGHT;
     }
 }

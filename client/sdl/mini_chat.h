@@ -10,14 +10,17 @@
 class MiniChat {
  private:
     static constexpr int MAX_MESSAGES = 8;
+    static constexpr int LINE_HEIGHT = 18;
+    static constexpr int PADDING = 5;
     SDL_Renderer* sdl_renderer;
     TTF_Font* font;
+    int window_width;
     std::deque<std::string> messages;
 
     void draw_text(const std::string& text, int x, int y, SDL_Color color);
 
  public:
-    MiniChat(SDL_Renderer* renderer, const std::string& font_path);
+    MiniChat(SDL_Renderer* renderer, const std::string& font_path, int win_width);
     ~MiniChat();
 
     MiniChat(const MiniChat&) = delete;
