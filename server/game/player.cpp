@@ -67,11 +67,16 @@ bool Player::remove_gold(uint64_t amount) {
     return true;
 }
 
+// no se puede perder más experiencia que la que se tiene, ni menos que el piso del nivel (o sea
+// tope del nivel anterior)
 void Player::remove_experience(uint64_t amount) {
-    if (experience > amount) {
+    uint64_t level_floor =
+        (get_level() > 1) ? GameFormulas::calculate_level_up_limit(get_level() - 1) : 0;
+
+    if (experience > amount && (experience - amount) >= level_floor) {
         experience -= amount;
     } else {
-        experience = 0;
+        experience = level_floor;
     }
 }
 

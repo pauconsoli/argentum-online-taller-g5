@@ -15,7 +15,7 @@
 #include "server/game/player.h"
 #include "world_map.h"
 
-struct GroundItem {
+struct GroundItem {  // por ahora así, no se si es lo mejor
     uint64_t gold = 0;
     std::unique_ptr<Item> item = nullptr;
     int quantity = 0;
@@ -58,7 +58,7 @@ class World {
 
     Position get_spawn_position() const;
 
-    void drop_loot(const Position& center, Loot loot);
+    void drop_loot_in_world(const Position& center, Loot loot);
 
     void move_player(uint32_t player_id, Direction direction);
 

@@ -158,6 +158,7 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
+// no considera si esta ocupada porque el jugador se para sobre los items del suelo
 Position World::find_closest_free_ground(const Position& start) const {
     std::queue<Position> q;
     std::set<Position> visited;
@@ -188,7 +189,7 @@ Position World::find_closest_free_ground(const Position& start) const {
     throw std::runtime_error("World::find_closest_free_ground: no hay espacio libre en el suelo");
 }
 
-void World::drop_loot(const Position& center, Loot loot) {
+void World::drop_loot_in_world(const Position& center, Loot loot) {
     if (loot.dropped_gold > 0) {
         try {
             Position free_pos = find_closest_free_ground(center);
@@ -241,7 +242,7 @@ void World::handle_target_death(Player* attacker, Character* target) {
     attacker->add_experience(bonus_exp);
 
     Loot loot = target->drop_loot();
-    drop_loot(target->get_position(), std::move(loot));
+    drop_loot_in_world(target->get_position(), std::move(loot));
 }
 
 int World::handle_successful_attack(Player* attacker, Character* target, int damage) {
@@ -309,7 +310,7 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
-        damage *= 2;
+        damage *= 2;  // extraer a config
     }
 
     bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
