@@ -15,11 +15,13 @@
 #include "common/direction.h"
 #include "common/socket.h"
 #include "common/thread.h"
+#include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
 
 #include "client_protocol.h"
 
 Q_DECLARE_METATYPE(std::vector<MatchInfo>)
+Q_DECLARE_METATYPE(AttackResult)
 
 class Client : public QObject {
     Q_OBJECT
@@ -44,6 +46,10 @@ class Client : public QObject {
     void do_join_match(uint32_t match_id);
     void do_select_race_class(uint8_t race, uint8_t klass);
     void do_move(Direction dir);
+    void do_attack(uint32_t target_id);
+    void do_meditate();
+    void do_pick_up();
+    void do_drop_item(uint8_t slot_index);
     void do_leave_match();
     void do_disconnect();
 
@@ -59,6 +65,8 @@ class Client : public QObject {
     void matchJoined();
     void errorReceived(uint8_t code, QString detail);
     void disconnectedFromServer();
+
+    void attackReceived(AttackResult result);
 };
 
 #endif

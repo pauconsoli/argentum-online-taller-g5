@@ -51,6 +51,10 @@ class ClientProtocol {
     void send_join_match(uint32_t match_id);
     void send_select_race_class(uint8_t race, uint8_t klass);
     void send_move(Direction dir);
+    void send_attack(uint32_t target_id);
+    void send_meditate();
+    void send_pick_up();
+    void send_drop_item(uint8_t slot_index);
     void send_disconnect();
     void send_leave_match();
 

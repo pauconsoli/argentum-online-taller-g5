@@ -1,4 +1,5 @@
 #include "client.h"
+#include "common/updates/attack_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
@@ -61,6 +62,12 @@ class ClientReceiverThread: public Thread {
                     emit client->errorReceived(
                             u->code,
                             QString::fromStdString(u->detail));
+                    break;
+                }
+
+                case UpdateType::ATTACKED: {
+                    auto* u = static_cast<AttackUpdate*>(update.get());
+                    emit client->attackReceived(u->get_result());
                     break;
                 }
 
@@ -154,6 +161,26 @@ void Client::do_select_race_class(uint8_t race, uint8_t klass) {
 void Client::do_move(Direction dir) {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_move(dir);
+}
+
+void Client::do_attack(uint32_t target_id) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_attack(target_id);
+}
+
+void Client::do_meditate() {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_meditate();
+}
+
+void Client::do_pick_up() {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_pick_up();
+}
+
+void Client::do_drop_item(uint8_t slot_index) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_drop_item(slot_index);
 }
 
 void Client::do_leave_match() {
