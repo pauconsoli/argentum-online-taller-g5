@@ -168,7 +168,8 @@ void ReceiverThread::handle_leave_match() {
 }
 
 void ReceiverThread::send_error(uint8_t code, const std::string& detail) {
-    player_conn.try_enqueue_update(std::make_unique<ErrorUpdate>(code, detail));
+    player_conn.try_enqueue_update(
+        std::make_unique<ErrorUpdate>(player_conn.get_player_id(), code, detail));
 }
 
 void ReceiverThread::stop() {

@@ -300,5 +300,5 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {
     uint8_t code = recv_u8();
     std::string detail = recv_string();
-    return std::make_unique<ErrorUpdate>(code, std::move(detail));
+    return std::make_unique<ErrorUpdate>(0, code, std::move(detail));
 }

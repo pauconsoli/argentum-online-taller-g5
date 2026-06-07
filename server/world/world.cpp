@@ -226,6 +226,7 @@ void World::validate_attack_conditions(const Player* attacker, const Character* 
     }
 }
 
+
 void World::consume_weapon_mana(Player* attacker) {
     Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
     if (equipped_weapon) {
@@ -241,6 +242,7 @@ void World::consume_weapon_mana(Player* attacker) {
     }
 }
 
+
 void World::handle_target_death(Player* attacker, Character* target) {
     int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker, *target);
     attacker->add_experience(bonus_exp);
@@ -248,6 +250,7 @@ void World::handle_target_death(Player* attacker, Character* target) {
     Loot loot = target->drop_loot();
     drop_loot_in_world(target->get_position(), std::move(loot));
 }
+
 
 int World::handle_successful_attack(Player* attacker, Character* target, int damage) {
     int defense = target->get_defense();
@@ -330,6 +333,56 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     }
 
     return AttackResult{attacker_id, target_id, real_damage, evaded, died};
+}
+
+// para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
+void World::pick_up_item(uint32_t player_id) {
+    Player* player = get_player(player_id);
+    if (!player)
+        throw std::runtime_error("World::pick_up_item: jugador no encontrado");
+    if (player->is_dead())
+        throw std::runtime_error("World::pick_up_item: un fantasma no puede agarrar items");
+
+    Position pos = player->get_position();
+    auto it = ground_items.find(pos);
+    if (it == ground_items.end())
+        throw std::runtime_error("World::pick_up_item: no hay item en esta posición");
+
+    GroundItem& ground = it->second;
+
+    if (ground.gold > 0) {
+        player->add_gold(ground.gold);
+        ground_items.erase(it);
+        return;
+    }
+
+    if (!player->get_inventory().can_add_item(*ground.item)) {
+        throw std::runtime_error("World::pick_up_item: inventario lleno");
+    }
+
+    player->get_inventory().add_item(std::move(ground.item), ground.quantity);
+
+    ground_items.erase(it);
+}
+
+
+void World::drop_item(uint32_t player_id, int slot_index) {
+    Player* player = get_player(player_id);
+    if (!player)
+        throw std::runtime_error("World::drop_item: jugador no encontrado");
+    if (player->is_dead())
+        throw std::runtime_error("World::drop_item: un fantasma no puede tirar items");
+
+    InventorySlot slot = player->get_inventory().pop_slot(slot_index);
+    if (!slot.item)
+        throw std::runtime_error("World::drop_item: slot inválido o vacío");
+
+    // si el item estaba equipado, no hace falta desquiparlo explícitamente
+    // porque pop_slot ya lo saca del inventario completamente
+
+    // no puedo dropear oro, solo items
+    Position pos = find_closest_free_ground(player->get_position());
+    ground_items[pos] = GroundItem{0, std::move(slot.item), slot.quantity};
 }
 
 

@@ -62,6 +62,9 @@ class World {
 
     void drop_loot_in_world(const Position& center, Loot loot);
 
+    void pick_up_item(uint32_t player_id);
+    void drop_item(uint32_t player_id, int slot_index);
+
     void move_player(uint32_t player_id, Direction direction);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);

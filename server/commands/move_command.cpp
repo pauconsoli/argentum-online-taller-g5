@@ -20,6 +20,7 @@ std::unique_ptr<GameUpdate> MoveCommand::execute(World& world) {
         world.move_player(player_id, direction);
         return std::make_unique<MovedUpdate>(player_id, player->get_position());
     } catch (const std::exception& e) {
-        return std::make_unique<ErrorUpdate>(ProtocolError::COMMAND_NOT_ALLOWED, e.what());
+        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
+                                             e.what());
     }
 }
