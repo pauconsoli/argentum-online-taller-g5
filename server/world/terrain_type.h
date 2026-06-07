@@ -1,6 +1,7 @@
 #ifndef TERRAIN_TYPE_H
 #define TERRAIN_TYPE_H
 
-enum class TerrainType { GRASS, WATER, DIRT, STONE, SAND };
+// Canonical location is now common/world/terrain_type.h
+#include "common/world/terrain_type.h"
 
 #endif
