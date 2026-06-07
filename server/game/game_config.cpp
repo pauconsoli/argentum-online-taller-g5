@@ -17,6 +17,7 @@ GameConfig::GameConfig():
     level_limit_base(0.0f),
     level_limit_exp(0.0f),
     kill_bonus_factor(0.0f),
+    death_exp_loss_mult(0.0f),
     critical_chance(0.0f),
     evasion_threshold(0.0f),
     newbie_max_level(0),
@@ -185,6 +186,11 @@ float GameConfig::get_level_limit_exp() const {
 float GameConfig::get_kill_bonus_factor() const {
     check_loaded(loaded);
     return kill_bonus_factor;
+}
+
+float GameConfig::get_death_exp_loss_mult() const {
+    check_loaded(loaded);
+    return death_exp_loss_mult;
 }
 
 float GameConfig::get_critical_chance() const {
