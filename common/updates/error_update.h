@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <string>
-#include <utility>
 
 #include "game_update.h"
 

@@ -3,13 +3,12 @@
 
 #include <SDL2/SDL.h>
 
-// Por ahora solo identifica el caso que el usuario cierra la ventana
 class InputHandler {
  public:
     InputHandler();
 
-    // retorna false si el usuario cierra la ventana, true si no
-    static bool handle(const SDL_Event& event);
+    // Retorna false si el usuario cerró la ventana, true si no
+    bool handle(const SDL_Event& event);
 };
 
 #endif

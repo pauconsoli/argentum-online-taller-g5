@@ -22,11 +22,11 @@ class World {
     std::vector<std::vector<bool>>
         occupied;  // matriz booleana para saber si una posición está ocupada (true) o no (false)
 
-    static Position calculate_destination(const Position& current, Direction direction);
+    Position calculate_destination(const Position& current, Direction direction) const;
 
     bool is_position_occupied(const Position& position) const;
 
-    static bool is_in_range_for_attack(const Player* attacker, const Character* target);
+    bool is_in_range_for_attack(const Player* attacker, const Character* target) const;
 
  public:
     World(int width, int height);

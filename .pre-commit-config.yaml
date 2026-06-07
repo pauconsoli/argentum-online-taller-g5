@@ -28,7 +28,6 @@ repos:
             "--suppress=unusedFunction",
             "--suppress=unmatchedSuppression",
             "--suppress=unusedStructMember",
-            "--suppress=normalCheckLevelMaxBranches",
             "--language=c++",
             "--std=c++20",
             "--error-exitcode=1"
