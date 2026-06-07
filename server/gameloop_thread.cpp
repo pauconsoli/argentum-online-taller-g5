@@ -52,8 +52,9 @@ void GameLoopThread::run() {
 
                 snapshots.push_back(ps);
             }
-            // esto habría que revisarlo, no se debería enviar a todos todas la iteraciones del
-            // gameloop por ahora lo dejo así
+            // esto habría que revisarlo, no se debería enviar de todos, a todos, todas la
+            // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo de
+            // los que cambiaron por ej
             auto snapshot_update = std::make_shared<SnapshotUpdate>(tick_id++, snapshots);
             server.broadcast_update_to_all(snapshot_update);
 

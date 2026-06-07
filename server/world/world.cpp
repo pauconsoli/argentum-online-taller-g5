@@ -329,6 +329,8 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 }
 
 
+// esto podría devolver un vector de structs (Stats o similar) o algo indicando
+// QUÉ cambió  y para QUE JUGADOR
 void World::update(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())

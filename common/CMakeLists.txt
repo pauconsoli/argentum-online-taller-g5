@@ -36,4 +36,5 @@ target_sources(taller_common
     updates/snapshot_update.h
     updates/spawned_update.h
     updates/attack_update.h
+    updates/death_update.h
     )
