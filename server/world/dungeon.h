@@ -9,9 +9,11 @@
 class Dungeon: public Zone {
  private:
     std::string name;
+    int entrance_x;
+    int entrance_y;
 
  public:
-    explicit Dungeon(std::string name): name(std::move(name)) {}
+    Dungeon(std::string name, int entrance_x, int entrance_y);
 
     bool is_safe() const override;
     bool can_spawn() const override;
