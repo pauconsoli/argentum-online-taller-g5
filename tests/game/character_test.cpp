@@ -22,6 +22,10 @@ class TestCharacter: public Character {
     bool validate_attack_from(int) const override {  // DUMMY
         return true;
     }
+
+    Loot drop_loot() override {  // DUMMY
+        return Loot{};
+    }
 };
 
 class CharacterTest: public ::testing::Test {

@@ -56,6 +56,8 @@ class Inventory {
     bool slot_has_item(EquipmentSlot slot) const;
 
     InventorySlot pop_slot(int slot_index);
+
+    std::vector<InventorySlot> drop_all();
 };
 
 #endif

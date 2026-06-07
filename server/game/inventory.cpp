@@ -151,3 +151,9 @@ InventorySlot Inventory::pop_slot(int slot_index) {
     slots.erase(slots.begin() + slot_index);
     return slot_copy;
 }
+
+std::vector<InventorySlot> Inventory::drop_all() {
+    std::vector<InventorySlot> dropped = std::move(slots);
+    slots.clear();
+    return dropped;
+}
