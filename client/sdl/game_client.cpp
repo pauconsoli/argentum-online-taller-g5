@@ -9,6 +9,23 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/snapshot_update.h"
+#include "server/game/player_class.h"
+#include "server/game/player_race.h"
+
+// Primera cabeza del rango de cada raza (HeadAndBodyData.json, male range start).
+static uint16_t head_index_for_race(uint8_t race) {
+    switch (race) {
+        case 1:
+            return 101;  // ELF
+        case 2:
+            return 300;  // DWARF
+        case 3:
+            return 400;  // GNOME
+        default:
+            return 1;  // HUMAN (y fallback)
+    }
+}
 
 GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
     window(nullptr),
@@ -19,6 +36,8 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     client(host, port),
     camera(width, height),
     my_player_id(0),
+    my_race(0),
+    my_klass(0),
     player_x(400),
     player_y(300),
     width(width),
@@ -26,6 +45,12 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error(SDL_GetError());
     }
+    my_hp = 100;
+    my_max_hp = 100;
+    my_mp = 100;
+    my_max_mp = 100;
+    my_level = 1;
+
     window = SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     if (window == nullptr) {
@@ -34,11 +59,10 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     }
     renderer = new Renderer(window);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load("body", "client/assets/body.png");
-    sprite_manager->load("head", "client/assets/head.png");
+    sprite_manager->load_body_textures("client/assets");
     sprite_manager->load_terrain_textures("client/assets");
-    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
-    mini_chat = new MiniChat(renderer->get_sdl_renderer(), "client/assets/font.ttf");
+    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf", height, width);
+    mini_chat = new MiniChat(renderer->get_sdl_renderer(), "client/assets/font.ttf", width);
 
     client.start();
 }
@@ -58,14 +82,13 @@ void GameClient::run() {
     bool running = true;
     SDL_Event event;
 
-    const int SPEED = 4;
     const int frame_w = 27;
     const int frame_h = 48;
     const int tile_w = 32;
     const int tile_h = 32;
-    // head.png: stride 27px wide (matches body), 64px tall per direction row
-    const int head_frame_w = 27;
-    const int head_frame_h = 64;
+    // cabezas: 27x256, 4 tiras de dirección de 64px (sin animación de frames)
+    const int head_w = 27;
+    const int head_h = 64;
 
     // direction: 0=down, 1=up, 2=left, 3=right (persists across frames)
     // TODO(chiaradelaurentis): esto viene del QT
@@ -113,8 +136,12 @@ void GameClient::run() {
                         break;
                     case UpdateType::MATCH_JOINED:
                         // este es el ultimo paso
+
                         in_match = true;
+                        client.do_select_race_class(static_cast<uint8_t>(PlayerRace::HUMAN),
+                                                    static_cast<uint8_t>(PlayerClass::WARRIOR));
                         break;
+
                     default:
                         break;
                 }
@@ -132,11 +159,6 @@ void GameClient::run() {
     player_y = tile_h;
 
     ClientMap client_map = build_sample_client_map();
-
-    // PRUEBA DE MINI CHAT
-    mini_chat->add_message("Minichat funcionando");
-    mini_chat->add_message("segundo mensaje de prueba");
-
 
     int direction = 0;
     int current_frame = 0;
@@ -158,25 +180,21 @@ void GameClient::run() {
 
         if (keys[SDL_SCANCODE_DOWN]) {
             client.do_move(Direction::DOWN);
-            player_y += SPEED;
             direction = 0;
             total_frames = 6;
             moving = true;
         } else if (keys[SDL_SCANCODE_UP]) {
             client.do_move(Direction::UP);
-            player_y -= SPEED;
             direction = 1;
             total_frames = 6;
             moving = true;
         } else if (keys[SDL_SCANCODE_LEFT]) {
             client.do_move(Direction::LEFT);
-            player_x -= SPEED;
             direction = 2;
             total_frames = 5;
             moving = true;
         } else if (keys[SDL_SCANCODE_RIGHT]) {
             client.do_move(Direction::RIGHT);
-            player_x += SPEED;
             direction = 3;
             total_frames = 5;
             moving = true;
@@ -189,6 +207,24 @@ void GameClient::run() {
                 case UpdateType::ERROR: {
                     const auto& eu = static_cast<const ErrorUpdate&>(*update);
                     mini_chat->add_message("Error: " + eu.detail);
+                    break;
+                }
+                case UpdateType::SNAPSHOT: {
+                    const auto& snap = static_cast<const SnapshotUpdate&>(*update);
+                    for (const auto& ps : snap.players) {
+                        players[ps.player_id] = ps;
+                        if (ps.player_id == my_player_id) {
+                            player_x = ps.x;
+                            player_y = ps.y;
+                            my_race = ps.race;
+                            my_klass = ps.klass;
+                            my_hp = ps.hp;
+                            my_mp = ps.mp;
+                            my_max_hp = ps.max_hp;
+                            my_max_mp = ps.max_mp;
+                            my_level = ps.level;
+                        }
+                    }
                     break;
                 }
                 default:
@@ -206,16 +242,9 @@ void GameClient::run() {
             current_frame = 0;
         }
 
-        int frame_x = current_frame * frame_w;
-        int frame_y = direction * frame_h;
-        int head_frame_y = direction * head_frame_h;
-
-        // se centra la camara
+        // centra la camara en el jugador local
         camera.center_on(player_x, player_y, client_map.get_width() * tile_w,
                          client_map.get_height() * tile_h);
-        // convierte coordenadas del mundo a coordenadas de pantalla
-        int screen_x = camera.get_screen_x(player_x);
-        int screen_y = camera.get_screen_y(player_y);
 
         renderer->clear();
 
@@ -236,23 +265,35 @@ void GameClient::run() {
             }
         }
 
-        // Body
-        renderer->draw_frame(sprite_manager->get("body"), frame_x, frame_y, frame_w, frame_h,
-                             screen_x, screen_y);
+        // Dibuja todos los jugadores con el body según raza/clase del snapshot
+        static const int head_offset_x[] = {0, 0, 0, 0};
+        static const int head_offset_y[] = {-8, -15, -15, -15};
 
-        // Head: same x as body (both 27px wide), positioned so visible head
-        // content (rows 16-37 of 64px frame) sits just above body content (row 17+)
-        int const head_offset_x[] = {0, 0, 0, 0};
-        int const head_offset_y[] = {-8, -15, -15, -15};
-        // down, up, left, right
+        for (const auto& [pid, ps] : players) {
+            int px = camera.get_screen_x(ps.x);
+            int py = camera.get_screen_y(ps.y);
 
-        int head_x = screen_x + head_offset_x[direction];
-        int head_y = screen_y + head_offset_y[direction];
+            int p_dir = (pid == my_player_id) ? direction : 0;
+            int p_frame = (pid == my_player_id) ? current_frame : 0;
+            int p_total = (p_dir < 2) ? 6 : 5;
+            int p_frame_clamped = p_frame % p_total;
 
-        renderer->draw_frame(sprite_manager->get("head"), current_frame * head_frame_w,
-                             head_frame_y, head_frame_w, head_frame_h, head_x, head_y);
+            int p_frame_x = p_frame_clamped * frame_w;
+            int p_frame_y = p_dir * frame_h;
 
-        hud->draw(100, 100, 50, 100, 1);
+            renderer->draw_frame(sprite_manager->get_body(ps.race, ps.klass), p_frame_x, p_frame_y,
+                                 frame_w, frame_h, px, py);
+
+            int hx = px + head_offset_x[p_dir];
+            int hy = py + head_offset_y[p_dir];
+            // nueva cabeza: src x=0 (sin frames), y = dirección * 64
+            renderer->draw_frame(sprite_manager->get_head(head_index_for_race(ps.race)), 0,
+                                 p_dir * head_h, head_w, head_h, hx, hy);
+        }
+
+        hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level);
+        hud->draw_inventory();
+
         mini_chat->draw();
         renderer->present();
 

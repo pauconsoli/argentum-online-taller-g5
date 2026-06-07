@@ -36,6 +36,10 @@ class InventoryUpdate: public GameUpdate {
     const std::vector<InventorySlotData>& get_items() const {
         return items;
     }
+
+    uint64_t get_gold() const {
+        return gold;
+    }
 };
 
 #endif

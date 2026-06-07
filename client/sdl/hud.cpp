@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-Hud::Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height):
-    sdl_renderer(renderer), font(nullptr), window_height(win_height) {
+Hud::Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height, int win_width):
+    sdl_renderer(renderer), font(nullptr), window_height(win_height), window_width(win_width) {
     if (TTF_Init() < 0) {
         throw std::runtime_error(TTF_GetError());
     }
@@ -56,6 +56,54 @@ void Hud::draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Col
     int text_y = y + (h - th) / 2;
     SDL_Color white = {255, 255, 255, 255};
     draw_text(label, text_x, text_y, white);
+}
+
+void Hud::draw_inventory() {
+    constexpr int COLS = 5;
+    constexpr int ROWS = 4;
+    constexpr int CELL = 40;
+    constexpr int GAP = 2;
+    constexpr int PAD = 8;
+    constexpr int TITLE_H = 24;
+    constexpr int MARGIN = 5;
+
+    const int grid_w = COLS * CELL + (COLS - 1) * GAP;
+    const int grid_h = ROWS * CELL + (ROWS - 1) * GAP;
+    const int panel_w = grid_w + 2 * PAD;
+    const int panel_h = PAD + TITLE_H + grid_h + PAD;
+    const int panel_x = window_width - panel_w - MARGIN;
+    const int panel_y = MARGIN;
+
+    SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_BLEND);
+
+    // panel de fondo semitransparente
+    SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 170);
+    SDL_Rect panel = {panel_x, panel_y, panel_w, panel_h};
+    SDL_RenderFillRect(sdl_renderer, &panel);
+
+    SDL_Color white = {255, 255, 255, 255};
+    int title_x = panel_x + PAD;
+    int title_y = panel_y + PAD / 2;
+    draw_text("Inventario", title_x, title_y, white);
+
+    const int grid_x = panel_x + PAD;
+    const int grid_y = panel_y + PAD + TITLE_H;
+
+    for (int row = 0; row < ROWS; ++row) {
+        for (int col = 0; col < COLS; ++col) {
+            int cell_x = grid_x + col * (CELL + GAP);
+            int cell_y = grid_y + row * (CELL + GAP);
+
+            // fondo de celda gris oscuro
+            SDL_SetRenderDrawColor(sdl_renderer, 55, 55, 55, 255);
+            SDL_Rect fill = {cell_x, cell_y, CELL, CELL};
+            SDL_RenderFillRect(sdl_renderer, &fill);
+
+            // borde de celda gris claro
+            SDL_SetRenderDrawColor(sdl_renderer, 110, 110, 110, 255);
+            SDL_RenderDrawRect(sdl_renderer, &fill);
+        }
+    }
 }
 
 void Hud::draw(int hp, int max_hp, int mana, int max_mana, int level) {
