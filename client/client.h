@@ -5,32 +5,37 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
+
+#include <QObject>
+#include <QString>
+#include <QMetaType>
 
 #include "client_protocol.h"
 #include "common/direction.h"
-#include "common/queue.h"
 #include "common/socket.h"
 #include "common/thread.h"
-#include "common/updates/game_update.h"
+#include "common/updates/match_list_update.h"
 
-class Client {
+#include "client_protocol.h"
+
+Q_DECLARE_METATYPE(std::vector<MatchInfo>)
+
+class Client : public QObject {
+    Q_OBJECT
+
  private:
     Socket socket;
     ClientProtocol protocol;
 
     std::mutex send_mutex;
-
-    Queue<std::unique_ptr<GameUpdate>> received_updates;
-
     std::unique_ptr<Thread> receiver_thread;
 
  public:
-    Client(const std::string& host, const std::string& port);
+    Client(const std::string& host, const std::string& port, QObject* parent = nullptr);
 
     void start();
-
     void stop();
-
     void join();
 
     void do_login(const std::string& nick);
@@ -42,12 +47,18 @@ class Client {
     void do_leave_match();
     void do_disconnect();
 
-    Queue<std::unique_ptr<GameUpdate>>& get_received_updates();
-
-    ~Client();
+    ~Client() override;
 
     Client(const Client&) = delete;
     Client& operator=(const Client&) = delete;
+
+ signals:
+    void loginOk();
+    void matchListReceived(const std::vector<MatchInfo>& matches);
+    void matchCreated();
+    void matchJoined();
+    void errorReceived(uint8_t code, QString detail);
+    void disconnectedFromServer();
 };
 
 #endif
