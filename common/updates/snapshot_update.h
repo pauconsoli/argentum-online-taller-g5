@@ -26,13 +26,23 @@ struct PlayerSnapshot {
     bool is_meditating;
 };
 
+struct GroundItemSnapshot {
+    int32_t x;
+    int32_t y;
+    bool is_gold;
+    uint64_t quantity;
+    std::string name;
+};
+
 class SnapshotUpdate: public GameUpdate {
  public:
     uint32_t tick;
     std::vector<PlayerSnapshot> players;
+    std::vector<GroundItemSnapshot> ground_items;
 
-    SnapshotUpdate(uint32_t tick, std::vector<PlayerSnapshot> players):
-        tick(tick), players(std::move(players)) {}
+    SnapshotUpdate(uint32_t tick, std::vector<PlayerSnapshot> players,
+                   std::vector<GroundItemSnapshot> ground_items):
+        tick(tick), players(std::move(players)), ground_items(std::move(ground_items)) {}
 
     UpdateType get_type() const override {
         return UpdateType::SNAPSHOT;

@@ -158,6 +158,10 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
+const std::map<Position, GroundItem>& World::get_ground_items() const {
+    return ground_items;
+}
+
 // no considera si esta ocupada porque el jugador se para sobre los items del suelo
 Position World::find_closest_free_ground(const Position& start) const {
     std::queue<Position> q;

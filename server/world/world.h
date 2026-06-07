@@ -58,6 +58,8 @@ class World {
 
     Position get_spawn_position() const;
 
+    const std::map<Position, GroundItem>& get_ground_items() const;
+
     void drop_loot_in_world(const Position& center, Loot loot);
 
     void move_player(uint32_t player_id, Direction direction);

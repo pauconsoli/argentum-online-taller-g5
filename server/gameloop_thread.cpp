@@ -52,10 +52,28 @@ void GameLoopThread::run() {
 
                 snapshots.push_back(ps);
             }
+
+            std::vector<GroundItemSnapshot> ground_snapshots;
+            for (const auto& [pos, ground_item] : world.get_ground_items()) {
+                GroundItemSnapshot world_ground_item;
+                world_ground_item.x = pos.x;
+                world_ground_item.y = pos.y;
+                if (ground_item.gold > 0) {
+                    world_ground_item.is_gold = true;
+                    world_ground_item.quantity = ground_item.gold;
+                } else if (ground_item.item) {
+                    world_ground_item.is_gold = false;
+                    world_ground_item.quantity = ground_item.quantity;
+                    world_ground_item.name = ground_item.item->get_name();
+                }
+                ground_snapshots.push_back(world_ground_item);
+            }
+
             // esto habría que revisarlo, no se debería enviar de todos, a todos, todas la
             // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo de
             // los que cambiaron por ej
-            auto snapshot_update = std::make_shared<SnapshotUpdate>(tick_id++, snapshots);
+            auto snapshot_update =
+                std::make_shared<SnapshotUpdate>(tick_id++, snapshots, ground_snapshots);
             server.broadcast_update_to_all(snapshot_update);
 
             std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
