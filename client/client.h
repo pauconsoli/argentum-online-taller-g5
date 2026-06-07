@@ -70,8 +70,6 @@ class Client : public QObject {
 
     void attackReceived(AttackResult result);
 
-    // El mapa llega justo después del MATCH_JOINED y antes del primer SNAPSHOT.
-    // Chiari lo usa para renderear el tile-grid de fondo.
     void worldMapReceived(uint16_t width, uint16_t height,
                           std::vector<MapCellData> cells);
 };
