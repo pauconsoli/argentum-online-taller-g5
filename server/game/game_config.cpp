@@ -18,7 +18,7 @@ GameConfig::GameConfig():
     level_limit_exp(0.0f),
     kill_bonus_factor(0.0f),
     critical_chance(0.0f),
-    dodge_threshold(0.0f),
+    evasion_threshold(0.0f),
     newbie_max_level(0),
     max_level_difference(0),
     clan_max_members(0),
@@ -191,9 +191,9 @@ float GameConfig::get_critical_chance() const {
     check_loaded(loaded);
     return critical_chance;
 }
-float GameConfig::get_dodge_threshold() const {
+float GameConfig::get_evasion_threshold() const {
     check_loaded(loaded);
-    return dodge_threshold;
+    return evasion_threshold;
 }
 int GameConfig::get_newbie_max_level() const {
     check_loaded(loaded);

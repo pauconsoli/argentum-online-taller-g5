@@ -52,7 +52,7 @@ class GameConfig {
     float kill_bonus_factor;
 
     float critical_chance;
-    float dodge_threshold;
+    float evasion_threshold;
     int newbie_max_level;
     int max_level_difference;
 
@@ -105,7 +105,7 @@ class GameConfig {
     float get_kill_bonus_factor() const;
 
     float get_critical_chance() const;
-    float get_dodge_threshold() const;
+    float get_evasion_threshold() const;
     int get_newbie_max_level() const;
     int get_max_level_difference() const;
 

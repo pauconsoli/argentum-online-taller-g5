@@ -9,7 +9,7 @@ class InputHandler {
     InputHandler();
 
     // retorna false si el usuario cierra la ventana, true si no
-    bool handle(const SDL_Event& event);
+    static bool handle(const SDL_Event& event);
 };
 
 #endif

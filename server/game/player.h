@@ -40,6 +40,10 @@ class Player: public Character {
 
     bool can_cast_magic() const override;
 
+    int get_defense() const override;
+
+    bool validate_attack_from(int attacker_level) const override;
+
     void move(const Position& new_position);
 
     void add_gold(uint64_t amount);
@@ -47,6 +51,8 @@ class Player: public Character {
     bool remove_gold(uint64_t amount);
 
     void add_experience(uint64_t amount);
+
+    void level_up();
 
     void start_meditating();
 
@@ -66,6 +72,8 @@ class Player: public Character {
 
     Inventory& get_inventory();
 
+    const Inventory& get_inventory() const;
+
     std::vector<std::pair<EquipmentSlot, Item*>> get_equipment() const;
 
     void equip(Item& item);
@@ -73,6 +81,8 @@ class Player: public Character {
     void set_initial_stats(int hp, int mana);
 
     void restore_mana(int amount);
+
+    void consume_mana(int amount);
 };
 
 #endif

@@ -91,3 +91,7 @@ const Position& Character::get_position() const {
 void Character::set_position(const Position& new_position) {
     position = new_position;
 }
+
+void Character::set_level(int new_level) {
+    level = new_level;
+}

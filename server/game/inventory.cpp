@@ -32,11 +32,14 @@ bool Inventory::add_item(std::unique_ptr<Item> item, int quantity) {
     if (item == nullptr || quantity <= 0)
         return false;
 
-    int index = find_item_by_type(*item);
+    // solo stackeo items no equipables, como pociones
+    if (!item->get_slot().has_value()) {
+        int index = find_item_by_type(*item);
 
-    if (index != -1) {
-        slots[index].quantity += quantity;
-        return true;
+        if (index != -1) {
+            slots[index].quantity += quantity;
+            return true;
+        }
     }
 
     if (is_full())
