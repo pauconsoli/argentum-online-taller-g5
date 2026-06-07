@@ -10,6 +10,8 @@
 #include "server/game/items/weapon.h"
 #include "server/game/player.h"
 
+#define MAX_INVENTORY_ITEMS 20  // máximo de items en el inventario para el test, hardcodeado
+
 class InventoryTest: public ::testing::Test {
  protected:
     Position position{5, 10};

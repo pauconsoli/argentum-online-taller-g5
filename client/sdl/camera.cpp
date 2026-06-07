@@ -1,5 +1,7 @@
 #include "camera.h"
 
+// TODO(chiaradelaurentis): la cámara no deje ver fuera del mapa: si el jugador está en el borde,
+// que la cámara no muestre negro más allá del límite.
 Camera::Camera(int screen_w, int screen_h): x(0), y(0), screen_w(screen_w), screen_h(screen_h) {}
 
 void Camera::center_on(int player_x, int player_y) {

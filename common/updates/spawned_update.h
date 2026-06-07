@@ -27,7 +27,7 @@ class SpawnedUpdate: public GameUpdate {
     uint32_t get_player_id() const {
         return player_id;
     }
-    std::string get_nick() const {
+    const std::string& get_nick() const {
         return nick;
     }
     PlayerRace get_race() const {
