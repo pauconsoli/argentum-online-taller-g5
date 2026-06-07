@@ -28,6 +28,7 @@
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
+#include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
@@ -230,6 +231,9 @@ void ServerProtocol::send_update(const GameUpdate& update) {
         case UpdateType::PLAYER_SPAWNED:
             send_player_spawned(update);
             break;
+        case UpdateType::WORLD_MAP:
+            send_world_map(update);
+            break;
         case UpdateType::SNAPSHOT:
             send_snapshot(update);
             break;
@@ -345,6 +349,25 @@ void ServerProtocol::send_player_spawned(const GameUpdate& update) {
     put_i32(buf, u.get_pos().y);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_player_spawned: client closed connection");
+    }
+}
+
+void ServerProtocol::send_world_map(const GameUpdate& update) {
+    const auto& u = static_cast<const WorldMapUpdate&>(update);
+    if (static_cast<size_t>(u.width) * static_cast<size_t>(u.height) != u.cells.size()) {
+        throw std::length_error("send_world_map: width*height != cells.size()");
+    }
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::WORLD_MAP);
+    put_u16(buf, u.width);
+    put_u16(buf, u.height);
+    buf.reserve(buf.size() + u.cells.size() * 2);
+    for (const auto& c: u.cells) {
+        put_u8(buf, c.terrain_type);
+        put_u8(buf, c.blocking ? 1 : 0);
+    }
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_world_map: client closed connection");
     }
 }
 

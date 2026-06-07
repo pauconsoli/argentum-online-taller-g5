@@ -17,11 +17,13 @@
 #include "common/thread.h"
 #include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/world_map_update.h"
 
 #include "client_protocol.h"
 
 Q_DECLARE_METATYPE(std::vector<MatchInfo>)
 Q_DECLARE_METATYPE(AttackResult)
+Q_DECLARE_METATYPE(std::vector<MapCellData>)
 
 class Client : public QObject {
     Q_OBJECT
@@ -67,6 +69,11 @@ class Client : public QObject {
     void disconnectedFromServer();
 
     void attackReceived(AttackResult result);
+
+    // El mapa llega justo después del MATCH_JOINED y antes del primer SNAPSHOT.
+    // Chiari lo usa para renderear el tile-grid de fondo.
+    void worldMapReceived(uint16_t width, uint16_t height,
+                          std::vector<MapCellData> cells);
 };
 
 #endif

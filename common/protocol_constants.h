@@ -32,6 +32,7 @@ constexpr uint8_t SNAPSHOT = 0x85;
 constexpr uint8_t PLAYER_JOINED = 0x86;
 constexpr uint8_t PLAYER_LEFT = 0x87;
 constexpr uint8_t PLAYER_SPAWNED = 0x88;  // jugador eligió raza/clase y se spawneó
+constexpr uint8_t WORLD_MAP = 0x89;
 
 constexpr uint8_t MOVED = 0x90;
 constexpr uint8_t STATS = 0x91;

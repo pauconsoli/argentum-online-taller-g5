@@ -12,6 +12,7 @@ enum class UpdateType : uint8_t {
     PLAYER_JOINED,
     PLAYER_LEFT,
     PLAYER_SPAWNED,
+    WORLD_MAP,
     ERROR,
 
     SNAPSHOT,
