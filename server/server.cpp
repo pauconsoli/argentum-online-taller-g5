@@ -12,8 +12,6 @@
 #include "common/updates/game_update.h"
 #include "game/basic_match.h"
 #include "game/player.h"
-#include "game/player_class.h"
-#include "game/player_race.h"
 #include "gameloop_thread.h"
 #include "player_connection.h"
 #include "world/world.h"
@@ -149,11 +147,6 @@ Match* Server::join_match(uint32_t match_id, PlayerConnection& conn) {
     } catch (...) {
         return nullptr;
     }
-    uint32_t pid = conn.get_player_id();
-    Position spawn{static_cast<int>(1 + pid % 36), 1};
-    auto player = std::make_unique<Player>(pid, conn.get_nick(), PlayerRace::HUMAN,
-                                           PlayerClass::WARRIOR, 1, 100, 50, 10, 10, 10, 10, spawn);
-    world->add_player(std::move(player));
     return m;
 }
 
@@ -199,7 +192,6 @@ void Server::add_client(PlayerConnection* conn) {
     clients.push_back(conn);
 }
 
-// cppcheck-suppress constParameterPointer
 void Server::remove_client(PlayerConnection* conn) {
     std::lock_guard<std::mutex> lk(clients_mutex);
     clients.remove(conn);

@@ -85,7 +85,7 @@ Character* World::get_character(uint32_t id) {
 }
 
 // (0,0) es la esquina superior izquierda, x aumenta hacia la derecha e y hacia abajo
-Position World::calculate_destination(const Position& current, Direction direction) {
+Position World::calculate_destination(const Position& current, Direction direction) const {
     Position dest = current;
     switch (direction) {
         case Direction::UP:
@@ -108,7 +108,7 @@ bool World::is_position_occupied(const Position& position) const {
     return occupied[position.y][position.x];
 }
 
-bool World::is_in_range_for_attack(const Player* attacker, const Character* target) {
+bool World::is_in_range_for_attack(const Player* attacker, const Character* target) const {
     bool is_ranged = false;
     Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
     if (equipped_weapon) {

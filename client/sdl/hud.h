@@ -20,8 +20,7 @@ class Hud {
     Hud(const Hud&) = delete;
     Hud& operator=(const Hud&) = delete;
 
-    void draw(int hp, int max_hp, int mana, int max_mana, int level, int xp, int max_xp, int gold,
-              int win_w, int win_h);
+    void draw(int hp, int max_hp, int mana, int max_mana, int level);
 };
 
 #endif

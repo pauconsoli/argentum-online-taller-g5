@@ -68,7 +68,7 @@ class Thread: public Runnable {
     }
 
     virtual void run() = 0;
-    ~Thread() override {}
+    virtual ~Thread() {}
 
     Thread(const Thread&) = delete;
     Thread& operator=(const Thread&) = delete;
