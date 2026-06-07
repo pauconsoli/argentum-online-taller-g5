@@ -32,18 +32,30 @@ bool Inventory::add_item(std::unique_ptr<Item> item, int quantity) {
     if (item == nullptr || quantity <= 0)
         return false;
 
-    int index = find_item_by_type(*item);
-
-    if (index != -1) {
-        slots[index].quantity += quantity;
-        return true;
-    }
-
-    if (is_full())
+    if (!can_add_item(*item))
         return false;
+
+    // solo stackeo items no equipables, como pociones
+    if (!item->get_slot().has_value()) {
+        int index = find_item_by_type(*item);
+
+        if (index != -1) {
+            slots[index].quantity += quantity;
+            return true;
+        }
+    }
 
     slots.push_back(InventorySlot{std::move(item), quantity, std::nullopt});
     return true;
+}
+
+bool Inventory::can_add_item(const Item& item) const {
+    if (!item.get_slot().has_value()) {
+        if (find_item_by_type(item) != -1) {
+            return true;
+        }
+    }
+    return !is_full();
 }
 
 bool Inventory::equip(Item& item, Player& player) {
@@ -147,4 +159,10 @@ InventorySlot Inventory::pop_slot(int slot_index) {
                             slots[slot_index].equipped_slot};
     slots.erase(slots.begin() + slot_index);
     return slot_copy;
+}
+
+std::vector<InventorySlot> Inventory::drop_all() {
+    std::vector<InventorySlot> dropped = std::move(slots);
+    slots.clear();
+    return dropped;
 }

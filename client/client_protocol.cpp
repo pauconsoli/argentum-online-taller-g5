@@ -13,7 +13,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
-#include "common/updates/move_update.h"
+#include "common/updates/moved_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
@@ -64,7 +64,7 @@ uint8_t ClientProtocol::recv_u8() {
 }
 
 uint16_t ClientProtocol::recv_u16() {
-    uint8_t b[2];
+    uint8_t b[2] = {};
     if (skt.recvall(b, 2) == 0) {
         throw LibError(0, "%s", "ClientProtocol::recv_u16: server closed connection");
     }
@@ -74,7 +74,7 @@ uint16_t ClientProtocol::recv_u16() {
 }
 
 uint32_t ClientProtocol::recv_u32() {
-    uint8_t b[4];
+    uint8_t b[4] = {};
     if (skt.recvall(b, 4) == 0) {
         throw LibError(0, "%s", "ClientProtocol::recv_u32: server closed connection");
     }
@@ -112,12 +112,16 @@ void ClientProtocol::send_login(const std::string& nick) {
     std::vector<uint8_t> buf;
     put_u8(buf, ClientOpcode::LOGIN);
     put_string(buf, nick);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_login: server closed connection");
+    }
 }
 
 void ClientProtocol::send_list_matches() {
     uint8_t op = ClientOpcode::LIST_MATCHES;
-    skt.sendall(&op, 1);
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_list_matches: server closed connection");
+    }
 }
 
 void ClientProtocol::send_create_match(const std::string& match_name, uint8_t max_players) {
@@ -125,14 +129,18 @@ void ClientProtocol::send_create_match(const std::string& match_name, uint8_t ma
     put_u8(buf, ClientOpcode::CREATE_MATCH);
     put_string(buf, match_name);
     put_u8(buf, max_players);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_create_match: server closed connection");
+    }
 }
 
 void ClientProtocol::send_join_match(uint32_t match_id) {
     std::vector<uint8_t> buf;
     put_u8(buf, ClientOpcode::JOIN_MATCH);
     put_u32(buf, match_id);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_join_match: server closed connection");
+    }
 }
 
 void ClientProtocol::send_select_race_class(uint8_t race, uint8_t klass) {
@@ -140,24 +148,32 @@ void ClientProtocol::send_select_race_class(uint8_t race, uint8_t klass) {
     put_u8(buf, ClientOpcode::SELECT_RACE_CLASS);
     put_u8(buf, race);
     put_u8(buf, klass);
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_select_race_class: server closed connection");
+    }
 }
 
 void ClientProtocol::send_move(Direction dir) {
     std::vector<uint8_t> buf;
     put_u8(buf, ClientOpcode::MOVE);
     put_u8(buf, static_cast<uint8_t>(dir));
-    skt.sendall(buf.data(), buf.size());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_move: server closed connection");
+    }
 }
 
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
-    skt.sendall(&op, 1);
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_disconnect: server closed connection");
+    }
 }
 
 void ClientProtocol::send_leave_match() {
     uint8_t op = ClientOpcode::LEAVE_MATCH;
-    skt.sendall(&op, 1);
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_leave_match: server closed connection");
+    }
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
@@ -253,9 +269,25 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         p.gold = recv_u64();
         p.level = recv_u16();
         p.is_ghost = (recv_u8() != 0);
+        p.is_meditating = (recv_u8() != 0);
         players.push_back(std::move(p));
     }
-    return std::make_unique<SnapshotUpdate>(tick, std::move(players));
+
+    uint16_t items_count = recv_u16();
+    std::vector<GroundItemSnapshot> ground_items;
+    ground_items.reserve(items_count);
+
+    for (uint16_t i = 0; i < items_count; ++i) {
+        GroundItemSnapshot gi;
+        gi.x = recv_i32();
+        gi.y = recv_i32();
+        gi.is_gold = (recv_u8() != 0);
+        gi.quantity = recv_u64();
+        gi.name = recv_string();
+        ground_items.push_back(std::move(gi));
+    }
+
+    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::move(ground_items));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
@@ -268,5 +300,5 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {
     uint8_t code = recv_u8();
     std::string detail = recv_string();
-    return std::make_unique<ErrorUpdate>(code, std::move(detail));
+    return std::make_unique<ErrorUpdate>(0, code, std::move(detail));
 }

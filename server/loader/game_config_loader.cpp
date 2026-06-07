@@ -40,6 +40,10 @@ void GameConfigLoader::load(const std::string& config_path) {
         gc.race_hp_mult[race] = require_float(*subtable, section, "hp_multiplier");
         gc.race_mana_mult[race] = require_float(*subtable, section, "mana_multiplier");
         gc.race_recovery[race] = require_float(*subtable, section, "recovery_factor");
+        gc.race_base_strength[race] = require_int(*subtable, section, "strength");
+        gc.race_base_agility[race] = require_int(*subtable, section, "agility");
+        gc.race_base_intelligence[race] = require_int(*subtable, section, "intelligence");
+        gc.race_base_constitution[race] = require_int(*subtable, section, "constitution");
     };
 
     auto load_class = [&](PlayerClass cls, std::string_view key) {
@@ -51,6 +55,10 @@ void GameConfigLoader::load(const std::string& config_path) {
         gc.class_hp_mult[cls] = require_float(*subtable, section, "hp_multiplier");
         gc.class_mana_mult[cls] = require_float(*subtable, section, "mana_multiplier");
         gc.class_meditation[cls] = require_float(*subtable, section, "meditation_factor");
+        gc.class_bonus_strength[cls] = require_int(*subtable, section, "strength_bonus");
+        gc.class_bonus_agility[cls] = require_int(*subtable, section, "agility_bonus");
+        gc.class_bonus_intelligence[cls] = require_int(*subtable, section, "intelligence_bonus");
+        gc.class_bonus_constitution[cls] = require_int(*subtable, section, "constitution_bonus");
     };
 
     load_race(PlayerRace::HUMAN, "human");
@@ -68,6 +76,18 @@ void GameConfigLoader::load(const std::string& config_path) {
         throw std::runtime_error("game_config.toml: falta la sección [inventory]");
     gc.max_inventory_items = require_int(*inv, "inventory", "max_items");
 
+    const auto* world = root["world"].as_table();
+    if (!world)
+        throw std::runtime_error("game_config.toml: falta la sección [world]");
+    gc.spawn_position.x = require_int(*world, "world", "spawn_x");
+    gc.spawn_position.y = require_int(*world, "world", "spawn_y");
+
+    const auto* level = root["level"].as_table();
+    if (!level)
+        throw std::runtime_error("game_config.toml: falta la sección [level]");
+    gc.initial_player_level = require_int(*level, "level", "initial_player_level");
+
+
     const auto* gold = root["gold"].as_table();
     if (!gold)
         throw std::runtime_error("game_config.toml: falta la sección [gold]");
@@ -82,12 +102,13 @@ void GameConfigLoader::load(const std::string& config_path) {
     gc.level_limit_base = require_float(*exp, "experience", "level_limit_base");
     gc.level_limit_exp = require_float(*exp, "experience", "level_limit_exp");
     gc.kill_bonus_factor = require_float(*exp, "experience", "kill_bonus_factor");
+    gc.death_exp_loss_mult = require_float(*exp, "experience", "death_exp_loss_mult");
 
     const auto* combat = root["combat"].as_table();
     if (!combat)
         throw std::runtime_error("game_config.toml: falta la sección [combat]");
     gc.critical_chance = require_float(*combat, "combat", "critical_chance");
-    gc.dodge_threshold = require_float(*combat, "combat", "dodge_threshold");
+    gc.evasion_threshold = require_float(*combat, "combat", "evasion_threshold");
     gc.newbie_max_level = require_int(*combat, "combat", "newbie_max_level");
     gc.max_level_difference = require_int(*combat, "combat", "max_level_difference");
 

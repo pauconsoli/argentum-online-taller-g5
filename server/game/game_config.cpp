@@ -8,6 +8,8 @@
 GameConfig::GameConfig():
     loaded(false),
     max_inventory_items(0),
+    spawn_position{},
+    initial_player_level(0),
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
@@ -15,8 +17,9 @@ GameConfig::GameConfig():
     level_limit_base(0.0f),
     level_limit_exp(0.0f),
     kill_bonus_factor(0.0f),
+    death_exp_loss_mult(0.0f),
     critical_chance(0.0f),
-    dodge_threshold(0.0f),
+    evasion_threshold(0.0f),
     newbie_max_level(0),
     max_level_difference(0),
     clan_max_members(0),
@@ -37,6 +40,20 @@ static float lookup(const std::map<PlayerRace, float>& m, PlayerRace key, const 
 }
 
 static float lookup(const std::map<PlayerClass, float>& m, PlayerClass key, const char* field) {
+    auto it = m.find(key);
+    if (it == m.end())
+        throw std::runtime_error(std::string("GameConfig: clase sin '") + field + "' cargado");
+    return it->second;
+}
+
+static int lookup(const std::map<PlayerRace, int>& m, PlayerRace key, const char* field) {
+    auto it = m.find(key);
+    if (it == m.end())
+        throw std::runtime_error(std::string("GameConfig: raza sin '") + field + "' cargado");
+    return it->second;
+}
+
+static int lookup(const std::map<PlayerClass, int>& m, PlayerClass key, const char* field) {
     auto it = m.find(key);
     if (it == m.end())
         throw std::runtime_error(std::string("GameConfig: clase sin '") + field + "' cargado");
@@ -71,6 +88,46 @@ float GameConfig::get_race_recovery_factor(PlayerRace race) const {
     return lookup(race_recovery, race, "recovery_factor");
 }
 
+int GameConfig::get_race_strength(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_strength, race, "base_strength");
+}
+
+int GameConfig::get_race_agility(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_agility, race, "base_agility");
+}
+
+int GameConfig::get_race_intelligence(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_intelligence, race, "base_intelligence");
+}
+
+int GameConfig::get_race_constitution(PlayerRace race) const {
+    check_loaded(loaded);
+    return lookup(race_base_constitution, race, "base_constitution");
+}
+
+int GameConfig::get_class_bonus_strength(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_strength, cls, "bonus_strength");
+}
+
+int GameConfig::get_class_bonus_agility(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_agility, cls, "bonus_agility");
+}
+
+int GameConfig::get_class_bonus_intelligence(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_intelligence, cls, "bonus_intelligence");
+}
+
+int GameConfig::get_class_bonus_constitution(PlayerClass cls) const {
+    check_loaded(loaded);
+    return lookup(class_bonus_constitution, cls, "bonus_constitution");
+}
+
 float GameConfig::get_class_hp_multiplier(PlayerClass cls) const {
     check_loaded(loaded);
     return lookup(class_hp_mult, cls, "hp_multiplier");
@@ -86,9 +143,19 @@ float GameConfig::get_class_meditation_factor(PlayerClass cls) const {
     return lookup(class_meditation, cls, "meditation_factor");
 }
 
+Position GameConfig::get_spawn_position() const {
+    check_loaded(loaded);
+    return spawn_position;
+}
+
 int GameConfig::get_max_inventory_items() const {
     check_loaded(loaded);
     return max_inventory_items;
+}
+
+int GameConfig::get_initial_player_level() const {
+    check_loaded(loaded);
+    return initial_player_level;
 }
 
 float GameConfig::get_gold_max_safe_base() const {
@@ -121,13 +188,18 @@ float GameConfig::get_kill_bonus_factor() const {
     return kill_bonus_factor;
 }
 
+float GameConfig::get_death_exp_loss_mult() const {
+    check_loaded(loaded);
+    return death_exp_loss_mult;
+}
+
 float GameConfig::get_critical_chance() const {
     check_loaded(loaded);
     return critical_chance;
 }
-float GameConfig::get_dodge_threshold() const {
+float GameConfig::get_evasion_threshold() const {
     check_loaded(loaded);
-    return dodge_threshold;
+    return evasion_threshold;
 }
 int GameConfig::get_newbie_max_level() const {
     check_loaded(loaded);

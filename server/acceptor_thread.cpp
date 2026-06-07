@@ -82,8 +82,12 @@ void AcceptorThread::stop() {
     Thread::stop();
     try {
         listener.shutdown(SHUT_RDWR);
+    } catch (const std::exception& e) {
+        std::cerr << "[ACCEPTOR] Error en stop (shutdown): " << e.what() << "\n";
+    }
+    try {
         listener.close();
     } catch (const std::exception& e) {
-        std::cerr << "[ACCEPTOR] Error en stop: " << e.what() << "\n";
+        std::cerr << "[ACCEPTOR] Error en stop (close): " << e.what() << "\n";
     }
 }

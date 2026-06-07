@@ -2,9 +2,8 @@
 
 #include "server/game/player.h"
 
-Weapon::Weapon(const std::string& name): Item(name) {}
-
-Weapon::~Weapon() = default;
+Weapon::Weapon(const std::string& name, int min_damage, int max_damage, bool ranged):
+    Item(name), min_damage(min_damage), max_damage(max_damage), ranged(ranged) {}
 
 std::optional<EquipmentSlot> Weapon::get_slot() const {
     return EquipmentSlot::WEAPON;
@@ -12,4 +11,20 @@ std::optional<EquipmentSlot> Weapon::get_slot() const {
 
 void Weapon::use(Player& player) {
     player.equip(*this);
+}
+
+int Weapon::get_min_damage() const {
+    return min_damage;
+}
+
+int Weapon::get_max_damage() const {
+    return max_damage;
+}
+
+bool Weapon::is_ranged() const {
+    return ranged;
+}
+
+int Weapon::get_mana_cost() const {
+    return 0;  // por defecto no consumen maná
 }

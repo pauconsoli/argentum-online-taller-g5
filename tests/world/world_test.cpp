@@ -3,6 +3,9 @@
 #include "common/direction.h"
 #include "common/position.h"
 #include "gtest/gtest.h"
+#include "server/game/game_config.h"
+#include "server/game/items/weapon.h"
+#include "server/game/loot.h"
 #include "server/game/player.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -81,36 +84,28 @@ TEST_F(WorldTest, PlayerExistsFalse) {
 
 TEST_F(WorldTest, MovePlayerUp) {
     world.add_player(create_player(1, 50, 50));
-    auto update = world.move_player(1, Direction::UP);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::UP));
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 49);
 }
 
 TEST_F(WorldTest, MovePlayerDown) {
     world.add_player(create_player(1, 50, 50));
-    auto update = world.move_player(1, Direction::DOWN);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::DOWN));
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 51);
 }
 
 TEST_F(WorldTest, MovePlayerLeft) {
     world.add_player(create_player(1, 50, 50));
-    auto update = world.move_player(1, Direction::LEFT);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::LEFT));
     EXPECT_EQ(world.get_player(1)->get_position().x, 49);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
 }
 
 TEST_F(WorldTest, MovePlayerRight) {
     world.add_player(create_player(1, 50, 50));
-    auto update = world.move_player(1, Direction::RIGHT);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::RIGHT));
     EXPECT_EQ(world.get_player(1)->get_position().x, 51);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
 }
@@ -128,9 +123,8 @@ TEST_F(WorldTest, MovePlayerMultipleTimes) {
 
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsUp) {
     world.add_player(create_player(1, 50, 0));
-    auto update = world.move_player(1, Direction::UP);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::UP), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 0);
@@ -138,9 +132,8 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsUp) {
 
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsDown) {
     world.add_player(create_player(1, 50, 79));  // valido de 0 a 79
-    auto update = world.move_player(1, Direction::DOWN);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::DOWN), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 79);
@@ -148,9 +141,8 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsDown) {
 
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsLeft) {
     world.add_player(create_player(1, 0, 50));
-    auto update = world.move_player(1, Direction::LEFT);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::LEFT), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 0);
     EXPECT_EQ(pos.y, 50);
@@ -158,9 +150,8 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsLeft) {
 
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsRight) {
     world.add_player(create_player(1, 99, 50));  // valido de 0 a 99
-    auto update = world.move_player(1, Direction::RIGHT);
 
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::RIGHT), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 99);
     EXPECT_EQ(pos.y, 50);
@@ -168,13 +159,13 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsRight) {
 
 TEST_F(WorldTest, MovePlayerAtAllCorners) {
     world.add_player(create_player(1, 0, 0));
-    EXPECT_EQ(world.move_player(1, Direction::UP), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::LEFT), nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::UP), std::runtime_error);
+    EXPECT_THROW(world.move_player(1, Direction::LEFT), std::runtime_error);
 
     world.remove_player(1);
     world.add_player(create_player(2, 99, 79));
-    EXPECT_EQ(world.move_player(2, Direction::DOWN), nullptr);
-    EXPECT_EQ(world.move_player(2, Direction::RIGHT), nullptr);
+    EXPECT_THROW(world.move_player(2, Direction::DOWN), std::runtime_error);
+    EXPECT_THROW(world.move_player(2, Direction::RIGHT), std::runtime_error);
 }
 
 TEST_F(WorldTest, MovePlayerBlockingTerrain) {
@@ -182,9 +173,7 @@ TEST_F(WorldTest, MovePlayerBlockingTerrain) {
     Cell blocking(TerrainType::WATER, true);
     world.set_cell(Position{50, 51}, blocking);
 
-    auto update = world.move_player(1, Direction::DOWN);
-
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::DOWN), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -195,9 +184,7 @@ TEST_F(WorldTest, MovePlayerNonBlockingTerrain) {
     Cell grass(TerrainType::GRASS, false);
     world.set_cell(Position{50, 51}, grass);
 
-    auto update = world.move_player(1, Direction::DOWN);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::DOWN));
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 51);
 }
@@ -206,9 +193,7 @@ TEST_F(WorldTest, MovePlayerCollisionWithAnotherPlayer) {
     world.add_player(create_player(1, 50, 50));
     world.add_player(create_player(2, 50, 51));
 
-    auto update = world.move_player(1, Direction::DOWN);
-
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::DOWN), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -218,9 +203,7 @@ TEST_F(WorldTest, MovePlayerNoCollisionWhenPathClear) {
     world.add_player(create_player(1, 50, 50));
     world.add_player(create_player(2, 50, 52));
 
-    auto update = world.move_player(1, Direction::DOWN);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 51);
@@ -233,10 +216,10 @@ TEST_F(WorldTest, MovePlayerSurrounded) {
     world.add_player(create_player(4, 50, 49));
     world.add_player(create_player(5, 50, 51));
 
-    EXPECT_EQ(world.move_player(1, Direction::UP), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::DOWN), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::LEFT), nullptr);
-    EXPECT_EQ(world.move_player(1, Direction::RIGHT), nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::UP), std::runtime_error);
+    EXPECT_THROW(world.move_player(1, Direction::DOWN), std::runtime_error);
+    EXPECT_THROW(world.move_player(1, Direction::LEFT), std::runtime_error);
+    EXPECT_THROW(world.move_player(1, Direction::RIGHT), std::runtime_error);
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -247,17 +230,14 @@ TEST_F(WorldTest, MovePlayerCollisionAfterRemoval) {
     world.add_player(create_player(2, 50, 51));
 
     world.remove_player(2);
-    auto update = world.move_player(1, Direction::DOWN);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 51);
 }
 
 TEST_F(WorldTest, MovePlayerNonExistent) {
-    auto update = world.move_player(999, Direction::UP);
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(999, Direction::UP), std::runtime_error);
 }
 
 TEST_F(WorldTest, MovePlayerCombinedBoundsAndTerrain) {
@@ -265,8 +245,7 @@ TEST_F(WorldTest, MovePlayerCombinedBoundsAndTerrain) {
     Cell blocking(TerrainType::WATER, true);
     world.set_cell(Position{50, 1}, blocking);
 
-    auto update = world.move_player(1, Direction::DOWN);
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::DOWN), std::runtime_error);
 }
 
 TEST_F(WorldTest, MovePlayerCombinedTerrainAndCollision) {
@@ -275,8 +254,7 @@ TEST_F(WorldTest, MovePlayerCombinedTerrainAndCollision) {
     Cell blocking(TerrainType::STONE, true);
     world.set_cell(Position{49, 50}, blocking);
 
-    auto update = world.move_player(1, Direction::LEFT);
-    EXPECT_EQ(update, nullptr);
+    EXPECT_THROW(world.move_player(1, Direction::LEFT), std::runtime_error);
 }
 
 TEST_F(WorldTest, PositionMapConsistencyMultipleMoves) {
@@ -300,15 +278,15 @@ TEST_F(WorldTest, LargeWorld) {
     World large(1000, 800);
     large.add_player(create_player(1, 999, 799));
 
-    EXPECT_EQ(large.move_player(1, Direction::DOWN), nullptr);
-    EXPECT_EQ(large.move_player(1, Direction::RIGHT), nullptr);
+    EXPECT_THROW(large.move_player(1, Direction::DOWN), std::runtime_error);
+    EXPECT_THROW(large.move_player(1, Direction::RIGHT), std::runtime_error);
 }
 
 TEST_F(WorldTest, SmallWorldMovement) {
     World small(3, 3);
     small.add_player(create_player(1, 1, 1));
 
-    EXPECT_NE(small.move_player(1, Direction::UP), nullptr);
+    EXPECT_NO_THROW(small.move_player(1, Direction::UP));
     auto pos = small.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 1);
     EXPECT_EQ(pos.y, 0);
@@ -336,10 +314,107 @@ TEST_F(WorldTest, PlayerRemovalDoesNotAffectOthers) {
     world.add_player(create_player(2, 50, 51));
 
     world.remove_player(1);
-    auto update = world.move_player(2, Direction::UP);
-
-    EXPECT_NE(update, nullptr);
+    EXPECT_NO_THROW(world.move_player(2, Direction::UP));
     auto pos = world.get_player(2)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
+}
+
+TEST_F(WorldTest, PickUpGoldSuccess) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+    uint64_t initial_gold = player->get_gold();
+
+    Loot loot;
+    loot.dropped_gold = 150;
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_NO_THROW(world.pick_up_item(1));
+    EXPECT_EQ(player->get_gold(), initial_gold + 150);
+    EXPECT_TRUE(world.get_ground_items().empty());
+}
+
+TEST_F(WorldTest, PickUpItemSuccess) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+
+    Loot loot;
+    loot.dropped_items.push_back(
+        InventorySlot{std::make_unique<Weapon>("GroundSword", 10, 20, false), 1, std::nullopt});
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_EQ(player->get_inventory().get_size(), 0);
+    EXPECT_NO_THROW(world.pick_up_item(1));
+    EXPECT_EQ(player->get_inventory().get_size(), 1);
+    EXPECT_TRUE(world.get_ground_items().empty());
+}
+
+TEST_F(WorldTest, PickUpItemInventoryFull) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+
+    int max_items = GameConfig::get_instance().get_max_inventory_items();
+    for (int i = 0; i < max_items; ++i) {
+        player->get_inventory().add_item(std::make_unique<Weapon>("Sword", 10, 20, false));
+    }
+
+    Loot loot;
+    loot.dropped_items.push_back(
+        InventorySlot{std::make_unique<Weapon>("GroundSword", 10, 20, false), 1, std::nullopt});
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_THROW(world.pick_up_item(1), std::runtime_error);
+    EXPECT_EQ(player->get_inventory().get_size(), max_items);  // Inventario sigue lleno
+
+    // El item debe seguir en el piso intacto (validando el arreglo de std::move)
+    const auto& ground = world.get_ground_items();
+    ASSERT_FALSE(ground.empty());
+    EXPECT_NE(ground.at(Position{50, 50}).item, nullptr);
+}
+
+TEST_F(WorldTest, PickUpNothing) {
+    world.add_player(create_player(1, 50, 50));
+    EXPECT_THROW(world.pick_up_item(1), std::runtime_error);
+}
+
+TEST_F(WorldTest, DropItemSuccess) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+    player->get_inventory().add_item(std::make_unique<Weapon>("Sword", 10, 20, false));
+
+    EXPECT_EQ(player->get_inventory().get_size(), 1);
+    EXPECT_TRUE(world.get_ground_items().empty());
+
+    EXPECT_NO_THROW(world.drop_item(1, 0));  // Tiramos el slot 0
+
+    EXPECT_EQ(player->get_inventory().get_size(), 0);
+
+    const auto& ground = world.get_ground_items();
+    ASSERT_FALSE(ground.empty());
+
+    // Verifica que esté en la posición (nuestro algoritmo BFS lo deja ahí mismo si está libre)
+    auto it = ground.find(Position{50, 50});
+    ASSERT_NE(it, ground.end());
+    EXPECT_EQ(it->second.item->get_name(), "Sword");
+}
+
+TEST_F(WorldTest, DropItemInvalidSlot) {
+    world.add_player(create_player(1, 50, 50));
+    EXPECT_THROW(world.drop_item(1, 0), std::runtime_error);
+}
+
+TEST_F(WorldTest, DeadPlayerCannotPickUpOrDrop) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+
+    player->get_inventory().add_item(std::make_unique<Weapon>("Sword", 10, 20, false));
+    player->receive_damage(9999);
+    EXPECT_TRUE(player->is_dead());
+
+    Loot loot;
+    loot.dropped_gold = 100;
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_THROW(world.pick_up_item(1), std::runtime_error);
+    EXPECT_THROW(world.drop_item(1, 0), std::runtime_error);
 }

@@ -7,6 +7,7 @@
 
 #include <sys/socket.h>
 
+#include "common/commands/select_race_class_command.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/error_update.h"
@@ -14,10 +15,9 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/spawned_update.h"
 #include "game/match.h"
 
-// ver validación de rangos con numeros mágicos en
-// void ReceiverThread::handle_select_race_class()
 
 ReceiverThread::ReceiverThread(Socket& sock, PlayerConnection& conn, ServerOps& ops):
     socket(sock), protocol(sock), player_conn(conn), server_ops(ops) {}
@@ -87,7 +87,12 @@ void ReceiverThread::run() {
 
     try {
         server_ops.disconnect(player_conn);
+    } catch (...) {}
 
+    // para asegurar que el sender thread termine si el cliente se desconectó inesperadamente sin
+    // pasar por disconnect()
+    try {
+        player_conn.close_send_queue();
     } catch (...) {}
 }
 
@@ -95,8 +100,6 @@ void ReceiverThread::handle_login() {
     std::string nick = protocol.recv_login_payload();
     try {
         uint32_t pid = server_ops.login(player_conn, nick);
-        player_conn.set_player_id(pid);
-        player_conn.set_nick(nick);
         player_conn.set_state(PlayerConnection::State::AUTHENTICATED);
         player_conn.enqueue_update(std::make_unique<LoginOkUpdate>(pid));
     } catch (const std::exception& e) {
@@ -135,26 +138,16 @@ void ReceiverThread::handle_join_match() {
 void ReceiverThread::handle_select_race_class() {
     auto payload = protocol.recv_select_race_class_payload();
 
-    // validar que race y class sean valores válidos
-
-    if (payload.race > 3) {
-        send_error(ProtocolError::INVALID_ARG, "raza inválida");
-        return;
-    }
-    if (payload.klass > 3) {
-        send_error(ProtocolError::INVALID_ARG, "clase inválida");
-        return;
-    }
-
     uint32_t match_id = player_conn.get_current_match_id();
     if (match_id == 0) {
         send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
         return;
     }
-    // TODO(paula): lo subo como ClientCommand al match: Hasta que exista la clase
-    // SelectRaceClassCommand y su execute(World&), lo dejo pendiente
-    // Pau decide la forma final
-    (void) payload;
+
+    auto cmd = std::make_unique<SelectRaceClassCommand>(
+        player_conn.get_player_id(), player_conn.get_nick(), payload.race, payload.klass);
+
+    server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 
 void ReceiverThread::handle_move() {
@@ -175,7 +168,8 @@ void ReceiverThread::handle_leave_match() {
 }
 
 void ReceiverThread::send_error(uint8_t code, const std::string& detail) {
-    player_conn.try_enqueue_update(std::make_unique<ErrorUpdate>(code, detail));
+    player_conn.try_enqueue_update(
+        std::make_unique<ErrorUpdate>(player_conn.get_player_id(), code, detail));
 }
 
 void ReceiverThread::stop() {

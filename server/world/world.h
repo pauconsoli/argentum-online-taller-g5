@@ -6,12 +6,20 @@
 #include <memory>
 #include <vector>
 
+#include "common/attack_result.h"
 #include "common/direction.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
+#include "server/game/items/item.h"
+#include "server/game/loot.h"
 #include "server/game/player.h"
 #include "world_map.h"
 
+struct GroundItem {  // por ahora así, no se si es lo mejor
+    uint64_t gold = 0;
+    std::unique_ptr<Item> item = nullptr;
+    int quantity = 0;
+};
 
 class World {
  private:
@@ -21,9 +29,20 @@ class World {
     std::vector<std::vector<bool>>
         occupied;  // matriz booleana para saber si una posición está ocupada (true) o no (false)
 
+    std::map<Position, GroundItem> ground_items;
+
     Position calculate_destination(const Position& current, Direction direction) const;
 
     bool is_position_occupied(const Position& position) const;
+
+    bool is_in_range_for_attack(const Player* attacker, const Character* target) const;
+
+    Position find_closest_free_ground(const Position& start) const;
+
+    void validate_attack_conditions(const Player* attacker, const Character* target) const;
+    void consume_weapon_mana(Player* attacker);
+    void handle_target_death(Player* attacker, Character* target);
+    int handle_successful_attack(Player* attacker, Character* target, int damage);
 
  public:
     World(int width, int height);
@@ -32,11 +51,25 @@ class World {
     void add_player(std::unique_ptr<Player> player);
     void remove_player(uint32_t player_id);
     Player* get_player(uint32_t player_id);
+    std::vector<Player*> get_players();
     bool player_exists(uint32_t player_id) const;
 
-    std::unique_ptr<GameUpdate> move_player(uint32_t player_id, Direction direction);
+    Character* get_character(uint32_t id);
 
-    std::vector<std::unique_ptr<GameUpdate>> update();
+    Position get_spawn_position() const;
+
+    const std::map<Position, GroundItem>& get_ground_items() const;
+
+    void drop_loot_in_world(const Position& center, Loot loot);
+
+    void pick_up_item(uint32_t player_id);
+    void drop_item(uint32_t player_id, int slot_index);
+
+    void move_player(uint32_t player_id, Direction direction);
+
+    AttackResult attack(uint32_t attacker_id, uint32_t target_id);
+
+    void update(float tick_seconds);
 
     // solo lo uso para poner celdas bloqueantes en el mapa en los tests
     void set_cell(const Position& pos, const Cell& cell);

@@ -57,38 +57,38 @@ void Server::broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) {
     }
 }
 
-void Server::broadcast_update_to_nearby(uint32_t player_id, int range,
-                                        std::shared_ptr<const GameUpdate> update) {
-    Player* origin_player = world->get_player(player_id);
-    if (!origin_player) {
-        return;
-    }
+// void Server::broadcast_update_to_nearby(uint32_t player_id, int range,
+//                                         std::shared_ptr<const GameUpdate> update) {
+//     Player* origin_player = world->get_player(player_id);
+//     if (!origin_player) {
+//         return;
+//     }
 
-    Position origin_pos = origin_player->get_position();
+//     Position origin_pos = origin_player->get_position();
 
-    std::unique_lock<std::mutex> lock(clients_mutex);
-    for (auto* client : clients) {
-        if (client->get_player_id() == 0) {
-            continue;
-        }
+//     std::unique_lock<std::mutex> lock(clients_mutex);
+//     for (auto* client : clients) {
+//         if (client->get_player_id() == 0) {
+//             continue;
+//         }
 
-        Player* target_player = world->get_player(client->get_player_id());
-        if (!target_player) {
-            continue;
-        }
+//         Player* target_player = world->get_player(client->get_player_id());
+//         if (!target_player) {
+//             continue;
+//         }
 
-        Position target_pos = target_player->get_position();
-        int distance =
-            std::abs(target_pos.x - origin_pos.x) + std::abs(target_pos.y - origin_pos.y);
+//         Position target_pos = target_player->get_position();
+//         int distance =
+//             std::abs(target_pos.x - origin_pos.x) + std::abs(target_pos.y - origin_pos.y);
 
-        if (distance <=
-            range) {  // range es la distancia máxima para recibir el update de ese evento
-            try {
-                client->enqueue_update(update);
-            } catch (const ClosedQueue&) {}
-        }
-    }
-}
+//         if (distance <=
+//             range) {  // range es la distancia máxima para recibir el update de ese evento
+//             try {
+//                 client->enqueue_update(update);
+//             } catch (const ClosedQueue&) {}
+//         }
+//     }
+// }
 
 uint32_t Server::login(PlayerConnection& conn, const std::string& nick) {
     if (nick.empty()) {
@@ -195,9 +195,13 @@ void Server::add_client(PlayerConnection* conn) {
 void Server::remove_client(PlayerConnection* conn) {
     std::lock_guard<std::mutex> lk(clients_mutex);
     clients.remove(conn);
-    const std::string& nick = conn->get_nick();
-    if (!nick.empty()) {
-        nicks_in_use.erase(nick);
+    if (conn->get_state() !=
+        PlayerConnection::State::DISCONNECTING) {  // si el cliente se desconectó inesperadamente
+                                                   // sin pasar por disconnect()
+        const std::string& nick = conn->get_nick();
+        if (!nick.empty()) {
+            nicks_in_use.erase(nick);
+        }
     }
 }
 
@@ -243,11 +247,13 @@ void Server::run() {
         }
 
         keep_running = false;
-        acceptor.stop();
-        gameloop.stop();
 
-        acceptor.join();
+        gameloop.stop();
         gameloop.join();
+
+        acceptor.stop();
+        acceptor.join();
+
     } catch (const std::exception& e) {
         std::cerr << "[SERVER] Error: " << e.what() << "\n";
         keep_running = false;

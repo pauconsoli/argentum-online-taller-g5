@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include "common/position.h"
 #include "player_class.h"
 #include "player_race.h"
 
@@ -21,11 +22,25 @@ class GameConfig {
     std::map<PlayerRace, float> race_mana_mult;
     std::map<PlayerRace, float> race_recovery;
 
+    std::map<PlayerRace, int> race_base_strength;
+    std::map<PlayerRace, int> race_base_agility;
+    std::map<PlayerRace, int> race_base_intelligence;
+    std::map<PlayerRace, int> race_base_constitution;
+
+    std::map<PlayerClass, int> class_bonus_strength;
+    std::map<PlayerClass, int> class_bonus_agility;
+    std::map<PlayerClass, int> class_bonus_intelligence;
+    std::map<PlayerClass, int> class_bonus_constitution;
+
     std::map<PlayerClass, float> class_hp_mult;
     std::map<PlayerClass, float> class_mana_mult;
     std::map<PlayerClass, float> class_meditation;
 
     int max_inventory_items;
+
+    Position spawn_position;
+
+    int initial_player_level;
 
     float gold_max_safe_base;
     float gold_max_safe_exp;
@@ -35,9 +50,10 @@ class GameConfig {
     float level_limit_base;
     float level_limit_exp;
     float kill_bonus_factor;
+    float death_exp_loss_mult;
 
     float critical_chance;
-    float dodge_threshold;
+    float evasion_threshold;
     int newbie_max_level;
     int max_level_difference;
 
@@ -60,11 +76,25 @@ class GameConfig {
     float get_race_mana_multiplier(PlayerRace race) const;
     float get_race_recovery_factor(PlayerRace race) const;
 
+    int get_race_strength(PlayerRace race) const;
+    int get_race_agility(PlayerRace race) const;
+    int get_race_intelligence(PlayerRace race) const;
+    int get_race_constitution(PlayerRace race) const;
+
+    int get_class_bonus_strength(PlayerClass cls) const;
+    int get_class_bonus_agility(PlayerClass cls) const;
+    int get_class_bonus_intelligence(PlayerClass cls) const;
+    int get_class_bonus_constitution(PlayerClass cls) const;
+
     float get_class_hp_multiplier(PlayerClass cls) const;
     float get_class_mana_multiplier(PlayerClass cls) const;
     float get_class_meditation_factor(PlayerClass cls) const;
 
     int get_max_inventory_items() const;
+
+    Position get_spawn_position() const;
+
+    int get_initial_player_level() const;
 
     float get_gold_max_safe_base() const;
     float get_gold_max_safe_exp() const;
@@ -74,9 +104,10 @@ class GameConfig {
     float get_level_limit_base() const;
     float get_level_limit_exp() const;
     float get_kill_bonus_factor() const;
+    float get_death_exp_loss_mult() const;
 
     float get_critical_chance() const;
-    float get_dodge_threshold() const;
+    float get_evasion_threshold() const;
     int get_newbie_max_level() const;
     int get_max_level_difference() const;
 

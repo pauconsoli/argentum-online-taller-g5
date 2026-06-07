@@ -9,7 +9,6 @@ target_sources(taller_game
     inventory.cpp
     items/item.cpp
     items/weapon.cpp
-    items/normal_weapon.cpp
     items/magic_weapon.cpp
     items/spell.cpp
     items/defensive_item.cpp
@@ -26,7 +25,6 @@ target_sources(taller_game
     inventory.h
     items/item.h
     items/weapon.h
-    items/normal_weapon.h
     items/magic_weapon.h
     items/spell.h
     items/defensive_item.h
