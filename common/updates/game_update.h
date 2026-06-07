@@ -27,6 +27,9 @@ enum class UpdateType : uint8_t {
 class GameUpdate {
  public:
     virtual UpdateType get_type() const = 0;
+    virtual uint32_t get_target_player_id() const {
+        return 0;
+    }  // 0 = broadcast, override si es para un jugador específico
     virtual ~GameUpdate() = default;
 };
 

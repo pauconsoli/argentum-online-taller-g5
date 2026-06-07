@@ -1,5 +1,6 @@
 #include "basic_match.h"
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -60,9 +61,18 @@ void BasicMatch::tick(World& world) {
         std::unique_ptr<ClientCommand> cmd;
         while (command_queue.try_pop(cmd)) {
             if (cmd) {
-                auto update = cmd->execute(world);
-                if (update) {
-                    broadcast_update_to_all(std::shared_ptr<const GameUpdate>(std::move(update)));
+                auto updates = cmd->execute(world);
+                for (auto& update : updates) {
+                    if (!update)
+                        continue;
+                    uint32_t target_id = update->get_target_player_id();
+                    auto shared = std::shared_ptr<const GameUpdate>(std::move(update));
+
+                    if (target_id == 0) {
+                        broadcast_update_to_all(shared);
+                    } else {
+                        send_update_to_player(target_id, shared);
+                    }
                 }
             }
         }
@@ -78,6 +88,19 @@ void BasicMatch::broadcast_update_to_all(std::shared_ptr<const GameUpdate> updat
     for (auto* player_conn : players) {
         try {
             player_conn->enqueue_update(update);
+        } catch (const ClosedQueue&) {}
+    }
+}
+
+void BasicMatch::send_update_to_player(uint32_t player_id,
+                                       std::shared_ptr<const GameUpdate> update) {
+    std::lock_guard<std::mutex> lk(players_mutex);
+    auto it = std::find_if(players.begin(), players.end(), [player_id](PlayerConnection* conn) {
+        return conn->get_player_id() == player_id;
+    });
+    if (it != players.end()) {
+        try {
+            (*it)->enqueue_update(update);
         } catch (const ClosedQueue&) {}
     }
 }

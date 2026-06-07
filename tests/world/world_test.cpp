@@ -3,6 +3,9 @@
 #include "common/direction.h"
 #include "common/position.h"
 #include "gtest/gtest.h"
+#include "server/game/game_config.h"
+#include "server/game/items/weapon.h"
+#include "server/game/loot.h"
 #include "server/game/player.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -315,4 +318,103 @@ TEST_F(WorldTest, PlayerRemovalDoesNotAffectOthers) {
     auto pos = world.get_player(2)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
+}
+
+TEST_F(WorldTest, PickUpGoldSuccess) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+    uint64_t initial_gold = player->get_gold();
+
+    Loot loot;
+    loot.dropped_gold = 150;
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_NO_THROW(world.pick_up_item(1));
+    EXPECT_EQ(player->get_gold(), initial_gold + 150);
+    EXPECT_TRUE(world.get_ground_items().empty());
+}
+
+TEST_F(WorldTest, PickUpItemSuccess) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+
+    Loot loot;
+    loot.dropped_items.push_back(
+        InventorySlot{std::make_unique<Weapon>("GroundSword", 10, 20, false), 1, std::nullopt});
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_EQ(player->get_inventory().get_size(), 0);
+    EXPECT_NO_THROW(world.pick_up_item(1));
+    EXPECT_EQ(player->get_inventory().get_size(), 1);
+    EXPECT_TRUE(world.get_ground_items().empty());
+}
+
+TEST_F(WorldTest, PickUpItemInventoryFull) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+
+    int max_items = GameConfig::get_instance().get_max_inventory_items();
+    for (int i = 0; i < max_items; ++i) {
+        player->get_inventory().add_item(std::make_unique<Weapon>("Sword", 10, 20, false));
+    }
+
+    Loot loot;
+    loot.dropped_items.push_back(
+        InventorySlot{std::make_unique<Weapon>("GroundSword", 10, 20, false), 1, std::nullopt});
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_THROW(world.pick_up_item(1), std::runtime_error);
+    EXPECT_EQ(player->get_inventory().get_size(), max_items);  // Inventario sigue lleno
+
+    // El item debe seguir en el piso intacto (validando el arreglo de std::move)
+    const auto& ground = world.get_ground_items();
+    ASSERT_FALSE(ground.empty());
+    EXPECT_NE(ground.at(Position{50, 50}).item, nullptr);
+}
+
+TEST_F(WorldTest, PickUpNothing) {
+    world.add_player(create_player(1, 50, 50));
+    EXPECT_THROW(world.pick_up_item(1), std::runtime_error);
+}
+
+TEST_F(WorldTest, DropItemSuccess) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+    player->get_inventory().add_item(std::make_unique<Weapon>("Sword", 10, 20, false));
+
+    EXPECT_EQ(player->get_inventory().get_size(), 1);
+    EXPECT_TRUE(world.get_ground_items().empty());
+
+    EXPECT_NO_THROW(world.drop_item(1, 0));  // Tiramos el slot 0
+
+    EXPECT_EQ(player->get_inventory().get_size(), 0);
+
+    const auto& ground = world.get_ground_items();
+    ASSERT_FALSE(ground.empty());
+
+    // Verifica que esté en la posición (nuestro algoritmo BFS lo deja ahí mismo si está libre)
+    auto it = ground.find(Position{50, 50});
+    ASSERT_NE(it, ground.end());
+    EXPECT_EQ(it->second.item->get_name(), "Sword");
+}
+
+TEST_F(WorldTest, DropItemInvalidSlot) {
+    world.add_player(create_player(1, 50, 50));
+    EXPECT_THROW(world.drop_item(1, 0), std::runtime_error);
+}
+
+TEST_F(WorldTest, DeadPlayerCannotPickUpOrDrop) {
+    world.add_player(create_player(1, 50, 50));
+    Player* player = world.get_player(1);
+
+    player->get_inventory().add_item(std::make_unique<Weapon>("Sword", 10, 20, false));
+    player->receive_damage(9999);
+    EXPECT_TRUE(player->is_dead());
+
+    Loot loot;
+    loot.dropped_gold = 100;
+    world.drop_loot_in_world(Position{50, 50}, std::move(loot));
+
+    EXPECT_THROW(world.pick_up_item(1), std::runtime_error);
+    EXPECT_THROW(world.drop_item(1, 0), std::runtime_error);
 }

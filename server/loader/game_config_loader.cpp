@@ -102,6 +102,7 @@ void GameConfigLoader::load(const std::string& config_path) {
     gc.level_limit_base = require_float(*exp, "experience", "level_limit_base");
     gc.level_limit_exp = require_float(*exp, "experience", "level_limit_exp");
     gc.kill_bonus_factor = require_float(*exp, "experience", "kill_bonus_factor");
+    gc.death_exp_loss_mult = require_float(*exp, "experience", "death_exp_loss_mult");
 
     const auto* combat = root["combat"].as_table();
     if (!combat)

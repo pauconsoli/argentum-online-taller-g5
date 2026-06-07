@@ -269,9 +269,25 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         p.gold = recv_u64();
         p.level = recv_u16();
         p.is_ghost = (recv_u8() != 0);
+        p.is_meditating = (recv_u8() != 0);
         players.push_back(std::move(p));
     }
-    return std::make_unique<SnapshotUpdate>(tick, std::move(players));
+
+    uint16_t items_count = recv_u16();
+    std::vector<GroundItemSnapshot> ground_items;
+    ground_items.reserve(items_count);
+
+    for (uint16_t i = 0; i < items_count; ++i) {
+        GroundItemSnapshot gi;
+        gi.x = recv_i32();
+        gi.y = recv_i32();
+        gi.is_gold = (recv_u8() != 0);
+        gi.quantity = recv_u64();
+        gi.name = recv_string();
+        ground_items.push_back(std::move(gi));
+    }
+
+    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::move(ground_items));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
@@ -284,5 +300,5 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {
     uint8_t code = recv_u8();
     std::string detail = recv_string();
-    return std::make_unique<ErrorUpdate>(code, std::move(detail));
+    return std::make_unique<ErrorUpdate>(0, code, std::move(detail));
 }

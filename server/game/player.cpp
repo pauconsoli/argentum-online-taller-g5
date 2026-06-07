@@ -32,6 +32,24 @@ bool Player::validate_attack_from(int attacker_level) const {
     return GameFormulas::can_attack_by_level(attacker_level, this->get_level());
 }
 
+Loot Player::drop_loot() {
+    Loot loot;
+
+    loot.dropped_gold = GameFormulas::calculate_player_dropped_gold(*this);
+    if (loot.dropped_gold > 0) {
+        remove_gold(loot.dropped_gold);  // descuenta el oro del jugador que cae al suelo al morir
+    }
+
+    uint64_t dropped_exp = GameFormulas::calculate_player_dropped_experience(*this);
+    if (dropped_exp > 0) {
+        remove_experience(dropped_exp);  // descuenta la exp que pierde el jugador al morir
+    }
+
+    loot.dropped_items = inventory->drop_all();
+
+    return loot;
+}
+
 void Player::move(const Position& new_position) {
     position = new_position;
 }
@@ -47,6 +65,19 @@ bool Player::remove_gold(uint64_t amount) {
 
     gold -= amount;
     return true;
+}
+
+// no se puede perder más experiencia que la que se tiene, ni menos que el piso del nivel (o sea
+// tope del nivel anterior)
+void Player::remove_experience(uint64_t amount) {
+    uint64_t level_floor =
+        (get_level() > 1) ? GameFormulas::calculate_level_up_limit(get_level() - 1) : 0;
+
+    if (experience > amount && (experience - amount) >= level_floor) {
+        experience -= amount;
+    } else {
+        experience = level_floor;
+    }
 }
 
 void Player::add_experience(uint64_t amount) {

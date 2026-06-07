@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "client_command.h"
 #include "common/direction.h"
@@ -22,7 +23,7 @@ class MoveCommand: public ClientCommand {
         return direction;
     }
 
-    std::unique_ptr<GameUpdate> execute(World& world) override;  // para Pau
+    std::vector<std::unique_ptr<GameUpdate>> execute(World& world) override;  // para Pau
 };
 
 #endif
