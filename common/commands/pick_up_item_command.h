@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "client_command.h"
 
@@ -17,7 +18,7 @@ class PickUpItemCommand: public ClientCommand {
         return player_id;
     }
 
-    std::unique_ptr<GameUpdate> execute(World& world) override;
+    std::vector<std::unique_ptr<GameUpdate>> execute(World& world) override;
 };
 
 #endif

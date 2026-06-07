@@ -8,7 +8,8 @@
 #include "server/game/player.h"
 #include "server/world/world.h"
 
-std::unique_ptr<GameUpdate> DropItemCommand::execute(World& world) {
+std::vector<std::unique_ptr<GameUpdate>> DropItemCommand::execute(World& world) {
+    std::vector<std::unique_ptr<GameUpdate>> updates;
     try {
         world.drop_item(player_id, slot_index);
 
@@ -19,10 +20,12 @@ std::unique_ptr<GameUpdate> DropItemCommand::execute(World& world) {
                                   slot.equipped_slot.has_value()});
         }
 
-        return std::make_unique<InventoryUpdate>(player_id, std::move(items_data),
-                                                 player->get_gold());
+        updates.push_back(std::make_unique<InventoryUpdate>(player_id, std::move(items_data),
+                                                            player->get_gold()));
+
     } catch (const std::exception& e) {
-        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
-                                             e.what());
+        updates.push_back(
+            std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED, e.what()));
     }
+    return updates;
 }

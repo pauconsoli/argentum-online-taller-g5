@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "client_command.h"
 
@@ -22,7 +23,7 @@ class AttackCommand: public ClientCommand {
         return target_id;
     }
 
-    std::unique_ptr<GameUpdate> execute(World& world) override;
+    std::vector<std::unique_ptr<GameUpdate>> execute(World& world) override;
 };
 
 #endif

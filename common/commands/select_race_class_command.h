@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "client_command.h"
 #include "server/game/player_class.h"
@@ -26,7 +27,7 @@ class SelectRaceClassCommand: public ClientCommand {
         return player_id;
     }
 
-    std::unique_ptr<GameUpdate> execute(World& world) override;
+    std::vector<std::unique_ptr<GameUpdate>> execute(World& world) override;
 };
 
 #endif

@@ -61,8 +61,10 @@ void BasicMatch::tick(World& world) {
         std::unique_ptr<ClientCommand> cmd;
         while (command_queue.try_pop(cmd)) {
             if (cmd) {
-                auto update = cmd->execute(world);
-                if (update) {
+                auto updates = cmd->execute(world);
+                for (auto& update : updates) {
+                    if (!update)
+                        continue;
                     uint32_t target_id = update->get_target_player_id();
                     auto shared = std::shared_ptr<const GameUpdate>(std::move(update));
 
