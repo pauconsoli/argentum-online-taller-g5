@@ -129,7 +129,7 @@ Resolver& Resolver::operator=(Resolver&& other) {
 
 bool Resolver::has_next() {
     chk_addr_or_fail();
-    return this->_next != NULL;
+    return this->_next != nullptr;
 }
 
 struct addrinfo* Resolver::next() {

@@ -1,4 +1,8 @@
 #include "client.h"
+#include "common/updates/error_update.h"
+#include "common/updates/match_created_update.h"
+#include "common/updates/match_joined_update.h"
+#include "common/updates/match_list_update.h"
 
 #include <iostream>
 #include <memory>
@@ -13,33 +17,64 @@ namespace {
 
 class ClientReceiverThread: public Thread {
  private:
+    Client* client;
     ClientProtocol& protocol;
-    Queue<std::unique_ptr<GameUpdate>>& out_queue;
     Socket& socket;
 
  public:
-    ClientReceiverThread(ClientProtocol& p, Queue<std::unique_ptr<GameUpdate>>& q, Socket& s):
-        protocol(p), out_queue(q), socket(s) {}
+    ClientReceiverThread(Client* c, ClientProtocol& p, Socket& s):
+            client(c), protocol(p), socket(s) {}
 
     void run() override {
         try {
             while (should_keep_running()) {
                 auto update = protocol.receive_update();
-                if (update) {
-                    out_queue.push(std::move(update));
-                }
+
+            if (!update) {
+                continue;
             }
-        } catch (const ClosedQueue&) {
-            // salgo
+
+            switch (update->get_type()) {
+                case UpdateType::LOGIN_OK: {
+                    emit client->loginOk();
+                    break;
+                }
+
+                case UpdateType::MATCH_LIST: {
+                    auto* u = static_cast<MatchListUpdate*>(update.get());
+                    emit client->matchListReceived(u->matches);
+                    break;
+                }
+
+                case UpdateType::MATCH_CREATED: {
+                    emit client->matchCreated();
+                    break;
+                }
+
+                case UpdateType::MATCH_JOINED: {
+                    emit client->matchJoined();
+                    break;
+                }
+
+                case UpdateType::ERROR: {
+                    auto* u = static_cast<ErrorUpdate*>(update.get());
+                    emit client->errorReceived(
+                            u->code,
+                            QString::fromStdString(u->detail));
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
         } catch (const LibError& e) {
             std::cerr << "[CLIENT-RECEIVER] Conexión cerrada: " << e.what() << "\n";
         } catch (const std::exception& e) {
             std::cerr << "[CLIENT-RECEIVER] Excepción inesperada: " << e.what() << "\n";
         }
 
-        try {
-            out_queue.close();
-        } catch (...) {}
+        emit client->disconnectedFromServer();
     }
 
     void stop() override {
@@ -52,12 +87,12 @@ class ClientReceiverThread: public Thread {
 
 }  // namespace
 
-Client::Client(const std::string& host, const std::string& port):
-    socket(host.c_str(), port.c_str()),
-    protocol(socket),
-    send_mutex(),
-    received_updates(),
-    receiver_thread(nullptr) {}
+Client::Client(const std::string& host, const std::string& port, QObject* parent):
+        QObject(parent),    
+        socket(host.c_str(), port.c_str()),
+        protocol(socket),
+        send_mutex(),
+        receiver_thread(nullptr) {}
 
 Client::~Client() {
     try {
@@ -70,7 +105,8 @@ void Client::start() {
     if (receiver_thread) {
         return;
     }
-    receiver_thread = std::make_unique<ClientReceiverThread>(protocol, received_updates, socket);
+    receiver_thread =
+             std::make_unique<ClientReceiverThread>(this, protocol, socket);
     receiver_thread->start();
 }
 
@@ -130,6 +166,3 @@ void Client::do_disconnect() {
     protocol.send_disconnect();
 }
 
-Queue<std::unique_ptr<GameUpdate>>& Client::get_received_updates() {
-    return received_updates;
-}
