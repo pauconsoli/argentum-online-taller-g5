@@ -20,6 +20,7 @@ std::unique_ptr<GameUpdate> AttackCommand::execute(World& world) {
         AttackResult result = world.attack(player_id, target_id);
         return std::make_unique<AttackUpdate>(result);
     } catch (const std::exception& e) {  // validaciones
-        return std::make_unique<ErrorUpdate>(ProtocolError::COMMAND_NOT_ALLOWED, e.what());
+        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
+                                             e.what());
     }
 }

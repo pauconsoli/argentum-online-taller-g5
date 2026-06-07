@@ -10,7 +10,7 @@
 
 std::unique_ptr<GameUpdate> SelectRaceClassCommand::execute(World& world) {
     if (world.player_exists(player_id)) {
-        return std::make_unique<ErrorUpdate>(ProtocolError::COMMAND_NOT_ALLOWED,
+        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
                                              "El jugador ya está conectado en el mundo.");
     }
 
@@ -21,6 +21,7 @@ std::unique_ptr<GameUpdate> SelectRaceClassCommand::execute(World& world) {
 
         return std::make_unique<SpawnedUpdate>(player_id, nick, race, klass, spawn);
     } catch (const std::exception& e) {
-        return std::make_unique<ErrorUpdate>(ProtocolError::COMMAND_NOT_ALLOWED, e.what());
+        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
+                                             e.what());
     }
 }

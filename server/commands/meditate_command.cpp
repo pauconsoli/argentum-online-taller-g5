@@ -11,14 +11,14 @@ std::unique_ptr<GameUpdate> MeditateCommand::execute(World& world) {
         return nullptr;
 
     if (player->is_dead()) {
-        return std::make_unique<ErrorUpdate>(ProtocolError::COMMAND_NOT_ALLOWED,
+        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
                                              "Estás muerto, no puedes meditar.");
     }
 
     player->start_meditating();
 
     if (!player->is_meditating()) {
-        return std::make_unique<ErrorUpdate>(ProtocolError::COMMAND_NOT_ALLOWED,
+        return std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
                                              "Tu clase no tiene mana");
     }
 
