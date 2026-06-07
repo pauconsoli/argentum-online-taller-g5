@@ -6,7 +6,9 @@
 
 class QLineEdit;
 class QPushButton;
+class QToolButton;
 class QLabel;
+class QFrame;
 
 class ConnectionWidget: public QWidget {
     Q_OBJECT
@@ -23,6 +25,7 @@ class ConnectionWidget: public QWidget {
 
  private slots:
     void on_connect_clicked();
+    void on_toggle_advanced_options(bool checked);
 
  private:
     QLineEdit* host_input;
@@ -30,6 +33,8 @@ class ConnectionWidget: public QWidget {
     QLineEdit* nick_input;
     QPushButton* connect_button;
     QLabel* error_label;
+    QToolButton* options_toggle;
+    QFrame* options_panel;
 };
 
 #endif

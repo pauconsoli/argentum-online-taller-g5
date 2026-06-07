@@ -6,6 +6,8 @@
 
 #include "common/position.h"
 #include "game_update.h"
+#include "server/game/player_race.h"
+#include "server/game/player_class.h"
 
 class SpawnedUpdate: public GameUpdate {
  private:

@@ -69,6 +69,32 @@ int main(int argc, char* argv[]) {
             color: #f5e6c8;
             font-weight: bold;
         }
+
+        QStatusBar {
+            background-color: #1b1510;
+            color: #c89b3c;
+            border-top: 1px solid #8a6a2f;
+        }
+
+        QStatusBar QLabel {
+            color: #c89b3c;
+            font-weight: normal;
+            padding: 4px;
+        }
+
+        QGroupBox {
+            border: 2px solid #8a6a2f;
+            border-radius: 4px;
+            margin-top: 12px;
+            padding-top: 10px;
+        }
+
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 6px;
+            color: #c89b3c;
+        }
     )");
     QCoreApplication::setApplicationName("Argentum Online - G5");
 

@@ -1,5 +1,6 @@
 #include "lobby_widget.h"
 
+#include <QFont>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -19,9 +20,24 @@ LobbyWidget::LobbyWidget(QWidget* parent):
         new_name_input(new QLineEdit(this)),
         new_max_input(new QSpinBox(this)),
         create_button(new QPushButton(tr("Crear partida"), this)),
+        logout_button(new QPushButton(tr("Cerrar sesión"), this)),
         status_label(new QLabel(this)) {
 
-    // Tabla de partidas
+    auto* header = new QHBoxLayout;
+    auto* title = new QLabel(tr("Partidas disponibles"), this);
+    {
+        QFont f = title->font();
+        f.setPointSize(18);
+        f.setBold(true);
+        title->setFont(f);
+    }
+    logout_button->setStyleSheet(
+            "QPushButton { background-color: #4a2418; border: 2px solid #8a3a1f; }"
+            "QPushButton:hover { background-color: #6b3424; }");
+    header->addWidget(title);
+    header->addStretch();
+    header->addWidget(logout_button);
+
     table->setHorizontalHeaderLabels({tr("ID"), tr("Nombre"), tr("Jugadores"), tr("Max")});
     table->horizontalHeader()->setStretchLastSection(false);
     table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
@@ -30,7 +46,6 @@ LobbyWidget::LobbyWidget(QWidget* parent):
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->verticalHeader()->setVisible(false);
 
-    // Sección "crear partida"
     new_name_input->setPlaceholderText(tr("nombre partida"));
     new_max_input->setRange(2, 8);
     new_max_input->setValue(4);
@@ -43,18 +58,17 @@ LobbyWidget::LobbyWidget(QWidget* parent):
     create_row->addWidget(new_max_input);
     create_row->addWidget(create_button);
 
-    // Botones de la tabla
     auto* table_buttons = new QHBoxLayout;
     table_buttons->addWidget(refresh_button);
     table_buttons->addStretch();
     table_buttons->addWidget(join_button);
 
-    status_label->setStyleSheet("color: #c00;");
+    status_label->setStyleSheet("color: #ff6b6b;");
     status_label->setVisible(false);
     status_label->setWordWrap(true);
 
     auto* root = new QVBoxLayout(this);
-    root->addWidget(new QLabel(tr("Partidas disponibles:"), this));
+    root->addLayout(header);
     root->addWidget(table, 1);
     root->addLayout(table_buttons);
     root->addWidget(create_box);
@@ -63,8 +77,11 @@ LobbyWidget::LobbyWidget(QWidget* parent):
     connect(refresh_button, &QPushButton::clicked, this, &LobbyWidget::on_refresh_clicked);
     connect(join_button, &QPushButton::clicked, this, &LobbyWidget::on_join_clicked);
     connect(create_button, &QPushButton::clicked, this, &LobbyWidget::on_create_clicked);
+    connect(logout_button, &QPushButton::clicked, this, &LobbyWidget::on_logout_clicked);
     connect(table, &QTableWidget::cellDoubleClicked, this, [this](int, int) { on_join_clicked(); });
 }
+
+void LobbyWidget::on_logout_clicked() { emit logoutRequested(); }
 
 void LobbyWidget::set_matches(const std::vector<MatchInfo>& matches) {
     table->setRowCount(static_cast<int>(matches.size()));

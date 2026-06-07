@@ -3,10 +3,11 @@
 #include <stdexcept>
 #include <utility>
 
+#include <QLabel>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <QStatusBar>
 #include <QString>
-
 
 #include "connection_widget.h"
 #include "lobby_widget.h"
@@ -18,10 +19,12 @@ MainWindow::MainWindow(QWidget* parent):
         connection_page(new ConnectionWidget(this)),
         lobby_page(new LobbyWidget(this)),
         race_class_page(new RaceClassWidget(this)),
-        client(nullptr){
+        client(nullptr),
+        current_nick(),
+        status_user_label(new QLabel(this)) {
 
     setWindowTitle(tr("Argentum Online - G5"));
-    resize(640, 480);
+    resize(720, 560);
 
     stack->addWidget(connection_page);  // 0
     stack->addWidget(lobby_page);       // 1
@@ -29,6 +32,9 @@ MainWindow::MainWindow(QWidget* parent):
     setCentralWidget(stack);
 
     stack->setCurrentIndex(PAGE_CONNECTION);
+
+    statusBar()->addWidget(status_user_label, 1);
+    update_status_bar();
 
     connect(connection_page, &ConnectionWidget::connectRequested, this,
             &MainWindow::handle_connect_requested);
@@ -39,13 +45,30 @@ MainWindow::MainWindow(QWidget* parent):
             &MainWindow::handle_create_match_requested);
     connect(lobby_page, &LobbyWidget::joinMatchRequested, this,
             &MainWindow::handle_join_match_requested);
+    connect(lobby_page, &LobbyWidget::logoutRequested, this,
+            &MainWindow::handle_logout_requested);
 
     connect(race_class_page, &RaceClassWidget::confirmRequested, this,
             &MainWindow::handle_confirm_race_class);
-
+    connect(race_class_page, &RaceClassWidget::backToLobbyRequested, this,
+            &MainWindow::handle_back_to_lobby_requested);
 }
 
 MainWindow::~MainWindow() = default;
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (client) {
+        auto reply = QMessageBox::question(
+                this, tr("¿Salir del juego?"),
+                tr("Hay una sesión activa. ¿Querés cerrar el juego?"),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (reply != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
+    event->accept();
+}
 
 void MainWindow::handle_connect_requested(const QString& host, const QString& port,
                                           const QString& nick) {
@@ -55,6 +78,7 @@ void MainWindow::handle_connect_requested(const QString& host, const QString& po
         connect_client_signals();
         client->start();
         client->do_login(nick.toStdString());
+        current_nick = nick;
     } catch (const std::exception& e) {
         connection_page->show_error(tr("No se pudo conectar: %1").arg(QString::fromLatin1(e.what())));
         connection_page->set_busy(false);
@@ -108,10 +132,38 @@ void MainWindow::handle_confirm_race_class(uint8_t race, uint8_t klass) {
                                 "no está integrado (Chiari)."));
 }
 
+void MainWindow::handle_logout_requested() {
+    if (!client) return;
+    auto reply = QMessageBox::question(
+            this, tr("¿Cerrar sesión?"),
+            tr("Vas a desconectarte del servidor. ¿Continuar?"),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+    teardown_session();
+}
+
+void MainWindow::handle_back_to_lobby_requested() {
+    if (!client) return;
+    try {
+        client->do_leave_match();
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, tr("Error"),
+                             tr("No se pudo salir del match: %1")
+                                     .arg(QString::fromLatin1(e.what())));
+        return;
+    }
+    stack->setCurrentIndex(PAGE_LOBBY);
+    update_status_bar();
+    handle_refresh_requested();
+}
+
 void MainWindow::connect_client_signals() {
     connect(client.get(), &Client::loginOk, this, [this]() {
         stack->setCurrentIndex(PAGE_LOBBY);
         connection_page->set_busy(false);
+        update_status_bar();
         handle_refresh_requested();
     });
 
@@ -124,6 +176,7 @@ void MainWindow::connect_client_signals() {
 
     connect(client.get(), &Client::matchJoined, this, [this]() {
         stack->setCurrentIndex(PAGE_RACE_CLASS);
+        update_status_bar();
     });
 
     connect(client.get(), &Client::errorReceived, this,
@@ -137,14 +190,36 @@ void MainWindow::connect_client_signals() {
 
     connect(client.get(), &Client::disconnectedFromServer, this, [this]() {
         if (!client) return;
-
         QMessageBox::warning(this, tr("Desconectado"),
                              tr("Se cerró la conexión con el servidor."));
-
-        client.reset();
-        connection_page->set_busy(false);
-        stack->setCurrentIndex(PAGE_CONNECTION);
+        teardown_session();
     });
+}
+
+void MainWindow::teardown_session() {
+    client.reset();
+    current_nick.clear();
+    connection_page->set_busy(false);
+    stack->setCurrentIndex(PAGE_CONNECTION);
+    update_status_bar();
+}
+
+void MainWindow::update_status_bar() {
+    if (!client) {
+        status_user_label->setText(tr("Desconectado"));
+        return;
+    }
+    switch (stack->currentIndex()) {
+        case PAGE_LOBBY:
+            status_user_label->setText(tr("Conectado como  %1  ·  En lobby").arg(current_nick));
+            break;
+        case PAGE_RACE_CLASS:
+            status_user_label->setText(
+                    tr("Conectado como  %1  ·  Eligiendo personaje").arg(current_nick));
+            break;
+        default:
+            status_user_label->setText(tr("Conectado como  %1").arg(current_nick));
+    }
 }
 
 void MainWindow::show_error_in_current_page(const QString& msg) {

@@ -18,14 +18,17 @@ class RaceClassWidget: public QWidget {
 
  signals:
     void confirmRequested(uint8_t race, uint8_t klass);
+    void backToLobbyRequested();
 
  private slots:
     void on_confirm_clicked();
+    void on_back_clicked();
 
  private:
     QComboBox* race_combo;
     QComboBox* class_combo;
     QPushButton* confirm_button;
+    QPushButton* back_button;
 };
 
 #endif

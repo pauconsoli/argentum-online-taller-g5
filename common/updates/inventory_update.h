@@ -18,7 +18,8 @@ class InventoryUpdate: public GameUpdate {
  private:
     uint32_t player_id;
     std::vector<InventorySlotData> items;
-    uint64_t gold;  // campo separado, NO va en el inventario
+    //le agregue [[maybe_unused]] porque no me compila. porque no se usa (Pau)
+    [[maybe_unused]] uint64_t gold;  // campo separado, NO va en el inventario
                     // pero como el cliente lo agarra, lo mando junto con inventario
 
  public:
