@@ -242,5 +242,6 @@ uint64_t GameFormulas::calculate_player_dropped_gold(const Player& player) {
 // Le asigno un valor del 40% de la exp actual pero se puede ajustar
 uint64_t GameFormulas::calculate_player_dropped_experience(const Player& player) {
     const GameConfig& config = GameConfig::get_instance();
-    return static_cast<uint64_t>(player.get_experience() * config.get_death_exp_loss_mult());
+    return static_cast<uint64_t>(player.get_experience() *
+                                 config.get_death_exp_loss_mult());  // exp * 0.4
 }
