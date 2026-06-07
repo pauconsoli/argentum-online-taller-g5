@@ -55,6 +55,10 @@ class GameFormulas {
     static int calculate_kill_experience_gain(const Player& attacker, const Character& target);
 
     static int get_hand_combat_damage(const Player& attacker);
+
+    // MUERTE Y DROPS
+    static uint64_t calculate_player_dropped_gold(const Player& player);
+    static uint64_t calculate_player_dropped_experience(const Player& player);
 };
 
 #endif

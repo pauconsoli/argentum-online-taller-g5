@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "common/position.h"
+#include "server/game/loot.h"
 
 class Character {
  protected:
@@ -45,6 +46,8 @@ class Character {
                     // inventario equipado usando la formula de GameFormulas
 
     virtual bool validate_attack_from(int attacker_level) const = 0;
+
+    virtual Loot drop_loot() = 0;
 
     void receive_damage(int damage);
 

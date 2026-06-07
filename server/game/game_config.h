@@ -50,6 +50,7 @@ class GameConfig {
     float level_limit_base;
     float level_limit_exp;
     float kill_bonus_factor;
+    float death_exp_loss_mult;
 
     float critical_chance;
     float evasion_threshold;
@@ -103,6 +104,7 @@ class GameConfig {
     float get_level_limit_base() const;
     float get_level_limit_exp() const;
     float get_kill_bonus_factor() const;
+    float get_death_exp_loss_mult() const;
 
     float get_critical_chance() const;
     float get_evasion_threshold() const;

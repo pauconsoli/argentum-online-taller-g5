@@ -316,6 +316,19 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         put_u8(buf, p.is_ghost ? 1 : 0);
         put_u8(buf, p.is_meditating ? 1 : 0);
     }
+
+    if (u.ground_items.size() > UINT16_MAX) {
+        throw std::length_error("send_snapshot: demasiados items en el suelo");
+    }
+    put_u16(buf, static_cast<uint16_t>(u.ground_items.size()));
+    for (const auto& gi : u.ground_items) {
+        put_i32(buf, gi.x);
+        put_i32(buf, gi.y);
+        put_u8(buf, gi.is_gold ? 1 : 0);
+        put_u64(buf, gi.quantity);
+        put_string(buf, gi.name);
+    }
+
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_snapshot: client closed connection");
     }

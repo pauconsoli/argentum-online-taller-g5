@@ -44,11 +44,15 @@ class Player: public Character {
 
     bool validate_attack_from(int attacker_level) const override;
 
+    Loot drop_loot() override;
+
     void move(const Position& new_position);
 
     void add_gold(uint64_t amount);
 
     bool remove_gold(uint64_t amount);
+
+    void remove_experience(uint64_t amount);
 
     void add_experience(uint64_t amount);
 

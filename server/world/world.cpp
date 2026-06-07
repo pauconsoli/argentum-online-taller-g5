@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <queue>
+#include <set>
 #include <stdexcept>
 #include <utility>
 
@@ -156,6 +158,107 @@ Position World::get_spawn_position() const {
     throw std::runtime_error("World::get_spawn_position: no hay posiciones libres en el mapa");
 }
 
+const std::map<Position, GroundItem>& World::get_ground_items() const {
+    return ground_items;
+}
+
+// no considera si esta ocupada porque el jugador se para sobre los items del suelo
+Position World::find_closest_free_ground(const Position& start) const {
+    std::queue<Position> q;
+    std::set<Position> visited;
+
+    q.push(start);
+    visited.insert(start);
+
+    while (!q.empty()) {
+        Position curr = q.front();
+        q.pop();
+        if (map.is_valid_position(curr) && !map.is_position_blocked(curr)) {
+            if (ground_items.find(curr) == ground_items.end()) {
+                return curr;
+            }
+        }
+
+        const Position neighbors[] = {
+            {curr.x, curr.y - 1}, {curr.x, curr.y + 1}, {curr.x - 1, curr.y}, {curr.x + 1, curr.y}};
+
+        for (const Position& neighbor : neighbors) {
+            if (map.is_valid_position(neighbor) && !map.is_position_blocked(neighbor)) {
+                if (visited.insert(neighbor).second) {
+                    q.push(neighbor);
+                }
+            }
+        }
+    }
+    throw std::runtime_error("World::find_closest_free_ground: no hay espacio libre en el suelo");
+}
+
+void World::drop_loot_in_world(const Position& center, Loot loot) {
+    if (loot.dropped_gold > 0) {
+        try {
+            Position free_pos = find_closest_free_ground(center);
+            ground_items[free_pos] = GroundItem{loot.dropped_gold, nullptr, 0};
+        } catch (const std::exception&) {}
+    }
+
+    for (auto& slot : loot.dropped_items) {
+        try {
+            Position free_pos = find_closest_free_ground(center);
+            ground_items[free_pos] = GroundItem{0, std::move(slot.item), slot.quantity};
+        } catch (const std::exception&) {
+            break;
+        }
+    }
+}
+
+void World::validate_attack_conditions(const Player* attacker, const Character* target) const {
+    if (attacker->is_dead() || target->is_dead()) {
+        throw std::runtime_error("World::attack: jugador u objetivo muertos, no se puede atacar");
+    }
+
+    if (!target->validate_attack_from(attacker->get_level())) {
+        throw std::runtime_error(
+            "World::attack: nivel insuficiente o diferencia de niveles no permitida");
+    }
+
+    if (!is_in_range_for_attack(attacker, target)) {
+        throw std::runtime_error("World::attack: el objetivo está fuera de rango para el ataque");
+    }
+}
+
+void World::consume_weapon_mana(Player* attacker) {
+    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
+    if (equipped_weapon) {
+        Weapon* weapon = static_cast<Weapon*>(equipped_weapon);
+        int mana_cost = weapon->get_mana_cost();
+
+        if (mana_cost > 0) {
+            if (attacker->get_current_mana() < mana_cost) {
+                throw std::runtime_error("World::attack: maná insuficiente para atacar");
+            }
+            attacker->consume_mana(mana_cost);
+        }
+    }
+}
+
+void World::handle_target_death(Player* attacker, Character* target) {
+    int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker, *target);
+    attacker->add_experience(bonus_exp);
+
+    Loot loot = target->drop_loot();
+    drop_loot_in_world(target->get_position(), std::move(loot));
+}
+
+int World::handle_successful_attack(Player* attacker, Character* target, int damage) {
+    int defense = target->get_defense();
+    int real_damage = std::max(0, damage - defense);
+    target->receive_damage(real_damage);
+
+    int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target);
+    attacker->add_experience(exp);
+
+    return real_damage;
+}
 
 // REFACTOR FUTURO.
 // TODO(Pau): que se use Character* para poder usarlo para NPCs cuando existan
@@ -194,6 +297,8 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 
 
 // TODO(Pau): clanes y zonas seguras
+// esto hay que adaptarlo bien a NPCs, esta adaptado a la mitad
+// el target puede ser NPC, pero en este momento no puede usarse para que un NPC ataqie
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Player* attacker = get_player(attacker_id);
     Character* target = get_character(target_id);
@@ -202,65 +307,34 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         throw std::runtime_error("World::attack: atacante o objetivo no existe");
     }
 
-    if (attacker->is_dead() || target->is_dead()) {
-        throw std::runtime_error("World::attack: jugador u objetivo muertos, no se puede atacar");
-    }
-
-    if (!target->validate_attack_from(attacker->get_level())) {
-        throw std::runtime_error(
-            "World::attack: nivel insuficiente o diferencia de niveles no permitida");
-    }
-
-    if (!is_in_range_for_attack(attacker, target)) {
-        throw std::runtime_error("World::attack: el objetivo está fuera de rango para el ataque");
-    }
-
-    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
-    if (equipped_weapon) {  // igual ver casteo
-        Weapon* weapon =
-            static_cast<Weapon*>(equipped_weapon);  // yo se que el item equipado en ese slot tiene
-                                                    // que ser un arma sí o sí
-        int mana_cost = weapon->get_mana_cost();
-
-        if (mana_cost > 0) {
-            if (attacker->get_current_mana() < mana_cost) {
-                throw std::runtime_error("World::attack: maná insuficiente para atacar");
-            }
-            attacker->consume_mana(mana_cost);
-        }
-    }
+    validate_attack_conditions(attacker, target);
+    consume_weapon_mana(attacker);
 
     int damage = GameFormulas::calculate_damage(*attacker);
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
-        damage *= 2;
+        damage *= 2;  // extraer a config
     }
 
     bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
 
     int real_damage = 0;
     if (!evaded) {
-
-        int defense = target->get_defense();
-        real_damage = std::max(0, damage - defense);
-        target->receive_damage(real_damage);
-
-        int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target);
-        attacker->add_experience(exp);
+        real_damage = handle_successful_attack(attacker, target, damage);
     }
 
     bool died = target->is_dead();
     if (died) {
-        int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker, *target);
-        attacker->add_experience(bonus_exp);
-        // TODO(Pau): drop de oro e items del atacado
+        handle_target_death(attacker, target);
     }
 
     return AttackResult{attacker_id, target_id, real_damage, evaded, died};
 }
 
 
+// esto podría devolver un vector de structs (Stats o similar) o algo indicando
+// QUÉ cambió  y para QUE JUGADOR
 void World::update(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())

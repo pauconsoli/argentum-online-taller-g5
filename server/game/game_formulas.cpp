@@ -229,3 +229,19 @@ int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const C
     float random_factor = get_random_float(0.0, config.get_kill_bonus_factor());
     return static_cast<int>(random_factor * target_max_hp * level_multiplier);
 }
+
+// MUERTE Y DROPS
+
+uint64_t GameFormulas::calculate_player_dropped_gold(const Player& player) {
+    uint64_t max_safe_gold = calculate_max_gold(player);
+    uint64_t current_gold = player.get_gold();
+    return (current_gold > max_safe_gold) ? (current_gold - max_safe_gold) : 0;
+}
+
+// Esta fórmula es inventada porque en el enunciado no dice cuanta exp se pierde
+// Le asigno un valor del 40% de la exp actual pero se puede ajustar
+uint64_t GameFormulas::calculate_player_dropped_experience(const Player& player) {
+    const GameConfig& config = GameConfig::get_instance();
+    return static_cast<uint64_t>(player.get_experience() *
+                                 config.get_death_exp_loss_mult());  // exp * 0.4
+}

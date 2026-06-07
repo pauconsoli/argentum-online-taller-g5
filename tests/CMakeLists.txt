@@ -12,6 +12,7 @@ target_sources(taller_tests
     world/zone_test.cpp
     world/world_map_test.cpp
     world/world_test.cpp
+    world/attack_test.cpp
     PUBLIC
     # .h files
     )
