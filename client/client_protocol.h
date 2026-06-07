@@ -35,6 +35,7 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_player_joined();
     std::unique_ptr<GameUpdate> recv_player_left();
     std::unique_ptr<GameUpdate> recv_player_spawned();
+    std::unique_ptr<GameUpdate> recv_world_map();
     std::unique_ptr<GameUpdate> recv_snapshot();
     std::unique_ptr<GameUpdate> recv_moved();
     std::unique_ptr<GameUpdate> recv_attacked();
