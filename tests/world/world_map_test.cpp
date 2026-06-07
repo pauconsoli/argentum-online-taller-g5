@@ -15,7 +15,7 @@ class WorldMapTest: public ::testing::Test {
     Position negative{-1, -1};
 
     City city_zone;
-    Dungeon dungeon_zone;
+    Dungeon dungeon_zone{"Caverna de Pruebas", 0, 0};
 };
 
 TEST_F(WorldMapTest, ConstructorDimensions) {
@@ -123,7 +123,7 @@ TEST_F(WorldMapTest, SetCellOutOfBoundsIgnored) {
 }
 
 TEST_F(WorldMapTest, MultipleZones) {
-    Dungeon dungeon2;
+    Dungeon dungeon2{"Otra Caverna", 10, 10};
 
     map.set_zone(center, &city_zone);
     map.set_zone(Position{10, 10}, &dungeon2);

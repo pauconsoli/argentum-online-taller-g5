@@ -1,7 +1,6 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
-// WorldMap: representa el mapa del mundo Argentum, con sus celdas y zonas
 // Idea actual: hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones.
 // Cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal)
 // tiene sus propias características (ej si es segura o no, si se puede spawnear ahí, etc).
@@ -11,8 +10,7 @@
 
 #include "cell.h"
 #include "common/position.h"
-
-class Zone;
+#include "zone.h"
 
 class WorldMap {
  private:

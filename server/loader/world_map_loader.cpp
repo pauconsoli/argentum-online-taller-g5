@@ -89,15 +89,17 @@ WorldMap WorldMapLoader::load(const std::string& config_path) {
             auto y_z = (*zone_table)["y"].value<int>();
             auto w_z = (*zone_table)["width"].value<int>();
             auto h_z = (*zone_table)["height"].value<int>();
+            auto ent_x = (*zone_table)["entrance_x"].value<int>();
+            auto ent_y = (*zone_table)["entrance_y"].value<int>();
 
-            if (!type_z || !name_z || !x_z || !y_z || !w_z || !h_z) {
+            if (!type_z || !name_z || !x_z || !y_z || !w_z || !h_z || !ent_x || !ent_y) {
                 throw std::runtime_error(
                     "map.toml: faltan atributos en una de las definiciones de [[zones]]");
             }
 
             std::unique_ptr<Zone> new_zone;
             if (*type_z == "dungeon") {
-                new_zone = std::make_unique<Dungeon>(*name_z);
+                new_zone = std::make_unique<Dungeon>(*name_z, *ent_x, *ent_y);
             } else {
                 throw std::runtime_error("map.toml: tipo de zona desconocido '" + *type_z + "'");
             }
