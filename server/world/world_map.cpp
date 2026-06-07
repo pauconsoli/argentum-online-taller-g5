@@ -1,5 +1,8 @@
 #include "world_map.h"
 
+#include <memory>
+#include <utility>
+
 #include "zone.h"
 
 // TODO(Pau): implementar excepciones para casos de posición inválida, etc. (ej algo fuera del mapa)
@@ -35,6 +38,17 @@ Zone* WorldMap::get_zone(const Position& pos) const {
     }
 
     return zones[pos.y][pos.x];
+}
+
+void WorldMap::add_zone(std::unique_ptr<Zone> zone, int x, int y, int w, int h) {
+    Zone* ptr = zone.get();
+    zones_storage.push_back(std::move(zone));
+
+    for (int dy = 0; dy < h; dy++) {
+        for (int dx = 0; dx < w; dx++) {
+            set_zone({x + dx, y + dy}, ptr);
+        }
+    }
 }
 
 void WorldMap::set_cell(const Position& pos, const Cell& cell) {
