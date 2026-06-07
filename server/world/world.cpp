@@ -356,8 +356,11 @@ void World::pick_up_item(uint32_t player_id) {
         return;
     }
 
-    if (!player->get_inventory().add_item(std::move(ground.item), ground.quantity))
+    if (!player->get_inventory().can_add_item(*ground.item)) {
         throw std::runtime_error("World::pick_up_item: inventario lleno");
+    }
+
+    player->get_inventory().add_item(std::move(ground.item), ground.quantity);
 
     ground_items.erase(it);
 }
