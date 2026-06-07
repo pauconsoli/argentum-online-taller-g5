@@ -8,7 +8,11 @@
 
 #include <arpa/inet.h>
 
+#include "common/commands/attack_command.h"
+#include "common/commands/drop_item_command.h"
+#include "common/commands/meditate_command.h"
 #include "common/commands/move_command.h"
+#include "common/commands/pick_up_item_command.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/error_update.h"
@@ -183,6 +187,24 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_move_payload(uint32_t player
     }
     Direction dir = static_cast<Direction>(dir_byte);
     return std::make_unique<MoveCommand>(player_id, dir);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_attack_payload(uint32_t player_id) {
+    uint32_t target_id = recv_u32();
+    return std::make_unique<AttackCommand>(player_id, target_id);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_meditate_payload(uint32_t player_id) {
+    return std::make_unique<MeditateCommand>(player_id);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_pick_up_payload(uint32_t player_id) {
+    return std::make_unique<PickUpItemCommand>(player_id);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_drop_item_payload(uint32_t player_id) {
+    uint8_t slot = recv_u8();
+    return std::make_unique<DropItemCommand>(player_id, static_cast<int>(slot));
 }
 
 void ServerProtocol::send_update(const GameUpdate& update) {
