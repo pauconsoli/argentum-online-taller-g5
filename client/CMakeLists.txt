@@ -9,6 +9,7 @@ target_sources(taller_client
     sdl/camera.cpp
     sdl/hud.cpp
     sdl/sprite_manager.cpp
+    sdl/client_map.cpp
     PUBLIC
     client.h
     client_protocol.h
@@ -18,4 +19,5 @@ target_sources(taller_client
     sdl/camera.h
     sdl/hud.h
     sdl/sprite_manager.h
+    sdl/client_map.h
     )

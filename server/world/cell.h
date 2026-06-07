@@ -1,7 +1,7 @@
 #ifndef CELL_H
 #define CELL_H
 
-#include "terrain_type.h"
+#include "common/world/terrain_type.h"
 
 class Cell {
  private:

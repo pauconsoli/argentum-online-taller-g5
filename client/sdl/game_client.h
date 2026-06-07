@@ -1,6 +1,7 @@
 #ifndef GAME_CLIENT_H
 #define GAME_CLIENT_H
 
+#include <cstdint>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -21,6 +22,7 @@ class GameClient {
     Client client;
     InputHandler input_handler;
     Camera camera;
+    uint32_t my_player_id;
     int player_x;
     int player_y;
     int width;

@@ -30,3 +30,32 @@ SDL_Texture* SpriteManager::get(const std::string& id) const {
     }
     return it->second;
 }
+
+const char* SpriteManager::terrain_key(TerrainType t) {
+    switch (t) {
+        case TerrainType::GRASS:
+            return "terrain_grass";
+        case TerrainType::WATER:
+            return "terrain_water";
+        case TerrainType::DIRT:
+            return "terrain_dirt";
+        case TerrainType::STONE:
+            return "terrain_stone";
+        case TerrainType::SAND:
+            return "terrain_sand";
+    }
+    return "terrain_grass";
+}
+
+void SpriteManager::load_terrain_textures(const std::string& assets_dir) {
+    const std::string sep = assets_dir.back() == '/' ? "" : "/";
+    load("terrain_grass", assets_dir + sep + "grass_tile.png");
+    load("terrain_water", assets_dir + sep + "water.png");
+    load("terrain_dirt", assets_dir + sep + "dirt.png");
+    load("terrain_stone", assets_dir + sep + "stone.png");
+    load("terrain_sand", assets_dir + sep + "sand.png");
+}
+
+SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
+    return get(terrain_key(t));
+}

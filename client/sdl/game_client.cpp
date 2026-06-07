@@ -3,6 +3,12 @@
 #include <memory>
 #include <stdexcept>
 
+#include "client_map.h"
+#include "common/updates/login_ok_update.h"
+#include "common/updates/match_created_update.h"
+#include "common/updates/match_joined_update.h"
+#include "common/updates/moved_update.h"
+
 GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
     window(nullptr),
     renderer(nullptr),
@@ -10,6 +16,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     sprite_manager(nullptr),
     client(host, port),
     camera(width, height),
+    my_player_id(0),
     player_x(400),
     player_y(300),
     width(width),
@@ -27,7 +34,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load("body", "client/assets/body.png");
     sprite_manager->load("head", "client/assets/head.png");
-    sprite_manager->load("grass", "client/assets/grass.png");
+    sprite_manager->load_terrain_textures("client/assets");
     hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf");
 
     client.start();
@@ -57,13 +64,83 @@ void GameClient::run() {
     const int head_frame_h = 64;
 
     // direction: 0=down, 1=up, 2=left, 3=right (persists across frames)
+    // TODO(chiaradelaurentis): esto viene del QT
+    client.do_login("player1");
+    {
+        auto& q = client.get_received_updates();
+        bool logged_in = false;
+        bool in_match = false;
+        uint32_t match_id = 0;
+
+        // espera respuesta del servidor hasta que comience la partida
+        while (running && !in_match) {
+            // evita que la ventana quede congelada
+            while (SDL_PollEvent(&event)) {
+                running = input_handler.handle(event);
+            }
+            std::unique_ptr<GameUpdate> u;
+            while (q.try_pop(u)) {
+                // Cliente manda LOGIN
+                // Servidor responde LOGIN_OK
+
+                // Cliente manda CREATE_MATCH
+                // Servidor responde MATCH_CREATED
+
+                // Cliente manda JOIN_MATCH
+                // Servidor responde MATCH_JOINED
+                // esperar LOGIN_OK
+                // crear sala1
+                // esperar MATCH_CREATED
+                // unirse a esa sala
+                // esperar MATCH_JOINED
+                // arrancar juego
+                // ver que tipo de mensaje recibe
+                switch (u->get_type()) {
+                    case UpdateType::LOGIN_OK:
+                        my_player_id =
+                            static_cast<LoginOkUpdate&>(*u).player_id;  // que tipo de dato es este?
+                        logged_in = true;
+                        // PARTIDA HARDCODEADA
+                        client.do_create_match("sala1", 4);
+                        break;
+                    case UpdateType::MATCH_CREATED:
+                        match_id = static_cast<MatchCreatedUpdate&>(*u).match_id;
+                        client.do_join_match(match_id);
+                        break;
+                    case UpdateType::MATCH_JOINED:
+                        // este es el ultimo paso
+                        in_match = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            (void) logged_in;
+            SDL_Delay(10);
+        }
+    }
+
+    if (!running)
+        return;
+
+    // TODO(chiaradelaurentis): ESTO LO TIENE QUE DECIDIR EL SERVIDOR!!!
+    player_x = static_cast<int>(1 + my_player_id) * tile_w;
+    player_y = tile_h;
+
+    ClientMap client_map = build_sample_client_map();
+
+
     int direction = 0;
     int current_frame = 0;
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
     const Uint32 frame_delay = 100;
 
+    const Uint32 frame_time_ms = 1000 / 60;
+
     while (running) {
+        Uint32 frame_start = SDL_GetTicks();
+
         while (SDL_PollEvent(&event)) {
             running = input_handler.handle(event);
         }
@@ -115,24 +192,29 @@ void GameClient::run() {
         int frame_y = direction * frame_h;
         int head_frame_y = direction * head_frame_h;
 
-        camera.center_on(player_x, player_y);
+        // se centra la camara
+        camera.center_on(player_x, player_y, client_map.get_width() * tile_w,
+                         client_map.get_height() * tile_h);
+        // convierte coordenadas del mundo a coordenadas de pantalla
         int screen_x = camera.get_screen_x(player_x);
         int screen_y = camera.get_screen_y(player_y);
 
         renderer->clear();
 
-        // Grass floor tiled across the visible area
-        int cam_world_x = player_x - width / 2;
-        int cam_world_y = player_y - height / 2;
-        int start_col = cam_world_x / tile_w - 1;
-        int end_col = start_col + width / tile_w + 3;
-        int start_row = cam_world_y / tile_h - 1;
-        int end_row = start_row + height / tile_h + 3;
+        int start_col = camera.get_x() / tile_w;
+        int end_col = start_col + width / tile_w + 1;
+        int start_row = camera.get_y() / tile_h;
+        int end_row = start_row + height / tile_h + 1;
         for (int row = start_row; row <= end_row; row++) {
             for (int col = start_col; col <= end_col; col++) {
                 int tx = camera.get_screen_x(col * tile_w);
                 int ty = camera.get_screen_y(row * tile_h);
-                renderer->draw_frame(sprite_manager->get("grass"), 0, 0, tile_w, tile_h, tx, ty);
+                TerrainType terrain = (col >= 0 && col < client_map.get_width() && row >= 0 &&
+                                       row < client_map.get_height()) ?
+                                          client_map.at(col, row).terrain :
+                                          TerrainType::GRASS;
+                renderer->draw_frame(sprite_manager->get_terrain(terrain), 0, 0, tile_w, tile_h, tx,
+                                     ty);
             }
         }
 
@@ -154,5 +236,10 @@ void GameClient::run() {
 
         hud->draw(100, 100, 50, 100, 1);
         renderer->present();
+
+        Uint32 elapsed = SDL_GetTicks() - frame_start;
+        if (elapsed < frame_time_ms) {
+            SDL_Delay(frame_time_ms - elapsed);
+        }
     }
 }
