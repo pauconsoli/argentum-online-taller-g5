@@ -19,7 +19,7 @@ MiniChat::~MiniChat() {
 }
 
 void MiniChat::draw_text(const std::string& text, int x, int y, SDL_Color color) {
-    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), color);
+    SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
     if (surface == nullptr)
         return;
 
@@ -38,7 +38,7 @@ void MiniChat::draw_text(const std::string& text, int x, int y, SDL_Color color)
 void MiniChat::draw_label(const std::string& text, int center_x, int y, SDL_Color color) {
     if (text.empty())
         return;
-    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), color);
+    SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
     if (!surface)
         return;
     SDL_Texture* texture = SDL_CreateTextureFromSurface(sdl_renderer, surface);

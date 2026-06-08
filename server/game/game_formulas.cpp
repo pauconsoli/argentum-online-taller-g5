@@ -163,13 +163,7 @@ bool GameFormulas::calculate_critical_attack() {
 }
 
 // Daño = Fuerza * rand(DañoArmaMin, DañoArmaMax)
-int GameFormulas::calculate_damage(const Player& attacker) {
-    Item* item = attacker.get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
-
-    // consultar sobre este cast
-    Weapon* weapon = static_cast<Weapon*>(
-        item);  // ya sé que el item equipado ahí va a ser un arma si o si, lo garantiza mi diseño
-
+int GameFormulas::calculate_damage(const Player& attacker, const Weapon* weapon) {
     int min_dmg = weapon ? weapon->get_min_damage() : get_hand_combat_damage(attacker);
     int max_dmg = weapon ? weapon->get_max_damage() : get_hand_combat_damage(attacker);
 

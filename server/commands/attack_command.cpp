@@ -22,16 +22,36 @@ std::vector<std::unique_ptr<GameUpdate>> AttackCommand::execute(World& world) {
         return updates;
     }
 
-    try {
-        AttackResult result = world.attack(player_id, target_id);
-        updates.push_back(std::make_unique<AttackUpdate>(result));
-
-        if (result.target_died) {
-            updates.push_back(std::make_unique<DeathUpdate>(target_id, player_id));
+    AttackResult result = world.attack(player_id, target_id);
+    if (result.status != AttackStatus::SUCCESS) {
+        std::string error_msg;
+        switch (result.status) {
+            case AttackStatus::NO_MANA:
+                error_msg = "No tienes suficiente mana";
+                break;
+            case AttackStatus::OUT_OF_RANGE:
+                error_msg = "El objetivo está fuera de rango";
+                break;
+            case AttackStatus::INVALID_TARGET:
+                error_msg = "Objetivo inválido";
+                break;
+            case AttackStatus::DEAD:
+                error_msg = "Jugador u objetivo muertos";
+                break;
+            default:
+                error_msg = "Ataque inválido";
+                break;
         }
-    } catch (const std::exception& e) {  // validaciones
-        updates.push_back(
-            std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED, e.what()));
+        updates.push_back(std::make_unique<ErrorUpdate>(
+            player_id, ProtocolError::COMMAND_NOT_ALLOWED, error_msg));
+        return updates;
     }
+
+    updates.push_back(std::make_unique<AttackUpdate>(result));
+
+    if (result.target_died) {
+        updates.push_back(std::make_unique<DeathUpdate>(target_id, player_id));
+    }
+
     return updates;
 }

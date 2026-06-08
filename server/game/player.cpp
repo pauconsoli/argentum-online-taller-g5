@@ -7,6 +7,7 @@
 
 #include "server/game/game_formulas.h"
 #include "server/game/inventory.h"
+#include "server/game/items/weapon.h"
 
 Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClass player_class,
                int level, int max_hp, int max_mana, int strength, int agility, int intelligence,
@@ -152,6 +153,11 @@ void Player::equip(Item& item) {
 
 std::vector<std::pair<EquipmentSlot, Item*>> Player::get_equipment() const {
     return inventory->get_equipped_items();
+}
+
+Weapon* Player::get_equipped_weapon() const {
+    Item* item = inventory->get_equipped_item(EquipmentSlot::WEAPON);
+    return static_cast<Weapon*>(item);  // yo se que ese item es SI O SI un arma, magica o normal
 }
 
 void Player::set_initial_stats(int hp, int mana) {

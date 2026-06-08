@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+enum class AttackStatus { SUCCESS, NO_MANA, OUT_OF_RANGE, INVALID_TARGET, DEAD };
+
 struct AttackResult {
     uint32_t attacker_id;
     uint32_t target_id;
@@ -11,6 +13,7 @@ struct AttackResult {
     bool target_died;
     bool is_healing = false;
     int heal_amount = 0;
+    AttackStatus status = AttackStatus::SUCCESS;
 };
 
 #endif

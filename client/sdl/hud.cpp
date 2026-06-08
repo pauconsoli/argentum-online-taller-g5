@@ -21,7 +21,7 @@ Hud::~Hud() {
 }
 
 void Hud::draw_text(const std::string& text, int x, int y, SDL_Color color) {
-    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), color);
+    SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
     if (surface == nullptr)
         return;
 

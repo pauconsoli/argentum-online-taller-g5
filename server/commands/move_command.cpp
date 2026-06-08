@@ -20,12 +20,14 @@ std::vector<std::unique_ptr<GameUpdate>> MoveCommand::execute(World& world) {
 
     player->stop_meditating();
 
-    try {
-        world.move_player(player_id, direction);
+    bool success = world.move_player(player_id, direction);
+
+    if (success) {
         updates.push_back(std::make_unique<MovedUpdate>(player_id, player->get_position()));
-    } catch (const std::exception& e) {
-        updates.push_back(
-            std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED, e.what()));
+    } else {
+        updates.push_back(std::make_unique<ErrorUpdate>(
+            player_id, ProtocolError::COMMAND_NOT_ALLOWED, "No puedes moverte en esa dirección"));
     }
+
     return updates;
 }

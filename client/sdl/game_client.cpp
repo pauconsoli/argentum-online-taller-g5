@@ -385,10 +385,13 @@ void GameClient::run() {
                 }
                 case UpdateType::INVENTORY: {
                     const auto& iu = static_cast<const InventoryUpdate&>(*update);
-                    if (iu.get_target_player_id() == my_player_id) {
-                        inventory_slots_ = iu.get_items();
-                        my_gold = iu.get_gold();
-                    }
+                    inventory_slots_ = iu.get_items();
+                    my_gold = iu.get_gold();
+                    std::cout << "[INV] Recibí InventoryUpdate: " << inventory_slots_.size()
+                              << " slots, gold=" << my_gold << "\n";
+                    for (const auto& s : inventory_slots_)
+                        std::cout << "  slot: " << s.item_name << " x" << s.quantity
+                                  << " equipped=" << s.is_equipped << "\n";
                     break;
                 }
                 case UpdateType::ATTACKED: {
@@ -504,6 +507,7 @@ void GameClient::run() {
         }
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
+        std::cout << "[HUD] draw_inventory con " << inventory_slots_.size() << " slots\n";
         hud->draw_inventory(sprite_manager, inventory_slots_);
 
         mini_chat->draw();
