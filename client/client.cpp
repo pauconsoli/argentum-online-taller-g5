@@ -1,10 +1,4 @@
 #include "client.h"
-#include "common/updates/attack_update.h"
-#include "common/updates/error_update.h"
-#include "common/updates/match_created_update.h"
-#include "common/updates/match_joined_update.h"
-#include "common/updates/match_list_update.h"
-#include "common/updates/world_map_update.h"
 
 #include <iostream>
 #include <memory>
@@ -13,82 +7,38 @@
 #include <sys/socket.h>
 
 #include "common/liberror.h"
-
-
+\
 namespace {
 
 class ClientReceiverThread: public Thread {
  private:
-    Client* client;
     ClientProtocol& protocol;
+    Queue<std::unique_ptr<GameUpdate>>& out_queue;
     Socket& socket;
 
  public:
-    ClientReceiverThread(Client* c, ClientProtocol& p, Socket& s):
-            client(c), protocol(p), socket(s) {}
+    ClientReceiverThread(ClientProtocol& p, Queue<std::unique_ptr<GameUpdate>>& q, Socket& s):
+            protocol(p), out_queue(q), socket(s) {}
 
     void run() override {
         try {
             while (should_keep_running()) {
                 auto update = protocol.receive_update();
-
-            if (!update) {
-                continue;
+                if (update) {
+                    out_queue.push(std::move(update));
+                }
             }
-
-            switch (update->get_type()) {
-                case UpdateType::LOGIN_OK: {
-                    emit client->loginOk();
-                    break;
-                }
-
-                case UpdateType::MATCH_LIST: {
-                    auto* u = static_cast<MatchListUpdate*>(update.get());
-                    emit client->matchListReceived(u->matches);
-                    break;
-                }
-
-                case UpdateType::MATCH_CREATED: {
-                    emit client->matchCreated();
-                    break;
-                }
-
-                case UpdateType::MATCH_JOINED: {
-                    emit client->matchJoined();
-                    break;
-                }
-
-                case UpdateType::ERROR: {
-                    auto* u = static_cast<ErrorUpdate*>(update.get());
-                    emit client->errorReceived(
-                            u->code,
-                            QString::fromStdString(u->detail));
-                    break;
-                }
-
-                case UpdateType::ATTACKED: {
-                    auto* u = static_cast<AttackUpdate*>(update.get());
-                    emit client->attackReceived(u->get_result());
-                    break;
-                }
-
-                case UpdateType::WORLD_MAP: {
-                    auto* u = static_cast<WorldMapUpdate*>(update.get());
-                    emit client->worldMapReceived(u->width, u->height, u->cells);
-                    break;
-                }
-
-                default:
-                    break;
-            }
-        }
+        } catch (const ClosedQueue&) {
+            // Cierre normal: la GUI cerró su queue.
         } catch (const LibError& e) {
             std::cerr << "[CLIENT-RECEIVER] Conexión cerrada: " << e.what() << "\n";
         } catch (const std::exception& e) {
             std::cerr << "[CLIENT-RECEIVER] Excepción inesperada: " << e.what() << "\n";
         }
 
-        emit client->disconnectedFromServer();
+        try {
+            out_queue.close();
+        } catch (...) {}
     }
 
     void stop() override {
@@ -101,11 +51,11 @@ class ClientReceiverThread: public Thread {
 
 }  // namespace
 
-Client::Client(const std::string& host, const std::string& port, QObject* parent):
-        QObject(parent),    
+Client::Client(const std::string& host, const std::string& port):
         socket(host.c_str(), port.c_str()),
         protocol(socket),
         send_mutex(),
+        received_updates(),
         receiver_thread(nullptr) {}
 
 Client::~Client() {
@@ -120,7 +70,7 @@ void Client::start() {
         return;
     }
     receiver_thread =
-             std::make_unique<ClientReceiverThread>(this, protocol, socket);
+            std::make_unique<ClientReceiverThread>(protocol, received_updates, socket);
     receiver_thread->start();
 }
 
@@ -200,3 +150,6 @@ void Client::do_disconnect() {
     protocol.send_disconnect();
 }
 
+Queue<std::unique_ptr<GameUpdate>>& Client::get_received_updates() {
+    return received_updates;
+}

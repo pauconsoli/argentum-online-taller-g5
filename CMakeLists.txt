@@ -217,6 +217,8 @@ if(TALLER_CLIENT_QT)
             client/qt/qt_main.cpp
             client/qt/main_window.cpp
             client/qt/main_window.h
+            client/qt/qt_client_adapter.cpp
+            client/qt/qt_client_adapter.h
             client/qt/connection_widget.cpp
             client/qt/connection_widget.h
             client/qt/lobby_widget.cpp

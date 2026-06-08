@@ -11,6 +11,7 @@
 
 #include "connection_widget.h"
 #include "lobby_widget.h"
+#include "qt_client_adapter.h"
 #include "race_class_widget.h"
 
 MainWindow::MainWindow(QWidget* parent):
@@ -20,6 +21,7 @@ MainWindow::MainWindow(QWidget* parent):
         lobby_page(new LobbyWidget(this)),
         race_class_page(new RaceClassWidget(this)),
         client(nullptr),
+        adapter(nullptr),
         current_nick(),
         status_user_label(new QLabel(this)) {
 
@@ -75,13 +77,18 @@ void MainWindow::handle_connect_requested(const QString& host, const QString& po
     connection_page->set_busy(true);
     try {
         client = std::make_unique<Client>(host.toStdString(), port.toStdString());
-        connect_client_signals();
-        client->start();
+
+        adapter = std::make_unique<QtClientAdapter>(client.get(), this);
+        connect_adapter_signals();
+
+        adapter->start();
+
         client->do_login(nick.toStdString());
         current_nick = nick;
     } catch (const std::exception& e) {
         connection_page->show_error(tr("No se pudo conectar: %1").arg(QString::fromLatin1(e.what())));
         connection_page->set_busy(false);
+        adapter.reset();
         client.reset();
     }
 }
@@ -159,27 +166,27 @@ void MainWindow::handle_back_to_lobby_requested() {
     handle_refresh_requested();
 }
 
-void MainWindow::connect_client_signals() {
-    connect(client.get(), &Client::loginOk, this, [this]() {
+void MainWindow::connect_adapter_signals() {
+    connect(adapter.get(), &QtClientAdapter::loginOk, this, [this]() {
         stack->setCurrentIndex(PAGE_LOBBY);
         connection_page->set_busy(false);
         update_status_bar();
         handle_refresh_requested();
     });
 
-    connect(client.get(), &Client::matchListReceived,
+    connect(adapter.get(), &QtClientAdapter::matchListReceived,
             lobby_page, &LobbyWidget::set_matches);
 
-    connect(client.get(), &Client::matchCreated, this, [this]() {
+    connect(adapter.get(), &QtClientAdapter::matchCreated, this, [this]() {
         handle_refresh_requested();
     });
 
-    connect(client.get(), &Client::matchJoined, this, [this]() {
+    connect(adapter.get(), &QtClientAdapter::matchJoined, this, [this]() {
         stack->setCurrentIndex(PAGE_RACE_CLASS);
         update_status_bar();
     });
 
-    connect(client.get(), &Client::errorReceived, this,
+    connect(adapter.get(), &QtClientAdapter::errorReceived, this,
             [this](uint8_t code, const QString& detail) {
                 show_error_in_current_page(
                         tr("[err %1] %2")
@@ -188,7 +195,7 @@ void MainWindow::connect_client_signals() {
                 connection_page->set_busy(false);
             });
 
-    connect(client.get(), &Client::disconnectedFromServer, this, [this]() {
+    connect(adapter.get(), &QtClientAdapter::disconnectedFromServer, this, [this]() {
         if (!client) return;
         QMessageBox::warning(this, tr("Desconectado"),
                              tr("Se cerró la conexión con el servidor."));
@@ -197,6 +204,10 @@ void MainWindow::connect_client_signals() {
 }
 
 void MainWindow::teardown_session() {
+    if (adapter) {
+        adapter->stop();
+    }
+    adapter.reset();
     client.reset();
     current_nick.clear();
     connection_page->set_busy(false);
