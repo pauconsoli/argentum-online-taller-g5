@@ -1,0 +1,147 @@
+# ============================================================
+#                      Argentum Online 
+#                        Item Catalog
+# ============================================================
+
+[items.sword]
+name = "Espada"
+type = "weapon"
+min_damage = 2
+max_damage = 5
+ranged = false
+
+[items.axe]
+name = "Hacha"
+type = "weapon"
+min_damage = 4
+max_damage = 5
+ranged = false
+
+[items.hammer]
+name = "Martillo"
+type = "weapon"
+min_damage = 1
+max_damage = 9
+ranged = false
+
+[items.simple_bow]
+name = "Arco simple"
+type = "weapon"
+min_damage = 1
+max_damage = 4
+ranged = true
+
+[items.compound_bow]
+name = "Arco compuesto"
+type = "weapon"
+min_damage = 4
+max_damage = 16
+ranged = true
+
+[items.leather_armor]
+name = "Armadura de cuero"
+type = "defensive"
+slot = "armor"
+min_defense = 2
+max_defense = 6
+
+[items.plate_armor]
+name = "Armadura de placas"
+type = "defensive"
+slot = "armor"
+min_defense = 15
+max_defense = 30
+
+[items.blue_tunic]
+name = "Túnica azul"
+type = "defensive"
+slot = "armor"
+min_defense = 6
+max_defense = 10
+
+[items.hood]
+name = "Capucha"
+type = "defensive"
+slot = "helmet"
+min_defense = 1
+max_defense = 4
+
+[items.iron_helmet]
+name = "Casco de hierro"
+type = "defensive"
+slot = "helmet"
+min_defense = 4
+max_defense = 8
+
+[items.magic_hat]
+name = "Sombrero mágico"
+type = "defensive"
+slot = "helmet"
+min_defense = 4
+max_defense = 12
+
+[items.turtle_shield]
+name = "Escudo de tortuga"
+type = "defensive"
+slot = "shield"
+min_defense = 1
+max_defense = 2
+
+[items.iron_shield]
+name = "Escudo de hierro"
+type = "defensive"
+slot = "shield"
+min_defense = 1
+max_defense = 4
+
+[items.ash_branch]
+name = "Vara de fresno"
+type = "magic_weapon"
+spell_name = "Flecha mágica"
+min_damage = 2
+max_damage = 4
+min_heal = 0
+max_heal = 0
+mana_cost = 5
+
+[items.knobby_staff]
+name = "Báculo nudoso"
+type = "magic_weapon"
+spell_name = "Misil"
+min_damage = 4
+max_damage = 8
+min_heal = 0
+max_heal = 0
+mana_cost = 15
+
+[items.attached_staff]
+name = "Báculo engarzado"
+type = "magic_weapon"
+spell_name = "Explosion"
+min_damage = 8
+max_damage = 20
+min_heal = 0
+max_heal = 0
+mana_cost = 30
+
+[items.elven_flute]
+name = "Flauta élfica"
+type = "magic_weapon"
+spell_name = "Curar"
+min_damage = 0
+max_damage = 0
+min_heal = 20
+max_heal = 40
+mana_cost = 100
+
+[items.health_potion]
+name = "Pocion de vida"
+type = "consumable"
+consumable_type = "health"
+restore = 50
+
+[items.mana_potion]
+name = "Pocion de mana"
+type = "consumable"
+consumable_type = "mana"
+restore = 50

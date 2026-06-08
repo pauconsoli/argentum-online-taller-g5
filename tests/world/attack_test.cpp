@@ -193,3 +193,31 @@ TEST_F(AttackTest, AttackerGetsRewardsOnKill) {
     ASSERT_TRUE(died);
     EXPECT_GT(attacker->get_experience(), initial_exp);
 }
+
+TEST_F(AttackTest, SelfAttackNormalThrows) {
+    test_add_player(1, 10, 10);
+
+    EXPECT_THROW(world.attack(1, 1), std::runtime_error);
+}
+
+TEST_F(AttackTest, HealingSpellSuccess) {
+    Player* attacker = test_add_player(1, 10, 10, 20, PlayerClass::MAGE);
+    Player* target = test_add_player(2, 10, 11);
+
+    target->receive_damage(50);
+    int initial_hp = target->get_current_hp();
+    int initial_mana = attacker->get_current_mana();
+
+    auto spell = std::make_unique<Spell>("Heal", 0, 0, 20, 40);
+    auto flute = std::make_unique<MagicWeapon>("Flute", std::move(spell), 10);
+    Item* flute_ptr = flute.get();
+    attacker->get_inventory().add_item(std::move(flute));
+    attacker->equip(*flute_ptr);
+
+    AttackResult result = world.attack(1, 2);
+
+    EXPECT_TRUE(result.is_healing);
+    EXPECT_GT(result.heal_amount, 0);
+    EXPECT_EQ(target->get_current_hp(), initial_hp + result.heal_amount);
+    EXPECT_EQ(attacker->get_current_mana(), initial_mana - 10);
+}

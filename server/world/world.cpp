@@ -9,6 +9,8 @@
 
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
+#include "server/game/items/magic_weapon.h"
+#include "server/game/items/spell.h"
 #include "server/game/items/weapon.h"
 
 World::World(int width, int height):
@@ -211,9 +213,29 @@ void World::drop_loot_in_world(const Position& center, Loot loot) {
     }
 }
 
-void World::validate_attack_conditions(const Player* attacker, const Character* target) const {
+void World::add_ground_item(const Position& pos, GroundItem item) {
+    if (!map.is_valid_position(pos) || map.is_position_blocked(pos)) {
+        throw std::runtime_error("World::add_ground_item: posición inválida o bloqueada");
+    }
+
+    Position free_pos = pos;
+    if (ground_items.find(pos) != ground_items.end()) {
+        free_pos = find_closest_free_ground(pos);
+    }
+    ground_items[free_pos] = std::move(item);
+}
+
+// TODO(Pau): refactor para que no tire excepciones, que devuelva un attack status o algo asi)
+void World::validate_attack_conditions(const Player* attacker, const Character* target,
+                                       bool is_healing) const {
     if (attacker->is_dead() || target->is_dead()) {
         throw std::runtime_error("World::attack: jugador u objetivo muertos, no se puede atacar");
+    }
+
+    if (!is_healing) {
+        if (attacker->get_id() == target->get_id()) {
+            throw std::runtime_error("World::attack: no puedes atacarte a ti mismo");
+        }
     }
 
     if (!target->validate_attack_from(attacker->get_level())) {
@@ -257,10 +279,31 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
     int real_damage = std::max(0, damage - defense);
     target->receive_damage(real_damage);
 
-    int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target);
+    int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target, real_damage);
     attacker->add_experience(exp);
 
     return real_damage;
+}
+
+// again esto no debería estar acá, pero por ahora solo quiero que funcione
+MagicWeapon* World::get_healing_weapon(Player* attacker) const {
+    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
+    if (MagicWeapon* magic_weapon = dynamic_cast<MagicWeapon*>(equipped_weapon)) {
+        if (magic_weapon->get_spell().does_heal()) {
+            return magic_weapon;
+        }
+    }
+    return nullptr;
+}
+
+AttackResult World::handle_healing(uint32_t attacker_id, uint32_t target_id, Character* target,
+                                   MagicWeapon* weapon) const {
+    int min_heal = weapon->get_spell().get_min_heal();
+    int max_heal = weapon->get_spell().get_max_heal();
+    int heal_amount = GameFormulas::calculate_healing(min_heal, max_heal);
+
+    target->heal(heal_amount);
+    return AttackResult{attacker_id, target_id, 0, false, false, true, heal_amount};
 }
 
 // REFACTOR FUTURO.
@@ -302,16 +345,25 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 // TODO(Pau): clanes y zonas seguras
 // esto hay que adaptarlo bien a NPCs, esta adaptado a la mitad
 // el target puede ser NPC, pero en este momento no puede usarse para que un NPC ataqie
+
+// otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Player* attacker = get_player(attacker_id);
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
-        throw std::runtime_error("World::attack: atacante o objetivo no existe");
+        throw std::runtime_error("World::attack: atacante u objetivo no existe");
     }
 
-    validate_attack_conditions(attacker, target);
+    MagicWeapon* healing_weapon = get_healing_weapon(attacker);
+    bool is_healing = (healing_weapon != nullptr);
+
+    validate_attack_conditions(attacker, target, is_healing);
     consume_weapon_mana(attacker);
+
+    if (is_healing) {
+        return handle_healing(attacker_id, target_id, target, healing_weapon);
+    }
 
     int damage = GameFormulas::calculate_damage(*attacker);
     bool is_critical = GameFormulas::calculate_critical_attack();
@@ -332,7 +384,7 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id, target_id, real_damage, evaded, died};
+    return AttackResult{attacker_id, target_id, real_damage, evaded, died, false, 0};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos

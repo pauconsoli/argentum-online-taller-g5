@@ -304,6 +304,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.damage = recv_i32();
     r.evaded = (recv_u8() != 0);
     r.target_died = (recv_u8() != 0);
+    r.is_healing = (recv_u8() != 0);
+    r.heal_amount = recv_i32();
     return std::make_unique<AttackUpdate>(r);
 }
 
@@ -314,7 +316,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
-    recv_u32();              // target_player_id
+    recv_u32();  // target_player_id
     uint16_t n = recv_u16();
     for (uint16_t i = 0; i < n; ++i) {
         recv_string();  // item_name
@@ -326,7 +328,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_spawned() {
-    // TODO Chiari: cuando integres SDL, quizá quieras un SpawnedUpdate
+    // TODO(Chiari): cuando integres SDL, quizá quieras un SpawnedUpdate
     // verdadero del lado cliente con info adicional. Por ahora basta con
     // que el server pueda mandar el opcode sin que el cliente se queje.
     uint32_t pid = recv_u32();

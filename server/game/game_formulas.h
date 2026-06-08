@@ -51,7 +51,9 @@ class GameFormulas {
     static bool calculate_critical_attack();
     static bool calculate_evasion(const Character& target);
     static int calculate_defense(const Player& target);
-    static int calculate_attack_experience_gain(const Player& attacker, const Character& target);
+    static int calculate_healing(int min_heal, int max_heal);
+    static int calculate_attack_experience_gain(const Player& attacker, const Character& target,
+                                                int damage);
     static int calculate_kill_experience_gain(const Player& attacker, const Character& target);
 
     static int get_hand_combat_damage(const Player& attacker);

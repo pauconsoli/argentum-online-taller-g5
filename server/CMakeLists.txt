@@ -20,6 +20,8 @@ target_sources(taller_server
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp
+    loader/item_registry_loader.cpp
+    loader/world_item_loader.cpp
     PUBLIC
     # .h files
     server.h
@@ -34,4 +36,6 @@ target_sources(taller_server
     game/match.h
     loader/world_map_loader.h
     loader/game_config_loader.h
-    )
+    loader/item_registry_loader.h
+    loader/world_item_loader.h
+)

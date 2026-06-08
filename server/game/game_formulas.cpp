@@ -212,10 +212,13 @@ int GameFormulas::calculate_defense(const Player& target) {
     return total_defense;
 }
 
+int GameFormulas::calculate_healing(int min_heal, int max_heal) {
+    return get_random_int(min_heal, max_heal);
+}
+
 // Exp = Daño * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_attack_experience_gain(const Player& attacker,
-                                                   const Character& target) {
-    int damage = calculate_damage(attacker);
+int GameFormulas::calculate_attack_experience_gain(const Player& attacker, const Character& target,
+                                                   int damage) {
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
     return static_cast<int>(damage * level_multiplier);
 }

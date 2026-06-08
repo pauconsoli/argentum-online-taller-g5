@@ -230,12 +230,11 @@ TEST_F(GameFormulasTest, CanAttackByLevel) {
 }
 
 TEST_F(GameFormulasTest, CalculateAttackExperienceGain) {
-    // daño = fuerza * (combate desarmado = fuerza)
-    // human_mage fuerza = 10 -> daño = 10 * 10 = 100.
-    // atacante nivel = 5, target nivel = 5 -> dif = max(5 - 5 + 10, 0) = 10
-    // exp = 100 * 10 = 1000
-    int exp = GameFormulas::calculate_attack_experience_gain(human_mage, human_warrior);
-    EXPECT_EQ(exp, 1000);
+    // actual_damage = 50 (valor de prueba explícito)
+    // atacante nivel = 5, target nivel = 5 -> multiplicador = max(5 - 5 + 10, 0) = 10
+    // exp = 50 * 10 = 500
+    int exp = GameFormulas::calculate_attack_experience_gain(human_mage, human_warrior, 50);
+    EXPECT_EQ(exp, 500);
 }
 
 TEST_F(GameFormulasTest, CalculateKillExperienceGain) {

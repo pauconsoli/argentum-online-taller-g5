@@ -1,10 +1,10 @@
 #include "server_protocol.h"
 
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 #include <arpa/inet.h>
 
@@ -15,15 +15,15 @@
 #include "common/commands/pick_up_item_command.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
+#include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/moved_update.h"
-#include "common/updates/attack_update.h"
-#include "common/updates/death_update.h"
-#include "common/updates/inventory_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
@@ -254,8 +254,8 @@ void ServerProtocol::send_update(const GameUpdate& update) {
             break;
         default:
             // Tolerante: si llega un tipo que aún no implementé (STATS, REVIVE,
-            // CHAT_MSG, etc.), lo loggeo y lo descarto. Así no rompe la conexión del cliente — solo se pierde ese
-            // mensaje en particular
+            // CHAT_MSG, etc.), lo loggeo y lo descarto. Así no rompe la conexión del cliente — solo
+            // se pierde ese mensaje en particular
             std::cerr << "[PROTOCOL] UpdateType no implementado (descartado): "
                       << static_cast<int>(update.get_type()) << "\n";
             break;
@@ -362,7 +362,7 @@ void ServerProtocol::send_world_map(const GameUpdate& update) {
     put_u16(buf, u.width);
     put_u16(buf, u.height);
     buf.reserve(buf.size() + u.cells.size() * 2);
-    for (const auto& c: u.cells) {
+    for (const auto& c : u.cells) {
         put_u8(buf, c.terrain_type);
         put_u8(buf, c.blocking ? 1 : 0);
     }
@@ -381,6 +381,8 @@ void ServerProtocol::send_attacked(const GameUpdate& update) {
     put_i32(buf, r.damage);
     put_u8(buf, r.evaded ? 1 : 0);
     put_u8(buf, r.target_died ? 1 : 0);
+    put_u8(buf, r.is_healing ? 1 : 0);
+    put_i32(buf, r.heal_amount);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_attacked: client closed connection");
     }
@@ -407,14 +409,12 @@ void ServerProtocol::send_inventory(const GameUpdate& update) {
     put_u8(buf, ServerOpcode::INVENTORY);
     put_u32(buf, u.get_target_player_id());
     put_u16(buf, static_cast<uint16_t>(items.size()));
-    for (const auto& slot: items) {
+    for (const auto& slot : items) {
         put_string(buf, slot.item_name);
         put_u32(buf, slot.quantity);
         put_u8(buf, slot.is_equipped ? 1 : 0);
     }
-    // TODO (Pau): el campo gold del InventoryUpdate no tiene getter, así que
-    // mandamos 0 acá. Cuando agregues get_gold(), reemplazá la línea de abajo.
-    put_u64(buf, 0);
+    put_u64(buf, u.get_gold());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_inventory: client closed connection");
     }
