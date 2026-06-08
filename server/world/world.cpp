@@ -437,6 +437,23 @@ void World::drop_item(uint32_t player_id, int slot_index) {
     ground_items[pos] = GroundItem{0, std::move(slot.item), slot.quantity};
 }
 
+void World::equip_item(uint32_t player_id, int slot_index) {
+    Player* player = get_player(player_id);
+    if (!player)
+        throw std::runtime_error("World::equip_item: jugador no encontrado");
+    if (player->is_dead())
+        throw std::runtime_error("World::equip_item: un fantasma no puede equipar items");
+
+    const auto& slots = player->get_inventory().get_slots();
+    if (slot_index < 0 || slot_index >= static_cast<int>(slots.size())) {
+        throw std::runtime_error("World::equip_item: índice de slot inválido");
+    }
+    if (!slots[slot_index].item) {
+        throw std::runtime_error("World::equip_item: no hay ítem en ese slot");
+    }
+
+    player->equip(*slots[slot_index].item);
+}
 
 // esto podría devolver un vector de structs (Stats o similar) o algo indicando
 // QUÉ cambió  y para QUE JUGADOR
