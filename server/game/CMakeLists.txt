@@ -13,6 +13,7 @@ target_sources(taller_game
     items/spell.cpp
     items/defensive_item.cpp
     items/consumable_item.cpp
+    items/item_registry.cpp
     PUBLIC
     # .h files
     character.h
@@ -30,4 +31,5 @@ target_sources(taller_game
     items/defensive_item.h
     items/equipment_slot.h
     items/consumable_item.h
+    items/item_registry.h
     )
