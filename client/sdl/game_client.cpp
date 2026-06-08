@@ -292,7 +292,7 @@ void GameClient::run() {
         }
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level);
-        hud->draw_inventory();
+        hud->draw_inventory(sprite_manager);
 
         mini_chat->draw();
         renderer->present();
