@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "common/attack_result.h"
@@ -37,11 +38,11 @@ class World {
 
     bool is_in_range_for_attack(const Player* attacker, const Character* target) const;
 
-    Position find_closest_free_ground(const Position& start) const;
+    std::optional<Position> find_closest_free_ground(const Position& start) const;
 
-    void validate_attack_conditions(const Player* attacker, const Character* target,
-                                    bool is_healing) const;
-    void consume_weapon_mana(Player* attacker);
+    AttackStatus validate_attack_conditions(const Player* attacker, const Character* target,
+                                            bool is_healing) const;
+    AttackStatus consume_weapon_mana(Player* attacker);
     void handle_target_death(Player* attacker, Character* target);
     int handle_successful_attack(Player* attacker, Character* target, int damage);
 
@@ -69,11 +70,11 @@ class World {
 
     void add_ground_item(const Position& pos, GroundItem item);
 
-    void pick_up_item(uint32_t player_id);
-    void drop_item(uint32_t player_id, int slot_index);
-    void equip_item(uint32_t player_id, int slot_index);
+    bool pick_up_item(uint32_t player_id);
+    bool drop_item(uint32_t player_id, int slot_index);
+    bool equip_item(uint32_t player_id, int slot_index);
 
-    void move_player(uint32_t player_id, Direction direction);
+    bool move_player(uint32_t player_id, Direction direction);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
 

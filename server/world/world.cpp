@@ -160,7 +160,7 @@ const std::map<Position, GroundItem>& World::get_ground_items() const {
 }
 
 // no considera si esta ocupada porque el jugador se para sobre los items del suelo
-Position World::find_closest_free_ground(const Position& start) const {
+std::optional<Position> World::find_closest_free_ground(const Position& start) const {
     std::queue<Position> q;
     std::set<Position> visited;
 
@@ -187,22 +187,20 @@ Position World::find_closest_free_ground(const Position& start) const {
             }
         }
     }
-    throw std::runtime_error("World::find_closest_free_ground: no hay espacio libre en el suelo");
+    return std::nullopt;
 }
 
 void World::drop_loot_in_world(const Position& center, Loot loot) {
     if (loot.dropped_gold > 0) {
-        try {
-            Position free_pos = find_closest_free_ground(center);
-            ground_items[free_pos] = GroundItem{loot.dropped_gold, nullptr, 0};
-        } catch (const std::exception&) {}
+        if (auto free_pos = find_closest_free_ground(center)) {
+            ground_items[*free_pos] = GroundItem{loot.dropped_gold, nullptr, 0};
+        }
     }
 
     for (auto& slot : loot.dropped_items) {
-        try {
-            Position free_pos = find_closest_free_ground(center);
-            ground_items[free_pos] = GroundItem{0, std::move(slot.item), slot.quantity};
-        } catch (const std::exception&) {
+        if (auto free_pos = find_closest_free_ground(center)) {
+            ground_items[*free_pos] = GroundItem{0, std::move(slot.item), slot.quantity};
+        } else {
             break;
         }
     }
@@ -210,52 +208,57 @@ void World::drop_loot_in_world(const Position& center, Loot loot) {
 
 void World::add_ground_item(const Position& pos, GroundItem item) {
     if (!map.is_valid_position(pos)) {
-        throw std::runtime_error("World::add_ground_item: posición inválida");
+        return;
     }
 
     Position free_pos = pos;
     if (map.is_position_blocked(pos) || ground_items.find(pos) != ground_items.end()) {
-        free_pos = find_closest_free_ground(pos);
+        if (auto maybe_pos = find_closest_free_ground(pos)) {
+            free_pos = *maybe_pos;
+        } else {
+            return;
+        }
     }
     ground_items[free_pos] = std::move(item);
 }
 
-// TODO(Pau): refactor para que no tire excepciones, que devuelva un attack status o algo asi)
-void World::validate_attack_conditions(const Player* attacker, const Character* target,
-                                       bool is_healing) const {
+AttackStatus World::validate_attack_conditions(const Player* attacker, const Character* target,
+                                               bool is_healing) const {
     if (attacker->is_dead() || target->is_dead()) {
-        throw std::runtime_error("World::attack: jugador u objetivo muertos, no se puede atacar");
+        return AttackStatus::DEAD;
     }
 
     if (!is_healing) {
         if (attacker->get_id() == target->get_id()) {
-            throw std::runtime_error("World::attack: no puedes atacarte a ti mismo");
+            return AttackStatus::INVALID_TARGET;
         }
     }
 
     if (!target->validate_attack_from(attacker->get_level())) {
-        throw std::runtime_error(
-            "World::attack: nivel insuficiente o diferencia de niveles no permitida");
+        return AttackStatus::INVALID_TARGET;
     }
 
     if (!is_in_range_for_attack(attacker, target)) {
-        throw std::runtime_error("World::attack: el objetivo está fuera de rango para el ataque");
+        return AttackStatus::OUT_OF_RANGE;
     }
+
+    return AttackStatus::SUCCESS;
 }
 
 
-void World::consume_weapon_mana(Player* attacker) {
+AttackStatus World::consume_weapon_mana(Player* attacker) {
     Weapon* weapon = attacker->get_equipped_weapon();
     if (weapon) {
         int mana_cost = weapon->get_mana_cost();
 
         if (mana_cost > 0) {
             if (attacker->get_current_mana() < mana_cost) {
-                throw std::runtime_error("World::attack: maná insuficiente para atacar");
+                return AttackStatus::NO_MANA;
             }
             attacker->consume_mana(mana_cost);
         }
     }
+    return AttackStatus::SUCCESS;
 }
 
 
@@ -281,10 +284,10 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
 
 // REFACTOR FUTURO.
 // TODO(Pau): que se use Character* para poder usarlo para NPCs cuando existan
-void World::move_player(uint32_t player_id, Direction direction) {
+bool World::move_player(uint32_t player_id, Direction direction) {
     auto it = players.find(player_id);
     if (it == players.end()) {
-        throw std::runtime_error("World::move_player: jugador no encontrado");
+        return false;
     }
 
     Player* player = it->second.get();
@@ -292,21 +295,22 @@ void World::move_player(uint32_t player_id, Direction direction) {
     Position next = calculate_destination(current, direction);
 
     if (!map.is_valid_position(next)) {
-        throw std::runtime_error("World::move_player: no podes avanzar en esa dirección.");
+        return false;
     }
 
     if (map.is_position_blocked(next)) {  // si la celda destino es bloqueante, no se mueve
-        throw std::runtime_error("World::move_player: el paso está bloqueado");
+        return false;
     }
 
     if (is_position_occupied(next)) {
-        throw std::runtime_error("World::move_player: hay alguien ocupando esa posición");
+        return false;
     }
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
     occupied[current.y][current.x] = false;
     player->set_position(next);
     occupied[next.y][next.x] = true;
+    return true;
 }
 
 // SOLO PARA TESTS
@@ -325,14 +329,21 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
-        throw std::runtime_error("World::attack: atacante u objetivo no existe");
+        return AttackResult{attacker_id, target_id, 0, false,
+                            false,       false,     0, AttackStatus::INVALID_TARGET};
     }
 
     Weapon* weapon = attacker->get_equipped_weapon();
     bool is_healing = weapon ? weapon->is_healing() : false;
 
-    validate_attack_conditions(attacker, target, is_healing);
-    consume_weapon_mana(attacker);
+    AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
+    if (status != AttackStatus::SUCCESS) {
+        return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
+    }
+    status = consume_weapon_mana(attacker);
+    if (status != AttackStatus::SUCCESS) {
+        return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
+    }
 
     WeaponEffect effect;
     if (weapon) {
@@ -343,7 +354,8 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     if (is_healing) {
         target->heal(effect.healing);
-        return AttackResult{attacker_id, target_id, 0, false, false, true, effect.healing};
+        return AttackResult{attacker_id,          target_id, 0, false, false, true, effect.healing,
+                            AttackStatus::SUCCESS};
     }
 
     bool is_critical = GameFormulas::calculate_critical_attack();
@@ -364,75 +376,78 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id, target_id, real_damage, evaded, died, false, 0};
+    return AttackResult{attacker_id, target_id, real_damage, evaded,
+                        died,        false,     0,           AttackStatus::SUCCESS};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
-void World::pick_up_item(uint32_t player_id) {
+bool World::pick_up_item(uint32_t player_id) {
     Player* player = get_player(player_id);
     if (!player)
-        throw std::runtime_error("World::pick_up_item: jugador no encontrado");
+        return false;
     if (player->is_dead())
-        throw std::runtime_error("World::pick_up_item: un fantasma no puede agarrar items");
+        return false;
 
     Position pos = player->get_position();
     auto it = ground_items.find(pos);
     if (it == ground_items.end())
-        throw std::runtime_error("World::pick_up_item: no hay item en esta posición");
+        return false;
 
     GroundItem& ground = it->second;
 
     if (ground.gold > 0) {
         player->add_gold(ground.gold);
         ground_items.erase(it);
-        return;
+        return true;
     }
 
     if (!player->get_inventory().can_add_item(*ground.item)) {
-        throw std::runtime_error("World::pick_up_item: inventario lleno");
+        return false;
     }
 
     player->get_inventory().add_item(std::move(ground.item), ground.quantity);
 
     ground_items.erase(it);
+    return true;
 }
 
 
-void World::drop_item(uint32_t player_id, int slot_index) {
+bool World::drop_item(uint32_t player_id, int slot_index) {
     Player* player = get_player(player_id);
     if (!player)
-        throw std::runtime_error("World::drop_item: jugador no encontrado");
+        return false;
     if (player->is_dead())
-        throw std::runtime_error("World::drop_item: un fantasma no puede tirar items");
+        return false;
+
+    auto maybe_pos = find_closest_free_ground(player->get_position());
+    if (!maybe_pos)
+        return false;
 
     InventorySlot slot = player->get_inventory().pop_slot(slot_index);
     if (!slot.item)
-        throw std::runtime_error("World::drop_item: slot inválido o vacío");
+        return false;
 
-    // si el item estaba equipado, no hace falta desquiparlo explícitamente
-    // porque pop_slot ya lo saca del inventario completamente
-
-    // no puedo dropear oro, solo items
-    Position pos = find_closest_free_ground(player->get_position());
-    ground_items[pos] = GroundItem{0, std::move(slot.item), slot.quantity};
+    ground_items[*maybe_pos] = GroundItem{0, std::move(slot.item), slot.quantity};
+    return true;
 }
 
-void World::equip_item(uint32_t player_id, int slot_index) {
+bool World::equip_item(uint32_t player_id, int slot_index) {
     Player* player = get_player(player_id);
     if (!player)
-        throw std::runtime_error("World::equip_item: jugador no encontrado");
+        return false;
     if (player->is_dead())
-        throw std::runtime_error("World::equip_item: un fantasma no puede equipar items");
+        return false;
 
     const auto& slots = player->get_inventory().get_slots();
     if (slot_index < 0 || slot_index >= static_cast<int>(slots.size())) {
-        throw std::runtime_error("World::equip_item: índice de slot inválido");
+        return false;
     }
     if (!slots[slot_index].item) {
-        throw std::runtime_error("World::equip_item: no hay ítem en ese slot");
+        return false;
     }
 
     player->equip(*slots[slot_index].item);
+    return true;
 }
 
 // esto podría devolver un vector de structs (Stats o similar) o algo indicando

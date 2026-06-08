@@ -18,6 +18,8 @@ int MagicWeapon::get_mana_cost() const {
     return mana_cost;
 }
 
+// ver si se podría dividir los spell para que cada uno calcule su propio efecto
+// O sea, el spell tendría un método aparte y aca solo se llamaría a es metodo polimorficamente
 WeaponEffect MagicWeapon::apply_effect(const Player& attacker) const {
     if (is_healing()) {
         int heal = GameFormulas::calculate_healing(spell->get_min_heal(), spell->get_max_heal());
