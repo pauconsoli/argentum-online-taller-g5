@@ -1,6 +1,7 @@
 #include "sprite_manager.h"
 
 #include <stdexcept>
+#include <unordered_map>
 
 SpriteManager::SpriteManager(SDL_Renderer* renderer): sdl_renderer(renderer), assets_dir("") {}
 
@@ -54,10 +55,15 @@ void SpriteManager::load_terrain_textures(const std::string& assets_dir) {
     load("terrain_dirt", assets_dir + sep + "dirt.png");
     load("terrain_stone", assets_dir + sep + "stone.png");
     load("terrain_sand", assets_dir + sep + "sand.png");
+    load("tree", assets_dir + sep + "tree.png");
 }
 
 SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
     return get(terrain_key(t));
+}
+
+SDL_Texture* SpriteManager::get_tree() const {
+    return get("tree");
 }
 
 std::string SpriteManager::body_key(uint8_t race, uint8_t klass) {
@@ -119,6 +125,32 @@ SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
         tex = load_lazy(head_key(1), assets_dir + sep + "heads/head_1.png");
     }
     return tex;
+}
+
+uint16_t SpriteManager::item_id_for_name(const std::string& name) {
+    static const std::unordered_map<std::string, uint16_t> table = {
+        {"Espada", 2},
+        {"Hacha", 3},
+        {"Martillo", 15},
+        {"Vara de fresno", 159},
+        {"Báculo nudoso", 401},
+        {"Báculo engarzado", 479},
+        {"Arco simple", 574},
+        {"Arco compuesto", 656},
+        {"Armadura de cuero", 30},
+        {"Armadura de placas", 1800},
+        {"Túnica azul", 1797},
+        {"Capucha", 132},
+        {"Casco de hierro", 243},
+        {"Escudo de tortuga", 38},
+        {"Escudo de hierro", 37},
+        {"Sombrero mágico", 996},
+        {"Flauta élfica", 401},
+        {"Pocion de vida", 2},
+        {"Pocion de mana", 2},
+    };
+    auto it = table.find(name);
+    return it != table.end() ? it->second : 2;
 }
 
 SDL_Texture* SpriteManager::get_item(uint16_t item_id) {

@@ -35,6 +35,7 @@ class SpriteManager {
 
     void load_terrain_textures(const std::string& assets_dir);
     SDL_Texture* get_terrain(TerrainType t) const;
+    SDL_Texture* get_tree() const;
 
     void load_body_textures(const std::string& assets_dir);
     SDL_Texture* get_body(uint8_t race, uint8_t klass) const;
@@ -45,6 +46,10 @@ class SpriteManager {
 
     // Item icons: 32x32 RGBA.
     SDL_Texture* get_item(uint16_t item_id);
+
+    // Mapea el nombre de item del protocolo al ID de textura correspondiente.
+    // Fallback: 2 (Espada) si el nombre no está en la tabla.
+    static uint16_t item_id_for_name(const std::string& name);
 };
 
 #endif

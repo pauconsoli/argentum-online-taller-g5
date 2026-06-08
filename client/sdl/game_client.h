@@ -5,11 +5,13 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <SDL2/SDL.h>
 
 #include "../client.h"
 #include "camera.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
 #include "hud.h"
 #include "input_handler.h"
@@ -39,8 +41,14 @@ class GameClient {
     int my_mp;
     int my_max_mp;
     int my_level;
+    uint64_t my_gold;
+    uint64_t my_xp;
     bool from_handoff;
     std::map<uint32_t, PlayerSnapshot> players;
+    std::vector<GroundItemSnapshot> ground_items_;
+    std::vector<InventorySlotData> inventory_slots_;
+    bool chat_active_ = false;
+    std::string chat_input_;
 
  public:
     // Constructor standalone: crea y arranca su propio Client (binario taller_client).

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "client_map.h"
+#include "common/updates/attack_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
@@ -65,6 +66,8 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     my_mp = 100;
     my_max_mp = 100;
     my_level = 1;
+    my_gold = 0;
+    my_xp = 0;
     renderer = new Renderer(window);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures("client/assets");
@@ -97,6 +100,8 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     my_mp = 100;
     my_max_mp = 100;
     my_level = 1;
+    my_gold = 0;
+    my_xp = 0;
     renderer = new Renderer(window);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures("client/assets");
@@ -193,44 +198,94 @@ void GameClient::run() {
         Uint32 frame_start = SDL_GetTicks();
 
         while (SDL_PollEvent(&event)) {
-            running = input_handler.handle(event);
+            if (!input_handler.handle(event))
+                running = false;
+            if (chat_active_) {
+                if (event.type == SDL_TEXTINPUT) {
+                    chat_input_ += event.text.text;
+                } else if (event.type == SDL_KEYDOWN) {
+                    switch (event.key.keysym.sym) {
+                        case SDLK_RETURN:
+                        case SDLK_RETURN2:
+                            if (!chat_input_.empty()) {
+                                if (chat_input_.rfind("/tomar", 0) == 0) {
+                                    client->do_pick_up();
+                                    mini_chat->add_message("/tomar");
+                                } else {
+                                    mini_chat->add_message(chat_input_);
+                                }
+                            }
+                            chat_input_.clear();
+                            chat_active_ = false;
+                            SDL_StopTextInput();
+                            break;
+                        case SDLK_BACKSPACE:
+                            if (!chat_input_.empty())
+                                chat_input_.pop_back();
+                            break;
+                        case SDLK_ESCAPE:
+                            chat_input_.clear();
+                            chat_active_ = false;
+                            SDL_StopTextInput();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
+                chat_active_ = true;
+                SDL_StartTextInput();
+            } else if (event.type == SDL_MOUSEBUTTONDOWN &&
+                       event.button.button == SDL_BUTTON_LEFT) {
+                int world_x = camera.get_x() + event.button.x;
+                int world_y = camera.get_y() + event.button.y;
+                int tile_x = world_x / tile_w;
+                int tile_y = world_y / tile_h;
+                for (const auto& [pid, ps] : players) {
+                    if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
+                        client->do_attack(pid);
+                        break;
+                    }
+                }
+            }
         }
 
         const Uint8* keys = SDL_GetKeyboardState(nullptr);
         bool moving = false;
-        bool can_move = (frame_start - last_move_time >= move_interval_ms);
-
-        if (keys[SDL_SCANCODE_DOWN]) {
-            direction = 0;
-            total_frames = 6;
-            moving = true;
-            if (can_move) {
-                client->do_move(Direction::DOWN);
-                last_move_time = frame_start;
-            }
-        } else if (keys[SDL_SCANCODE_UP]) {
-            direction = 1;
-            total_frames = 6;
-            moving = true;
-            if (can_move) {
-                client->do_move(Direction::UP);
-                last_move_time = frame_start;
-            }
-        } else if (keys[SDL_SCANCODE_LEFT]) {
-            direction = 2;
-            total_frames = 5;
-            moving = true;
-            if (can_move) {
-                client->do_move(Direction::LEFT);
-                last_move_time = frame_start;
-            }
-        } else if (keys[SDL_SCANCODE_RIGHT]) {
-            direction = 3;
-            total_frames = 5;
-            moving = true;
-            if (can_move) {
-                client->do_move(Direction::RIGHT);
-                last_move_time = frame_start;
+        if (!chat_active_) {
+            bool can_move = (frame_start - last_move_time >= move_interval_ms);
+            if (keys[SDL_SCANCODE_DOWN]) {
+                direction = 0;
+                total_frames = 6;
+                moving = true;
+                if (can_move) {
+                    client->do_move(Direction::DOWN);
+                    last_move_time = frame_start;
+                }
+            } else if (keys[SDL_SCANCODE_UP]) {
+                direction = 1;
+                total_frames = 6;
+                moving = true;
+                if (can_move) {
+                    client->do_move(Direction::UP);
+                    last_move_time = frame_start;
+                }
+            } else if (keys[SDL_SCANCODE_LEFT]) {
+                direction = 2;
+                total_frames = 5;
+                moving = true;
+                if (can_move) {
+                    client->do_move(Direction::LEFT);
+                    last_move_time = frame_start;
+                }
+            } else if (keys[SDL_SCANCODE_RIGHT]) {
+                direction = 3;
+                total_frames = 5;
+                moving = true;
+                if (can_move) {
+                    client->do_move(Direction::RIGHT);
+                    last_move_time = frame_start;
+                }
             }
         }
 
@@ -307,8 +362,11 @@ void GameClient::run() {
                             my_max_hp = ps.max_hp;
                             my_max_mp = ps.max_mp;
                             my_level = ps.level;
+                            my_gold = ps.gold;
+                            my_xp = ps.xp;
                         }
                     }
+                    ground_items_ = snap.ground_items;
                     break;
                 }
                 case UpdateType::WORLD_MAP: {
@@ -323,6 +381,34 @@ void GameClient::run() {
                             return MapCell{static_cast<TerrainType>(c.terrain_type), c.blocking};
                         });
                     client_map = ClientMap(mu.width, mu.height, std::move(map_cells));
+                    break;
+                }
+                case UpdateType::INVENTORY: {
+                    const auto& iu = static_cast<const InventoryUpdate&>(*update);
+                    if (iu.get_target_player_id() == my_player_id) {
+                        inventory_slots_ = iu.get_items();
+                        my_gold = iu.get_gold();
+                    }
+                    break;
+                }
+                case UpdateType::ATTACKED: {
+                    const auto& au = static_cast<const AttackUpdate&>(*update);
+                    const AttackResult& r = au.get_result();
+                    if (r.evaded) {
+                        mini_chat->add_message("Ataque esquivado");
+                    } else if (r.attacker_id == my_player_id) {
+                        if (r.target_died)
+                            mini_chat->add_message("Mataste al jugador");
+                        else
+                            mini_chat->add_message("Causaste " + std::to_string(r.damage) +
+                                                   " de daño");
+                    } else if (r.target_id == my_player_id) {
+                        if (r.target_died)
+                            mini_chat->add_message("Moriste");
+                        else
+                            mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
+                                                   " de daño");
+                    }
                     break;
                 }
                 default:
@@ -359,15 +445,34 @@ void GameClient::run() {
                 TerrainType terrain =
                     in_bounds ? client_map.at(col, row).terrain : TerrainType::GRASS;
                 bool blocking = in_bounds && client_map.at(col, row).blocking;
-                SDL_Texture* tile_tex = blocking ? sprite_manager->get_terrain(TerrainType::STONE) :
-                                                   sprite_manager->get_terrain(terrain);
+                SDL_Texture* tile_tex = sprite_manager->get_terrain(terrain);
                 renderer->draw_frame(tile_tex, 0, 0, tile_w, tile_h, tx, ty);
+                // Árbol (GRASS + blocking): sprite extraído de Recursos/Graficos/657.png (grh=653)
+                if (blocking && terrain == TerrainType::GRASS) {
+                    renderer->draw_frame(sprite_manager->get_tree(), 0, 0, tile_w, tile_h, tx, ty);
+                }
+            }
+        }
+
+        // Ground items: entre terreno y jugadores
+        for (const auto& gi : ground_items_) {
+            uint16_t item_id = gi.is_gold ? 2 : SpriteManager::item_id_for_name(gi.name);
+            SDL_Texture* item_tex = sprite_manager->get_item(item_id);
+            if (item_tex == nullptr)
+                item_tex = sprite_manager->get_item(2);
+            if (item_tex != nullptr) {
+                int gx = camera.get_screen_x(gi.x * tile_w);
+                int gy = camera.get_screen_y(gi.y * tile_h);
+                renderer->draw_frame(item_tex, 0, 0, tile_w, tile_h, gx, gy);
             }
         }
 
         // Dibuja todos los jugadores con el body según raza/clase del snapshot
         static const int head_offset_x[] = {0, 0, 0, 0};
         static const int head_offset_y[] = {-8, -15, -15, -15};
+        // El spritesheet de cabezas tiene filas en orden: UP(0),RIGHT(1),DOWN(2),LEFT(3)
+        // pero direction usa: 0=DOWN,1=UP,2=LEFT,3=RIGHT → necesita remapeo
+        static const int head_dir_to_row[] = {2, 0, 3, 1};
 
         for (const auto& [pid, ps] : players) {
             int px = camera.get_screen_x(ps.x * tile_w);  // tiles → píxeles
@@ -386,15 +491,24 @@ void GameClient::run() {
 
             int hx = px + head_offset_x[p_dir];
             int hy = py + head_offset_y[p_dir];
-            // nueva cabeza: src x=0 (sin frames), y = dirección * 64
             renderer->draw_frame(sprite_manager->get_head(head_index_for_race(ps.race)), 0,
-                                 p_dir * head_h, head_w, head_h, hx, hy);
+                                 head_dir_to_row[p_dir] * head_h, head_w, head_h, hx, hy);
+
+            // Nick centrado debajo de los pies del sprite (sombra + texto blanco)
+            int nick_center_x = px + frame_w / 2;
+            int nick_y = py + frame_h + 3;
+            SDL_Color shadow = {0, 0, 0, 200};
+            SDL_Color white = {255, 255, 255, 255};
+            mini_chat->draw_label(ps.nick, nick_center_x + 1, nick_y + 1, shadow);
+            mini_chat->draw_label(ps.nick, nick_center_x, nick_y, white);
         }
 
-        hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level);
-        hud->draw_inventory(sprite_manager);
+        hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
+        hud->draw_inventory(sprite_manager, inventory_slots_);
 
         mini_chat->draw();
+        if (chat_active_)
+            mini_chat->draw_input(chat_input_, height - 30);
         renderer->present();
 
         Uint32 elapsed = SDL_GetTicks() - frame_start;

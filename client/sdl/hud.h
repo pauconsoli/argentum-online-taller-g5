@@ -1,11 +1,14 @@
 #ifndef HUD_H
 #define HUD_H
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include <SDL2/SDL.h>
 #include <SDL_ttf.h>
 
+#include "common/updates/inventory_update.h"
 #include "sprite_manager.h"
 
 class Hud {
@@ -25,8 +28,8 @@ class Hud {
     Hud(const Hud&) = delete;
     Hud& operator=(const Hud&) = delete;
 
-    void draw(int hp, int max_hp, int mana, int max_mana, int level);
-    void draw_inventory(SpriteManager* sprites);
+    void draw(int hp, int max_hp, int mana, int max_mana, int level, uint64_t gold, uint64_t xp);
+    void draw_inventory(SpriteManager* sprites, const std::vector<InventorySlotData>& slots);
 };
 
 #endif
