@@ -21,6 +21,8 @@ struct GroundItem {  // por ahora así, no se si es lo mejor
     int quantity = 0;
 };
 
+class MagicWeapon;
+
 class World {
  private:
     WorldMap map;
@@ -39,16 +41,22 @@ class World {
 
     Position find_closest_free_ground(const Position& start) const;
 
-    void validate_attack_conditions(const Player* attacker, const Character* target) const;
+    void validate_attack_conditions(const Player* attacker, const Character* target,
+                                    bool is_healing) const;
     void consume_weapon_mana(Player* attacker);
     void handle_target_death(Player* attacker, Character* target);
     int handle_successful_attack(Player* attacker, Character* target, int damage);
+    MagicWeapon* get_healing_weapon(Player* attacker) const;
+    AttackResult handle_healing(uint32_t attacker_id, uint32_t target_id, Character* target,
+                                MagicWeapon* weapon) const;
 
  public:
     World(int width, int height);
     explicit World(WorldMap map);  // para cargar un mapa ya creado
 
-    const WorldMap& get_map() const { return map; }
+    const WorldMap& get_map() const {
+        return map;
+    }
 
     void add_player(std::unique_ptr<Player> player);
     void remove_player(uint32_t player_id);

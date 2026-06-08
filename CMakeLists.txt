@@ -86,6 +86,10 @@ add_subdirectory(server/game)
 add_library(taller_world STATIC)
 add_subdirectory(server/world)
 
+# Linker dependencies between the libs
+target_link_libraries(taller_world PUBLIC taller_game)
+target_link_libraries(taller_game PUBLIC taller_world)
+
 # set compiler warnings to the targets
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(taller_common ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)

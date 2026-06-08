@@ -9,6 +9,8 @@ struct AttackResult {
     int damage;  // 0 si lo esquiva
     bool evaded;
     bool target_died;
+    bool is_healing = false;
+    int heal_amount = 0;
 };
 
 #endif
