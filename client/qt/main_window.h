@@ -27,7 +27,7 @@ class MainWindow: public QMainWindow {
  signals:
     // Emitida cuando el usuario completó login+lobby+raza/clase.
     // Transfiere el Client ya conectado al loop SDL (mismo proceso).
-    void gameStartRequested(Client* client, uint8_t race, uint8_t klass);
+    void gameStartRequested(Client* client, uint8_t race, uint8_t klass, uint32_t player_id);
 
  protected:
     void closeEvent(QCloseEvent* event) override;
@@ -55,6 +55,7 @@ class MainWindow: public QMainWindow {
     std::unique_ptr<QtClientAdapter> adapter;
 
     QString current_nick;
+    uint32_t current_player_id;
     QLabel* status_user_label;
 
     void show_error_in_current_page(const QString& msg);

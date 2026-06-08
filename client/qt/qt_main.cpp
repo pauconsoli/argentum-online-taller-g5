@@ -100,20 +100,23 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Client> pending_client;
     uint8_t pending_race = 0;
     uint8_t pending_klass = 0;
+    uint32_t pending_player_id = 0;
 
-    QObject::connect(
-        &window, &MainWindow::gameStartRequested,
-        [&pending_client, &pending_race, &pending_klass](Client* c, uint8_t race, uint8_t klass) {
-            pending_client.reset(c);
-            pending_race = race;
-            pending_klass = klass;
-        });
+    QObject::connect(&window, &MainWindow::gameStartRequested,
+                     [&pending_client, &pending_race, &pending_klass, &pending_player_id](
+                         Client* c, uint8_t race, uint8_t klass, uint32_t player_id) {
+                         pending_client.reset(c);
+                         pending_race = race;
+                         pending_klass = klass;
+                         pending_player_id = player_id;
+                     });
 
     window.show();
     app.exec();
 
     if (pending_client) {
-        GameClient game(800, 600, std::move(pending_client), pending_race, pending_klass);
+        GameClient game(800, 600, std::move(pending_client), pending_race, pending_klass,
+                        pending_player_id);
         game.run();
     }
 

@@ -75,7 +75,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
 }
 
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
-                       uint8_t klass):
+                       uint8_t klass, uint32_t player_id):
     window(nullptr),
     renderer(nullptr),
     hud(nullptr),
@@ -83,7 +83,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     sprite_manager(nullptr),
     client(std::move(c)),
     camera(width, height),
-    my_player_id(0),
+    my_player_id(player_id),
     my_race(race),
     my_klass(klass),
     player_x(400),
@@ -354,12 +354,14 @@ void GameClient::run() {
             for (int col = start_col; col <= end_col; col++) {
                 int tx = camera.get_screen_x(col * tile_w);
                 int ty = camera.get_screen_y(row * tile_h);
-                TerrainType terrain = (col >= 0 && col < client_map.get_width() && row >= 0 &&
-                                       row < client_map.get_height()) ?
-                                          client_map.at(col, row).terrain :
-                                          TerrainType::GRASS;
-                renderer->draw_frame(sprite_manager->get_terrain(terrain), 0, 0, tile_w, tile_h, tx,
-                                     ty);
+                bool in_bounds = (col >= 0 && col < client_map.get_width() && row >= 0 &&
+                                  row < client_map.get_height());
+                TerrainType terrain =
+                    in_bounds ? client_map.at(col, row).terrain : TerrainType::GRASS;
+                bool blocking = in_bounds && client_map.at(col, row).blocking;
+                SDL_Texture* tile_tex = blocking ? sprite_manager->get_terrain(TerrainType::STONE) :
+                                                   sprite_manager->get_terrain(terrain);
+                renderer->draw_frame(tile_tex, 0, 0, tile_w, tile_h, tx, ty);
             }
         }
 

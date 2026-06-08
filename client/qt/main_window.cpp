@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget* parent):
     client(nullptr),
     adapter(nullptr),
     current_nick(),
+    current_player_id(0),
     status_user_label(new QLabel(this)) {
 
     setWindowTitle(tr("Argentum Online - G5"));
@@ -135,7 +136,7 @@ void MainWindow::handle_confirm_race_class(uint8_t race, uint8_t klass) {
 
     adapter->stop();
     adapter.reset();
-    emit gameStartRequested(client.release(), race, klass);
+    emit gameStartRequested(client.release(), race, klass, current_player_id);
     close();
 }
 
@@ -168,7 +169,8 @@ void MainWindow::handle_back_to_lobby_requested() {
 }
 
 void MainWindow::connect_adapter_signals() {
-    connect(adapter.get(), &QtClientAdapter::loginOk, this, [this]() {
+    connect(adapter.get(), &QtClientAdapter::loginOk, this, [this](uint32_t player_id) {
+        current_player_id = player_id;
         stack->setCurrentIndex(PAGE_LOBBY);
         connection_page->set_busy(false);
         update_status_bar();
