@@ -1,6 +1,8 @@
 #include "hud.h"
 
+#include <cstdint>
 #include <stdexcept>
+#include <vector>
 
 Hud::Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height, int win_width):
     sdl_renderer(renderer), font(nullptr), window_height(win_height), window_width(win_width) {
@@ -58,7 +60,7 @@ void Hud::draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Col
     draw_text(label, text_x, text_y, white);
 }
 
-void Hud::draw_inventory() {
+void Hud::draw_inventory(SpriteManager* sprites) {
     constexpr int COLS = 5;
     constexpr int ROWS = 4;
     constexpr int CELL = 40;
@@ -66,6 +68,10 @@ void Hud::draw_inventory() {
     constexpr int PAD = 8;
     constexpr int TITLE_H = 24;
     constexpr int MARGIN = 5;
+    constexpr int ICON = 32;
+
+    // TODO(cdelaurentis): reemplazar con el vector real del InventoryUpdate
+    static const std::vector<uint16_t> items = {2, 30, 38, 37, 479, 132, 243, 1797};
 
     const int grid_w = COLS * CELL + (COLS - 1) * GAP;
     const int grid_h = ROWS * CELL + (ROWS - 1) * GAP;
@@ -76,15 +82,12 @@ void Hud::draw_inventory() {
 
     SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_BLEND);
 
-    // panel de fondo semitransparente
     SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 170);
     SDL_Rect panel = {panel_x, panel_y, panel_w, panel_h};
     SDL_RenderFillRect(sdl_renderer, &panel);
 
     SDL_Color white = {255, 255, 255, 255};
-    int title_x = panel_x + PAD;
-    int title_y = panel_y + PAD / 2;
-    draw_text("Inventario", title_x, title_y, white);
+    draw_text("Inventario", panel_x + PAD, panel_y + PAD / 2, white);
 
     const int grid_x = panel_x + PAD;
     const int grid_y = panel_y + PAD + TITLE_H;
@@ -94,14 +97,23 @@ void Hud::draw_inventory() {
             int cell_x = grid_x + col * (CELL + GAP);
             int cell_y = grid_y + row * (CELL + GAP);
 
-            // fondo de celda gris oscuro
             SDL_SetRenderDrawColor(sdl_renderer, 55, 55, 55, 255);
             SDL_Rect fill = {cell_x, cell_y, CELL, CELL};
             SDL_RenderFillRect(sdl_renderer, &fill);
 
-            // borde de celda gris claro
             SDL_SetRenderDrawColor(sdl_renderer, 110, 110, 110, 255);
             SDL_RenderDrawRect(sdl_renderer, &fill);
+
+            int slot = row * COLS + col;
+            if (sprites != nullptr && slot < static_cast<int>(items.size())) {
+                SDL_Texture* icon = sprites->get_item(items[slot]);
+                if (icon != nullptr) {
+                    int ox = cell_x + (CELL - ICON) / 2;
+                    int oy = cell_y + (CELL - ICON) / 2;
+                    SDL_Rect dst = {ox, oy, ICON, ICON};
+                    SDL_RenderCopy(sdl_renderer, icon, nullptr, &dst);
+                }
+            }
         }
     }
 }

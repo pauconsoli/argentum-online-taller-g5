@@ -6,6 +6,8 @@
 #include <SDL2/SDL.h>
 #include <SDL_ttf.h>
 
+#include "sprite_manager.h"
+
 class Hud {
  private:
     SDL_Renderer* sdl_renderer;
@@ -24,7 +26,7 @@ class Hud {
     Hud& operator=(const Hud&) = delete;
 
     void draw(int hp, int max_hp, int mana, int max_mana, int level);
-    void draw_inventory();
+    void draw_inventory(SpriteManager* sprites);
 };
 
 #endif
