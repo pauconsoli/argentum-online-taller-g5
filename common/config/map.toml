@@ -78,7 +78,7 @@ height = 15
 [[ground_items]]
 type = "item"
 name = "Espada"
-x = 5
+x = 4
 y = 3
  
 [[ground_items]]
@@ -170,4 +170,4 @@ y = 24
 type = "gold"
 amount = 1000
 x = 49
-y = 28
+y = 27

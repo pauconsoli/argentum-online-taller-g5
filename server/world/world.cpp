@@ -285,7 +285,7 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
     return real_damage;
 }
 
-// again esto no debería estar acá, pero por ahora solo quiero que funcione
+// again esto no debería estar acá
 MagicWeapon* World::get_healing_weapon(Player* attacker) const {
     Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
     if (MagicWeapon* magic_weapon = dynamic_cast<MagicWeapon*>(equipped_weapon)) {
