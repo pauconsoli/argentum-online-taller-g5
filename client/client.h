@@ -11,7 +11,6 @@
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/thread.h"
-#include "common/updates/game_update.h"
 
 class Client {
  private:
@@ -28,17 +27,20 @@ class Client {
     Client(const std::string& host, const std::string& port);
 
     void start();
-
     void stop();
-
     void join();
 
+    // Acciones cliente → servidor. Thread-safe (toman send_mutex).
     void do_login(const std::string& nick);
     void do_list_matches();
     void do_create_match(const std::string& name, uint8_t max_players);
     void do_join_match(uint32_t match_id);
     void do_select_race_class(uint8_t race, uint8_t klass);
     void do_move(Direction dir);
+    void do_attack(uint32_t target_id);
+    void do_meditate();
+    void do_pick_up();
+    void do_drop_item(uint8_t slot_index);
     void do_leave_match();
     void do_disconnect();
 

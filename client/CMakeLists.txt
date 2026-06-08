@@ -8,7 +8,9 @@ target_sources(taller_client
     sdl/input_handler.cpp
     sdl/camera.cpp
     sdl/hud.cpp
+    sdl/mini_chat.cpp
     sdl/sprite_manager.cpp
+    sdl/client_map.cpp
     PUBLIC
     client.h
     client_protocol.h
@@ -17,5 +19,7 @@ target_sources(taller_client
     sdl/input_handler.h
     sdl/camera.h
     sdl/hud.h
+    sdl/mini_chat.h
     sdl/sprite_manager.h
+    sdl/client_map.h
     )

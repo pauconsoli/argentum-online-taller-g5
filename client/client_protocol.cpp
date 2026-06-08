@@ -6,8 +6,10 @@
 
 #include <arpa/inet.h>
 
+#include "common/attack_result.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
+#include "common/updates/attack_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
@@ -17,6 +19,8 @@
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/spawned_update.h"
+#include "common/updates/world_map_update.h"
 
 ClientProtocol::ClientProtocol(Socket& socket): skt(socket) {}
 
@@ -162,6 +166,38 @@ void ClientProtocol::send_move(Direction dir) {
     }
 }
 
+void ClientProtocol::send_attack(uint32_t target_id) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::ATTACK);
+    put_u32(buf, target_id);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_attack: server closed connection");
+    }
+}
+
+void ClientProtocol::send_meditate() {
+    uint8_t op = ClientOpcode::MEDITATE;
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_meditate: server closed connection");
+    }
+}
+
+void ClientProtocol::send_pick_up() {
+    uint8_t op = ClientOpcode::PICK_UP;
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_pick_up: server closed connection");
+    }
+}
+
+void ClientProtocol::send_drop_item(uint8_t slot_index) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::DROP_ITEM);
+    put_u8(buf, slot_index);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_drop_item: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
@@ -191,6 +227,16 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_player_joined();
         case ServerOpcode::PLAYER_LEFT:
             return recv_player_left();
+        case ServerOpcode::PLAYER_SPAWNED:
+            return recv_player_spawned();
+        case ServerOpcode::WORLD_MAP:
+            return recv_world_map();
+        case ServerOpcode::ATTACKED:
+            return recv_attacked();
+        case ServerOpcode::DEATH:
+            return recv_death();
+        case ServerOpcode::INVENTORY:
+            return recv_inventory();
         case ServerOpcode::SNAPSHOT:
             return recv_snapshot();
         case ServerOpcode::MOVED:
@@ -246,6 +292,65 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     uint32_t pid = recv_u32();
     return std::make_unique<PlayerLeftUpdate>(pid);
+}
+
+
+// Cuando Chiari conecte SDL, estos métodos deben construir los GameUpdate
+// concretos (AttackUpdate, DeathUpdate, InventoryUpdate).
+std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
+    AttackResult r;
+    r.attacker_id = recv_u32();
+    r.target_id = recv_u32();
+    r.damage = recv_i32();
+    r.evaded = (recv_u8() != 0);
+    r.target_died = (recv_u8() != 0);
+    return std::make_unique<AttackUpdate>(r);
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
+    recv_u32();  // dead_id
+    recv_u32();  // killer_id
+    return nullptr;
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
+    recv_u32();              // target_player_id
+    uint16_t n = recv_u16();
+    for (uint16_t i = 0; i < n; ++i) {
+        recv_string();  // item_name
+        recv_u32();     // quantity
+        recv_u8();      // is_equipped
+    }
+    recv_u64();  // gold
+    return nullptr;
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_player_spawned() {
+    // TODO Chiari: cuando integres SDL, quizá quieras un SpawnedUpdate
+    // verdadero del lado cliente con info adicional. Por ahora basta con
+    // que el server pueda mandar el opcode sin que el cliente se queje.
+    uint32_t pid = recv_u32();
+    std::string nick = recv_string();
+    uint8_t race = recv_u8();
+    uint8_t klass = recv_u8();
+    int32_t x = recv_i32();
+    int32_t y = recv_i32();
+    return std::make_unique<PlayerJoinedUpdate>(pid, std::move(nick), race, klass, Position{x, y});
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_world_map() {
+    uint16_t width = recv_u16();
+    uint16_t height = recv_u16();
+    const size_t total = static_cast<size_t>(width) * static_cast<size_t>(height);
+    std::vector<MapCellData> cells;
+    cells.reserve(total);
+    for (size_t i = 0; i < total; ++i) {
+        MapCellData c;
+        c.terrain_type = recv_u8();
+        c.blocking = (recv_u8() != 0);
+        cells.push_back(c);
+    }
+    return std::make_unique<WorldMapUpdate>(width, height, std::move(cells));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {

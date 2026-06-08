@@ -10,6 +10,9 @@
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/updates/game_update.h"
+#include "common/updates/world_map_update.h"
+#include "world/cell.h"
+#include "world/world_map.h"
 #include "game/basic_match.h"
 #include "game/player.h"
 #include "gameloop_thread.h"
@@ -171,6 +174,28 @@ void Server::push_command_to_match(uint32_t match_id, std::unique_ptr<ClientComm
         return;  // Match no existe
     }
     it->second->push_command(std::move(cmd));
+}
+
+void Server::send_world_map_to(PlayerConnection& conn) {
+    if (!world) return;
+    const WorldMap& m = world->get_map();
+    const int w = m.get_width();
+    const int h = m.get_height();
+    std::vector<MapCellData> cells;
+    cells.reserve(static_cast<size_t>(w) * static_cast<size_t>(h));
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            const Cell& c = m.get_cell(Position{x, y});
+            cells.push_back(MapCellData{static_cast<uint8_t>(c.get_terrain_type()),
+                                        c.is_blocking()});
+        }
+    }
+    try {
+        conn.enqueue_update(std::make_shared<WorldMapUpdate>(
+                static_cast<uint16_t>(w), static_cast<uint16_t>(h), std::move(cells)));
+    } catch (const ClosedQueue&) {
+        // El cliente se desconectó.
+    }
 }
 
 void Server::disconnect(PlayerConnection& conn) {

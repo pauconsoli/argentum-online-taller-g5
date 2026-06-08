@@ -19,6 +19,7 @@ project(taller_tp
 option(TALLER_TESTS "Enable / disable tests." ON)
 option(TALLER_CLIENT "Enable / disable client program." ON)
 option(TALLER_CLIENT_CLI "Enable / disable client CLI (debug, sin GUI)." ON)
+option(TALLER_CLIENT_QT "Enable / disable client con menú Qt." ON)
 option(TALLER_SERVER "Enable / disable server program." ON)
 option(TALLER_EDITOR "Enable / disable editor program." ON)
 option(TALLER_MAKE_WARNINGS_AS_ERRORS "Enable / disable warnings as errors." ON)
@@ -202,6 +203,46 @@ if(TALLER_CLIENT_CLI)
     set_project_warnings(taller_client_cli ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
     taller_apply_sanitizers(taller_client_cli)
     target_link_libraries(taller_client_cli taller_common spdlog::spdlog)
+endif()
+
+# Binario del cliente con menú Qt (pre-juego). El handoff a SDL para el
+# in-game lo integra Chiari después.
+if(TALLER_CLIENT_QT)
+    find_package(Qt5 COMPONENTS Core Widgets QUIET)
+    if(Qt5_FOUND)
+        set(CMAKE_AUTOMOC ON)
+        set(CMAKE_AUTORCC ON)
+
+        add_executable(taller_client_qt
+            client/qt/qt_main.cpp
+            client/qt/main_window.cpp
+            client/qt/main_window.h
+            client/qt/qt_client_adapter.cpp
+            client/qt/qt_client_adapter.h
+            client/qt/connection_widget.cpp
+            client/qt/connection_widget.h
+            client/qt/lobby_widget.cpp
+            client/qt/lobby_widget.h
+            client/qt/race_class_widget.cpp
+            client/qt/race_class_widget.h
+            client/client.cpp
+            client/client.h
+            client/client_protocol.cpp
+        )
+
+        add_dependencies(taller_client_qt taller_common)
+
+        set_project_warnings(taller_client_qt ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+
+        target_link_libraries(taller_client_qt
+            taller_common
+            Qt5::Core
+            Qt5::Widgets
+            spdlog::spdlog
+        )
+    else()
+        message(WARNING "Qt5 no encontrado. Saltando taller_client_qt. Instalalo con: sudo apt-get install qtbase5-dev")
+    endif()
 endif()
 
 if(TALLER_SERVER)

@@ -7,9 +7,9 @@
 
 #include <toml++/toml.hpp>
 
+#include "common/world/terrain_type.h"
 #include "server/world/cell.h"
 #include "server/world/dungeon.h"
-#include "server/world/terrain_type.h"
 
 static std::pair<TerrainType, bool> char_to_cell(char c) {
     switch (c) {

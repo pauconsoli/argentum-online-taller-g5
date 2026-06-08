@@ -29,6 +29,8 @@ class ServerOps {
 
     virtual void push_command_to_match(uint32_t match_id, std::unique_ptr<ClientCommand> cmd) = 0;
 
+    virtual void send_world_map_to(PlayerConnection& conn) = 0;
+
     virtual void disconnect(PlayerConnection& conn) = 0;
 };
 

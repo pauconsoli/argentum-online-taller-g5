@@ -1,0 +1,6 @@
+#ifndef COMMON_WORLD_TERRAIN_TYPE_H
+#define COMMON_WORLD_TERRAIN_TYPE_H
+
+enum class TerrainType { GRASS, WATER, DIRT, STONE, SAND };
+
+#endif

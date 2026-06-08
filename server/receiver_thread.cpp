@@ -62,6 +62,18 @@ void ReceiverThread::run() {
                         case ClientOpcode::MOVE:
                             handle_move();
                             break;
+                        case ClientOpcode::ATTACK:
+                            handle_attack();
+                            break;
+                        case ClientOpcode::MEDITATE:
+                            handle_meditate();
+                            break;
+                        case ClientOpcode::PICK_UP:
+                            handle_pick_up();
+                            break;
+                        case ClientOpcode::DROP_ITEM:
+                            handle_drop_item();
+                            break;
                         case ClientOpcode::LEAVE_MATCH:
                             handle_leave_match();
                             break;
@@ -133,6 +145,13 @@ void ReceiverThread::handle_join_match() {
     player_conn.set_state(PlayerConnection::State::IN_MATCH);
     player_conn.enqueue_update(
         std::make_unique<MatchJoinedUpdate>(match_id, player_conn.get_player_id()));
+
+    try {
+        server_ops.send_world_map_to(player_conn);
+    } catch (const std::exception& e) {
+        std::cerr << "[RECEIVER] No se pudo mandar el mapa a "
+                  << player_conn.get_nick() << ": " << e.what() << "\n";
+    }
 }
 
 void ReceiverThread::handle_select_race_class() {
@@ -158,6 +177,48 @@ void ReceiverThread::handle_move() {
         return;
     }
     auto cmd = protocol.recv_move_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_attack() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        protocol.recv_attack_payload(player_conn.get_player_id());  
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_attack_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_meditate() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_meditate_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_pick_up() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_pick_up_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_drop_item() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        protocol.recv_drop_item_payload(player_conn.get_player_id()); 
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_drop_item_payload(player_conn.get_player_id());
     server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 

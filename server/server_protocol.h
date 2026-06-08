@@ -38,8 +38,13 @@ class ServerProtocol {
     void send_match_joined(const GameUpdate& update);
     void send_player_joined(const GameUpdate& update);
     void send_player_left(const GameUpdate& update);
+    void send_player_spawned(const GameUpdate& update);
+    void send_world_map(const GameUpdate& update);
     void send_snapshot(const GameUpdate& update);
     void send_moved(const GameUpdate& update);
+    void send_attacked(const GameUpdate& update);
+    void send_death(const GameUpdate& update);
+    void send_inventory(const GameUpdate& update);
     void send_error(const GameUpdate& update);
 
  public:
@@ -60,6 +65,10 @@ class ServerProtocol {
     RaceClassPayload recv_select_race_class_payload();
 
     std::unique_ptr<ClientCommand> recv_move_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_attack_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_meditate_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_pick_up_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_drop_item_payload(uint32_t player_id);
 
     void send_update(const GameUpdate& update);
 
