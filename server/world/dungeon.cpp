@@ -16,3 +16,11 @@ bool Dungeon::can_spawn() const {
 const std::string& Dungeon::get_name() const {
     return name;
 }
+
+int Dungeon::get_entrance_x() const {
+    return entrance_x;
+}
+
+int Dungeon::get_entrance_y() const {
+    return entrance_y;
+}
