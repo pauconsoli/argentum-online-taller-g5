@@ -213,6 +213,18 @@ void World::drop_loot_in_world(const Position& center, Loot loot) {
     }
 }
 
+void World::add_ground_item(const Position& pos, GroundItem item) {
+    if (!map.is_valid_position(pos) || map.is_position_blocked(pos)) {
+        throw std::runtime_error("World::add_ground_item: posición inválida o bloqueada");
+    }
+
+    Position free_pos = pos;
+    if (ground_items.find(pos) != ground_items.end()) {
+        free_pos = find_closest_free_ground(pos);
+    }
+    ground_items[free_pos] = std::move(item);
+}
+
 // TODO(Pau): refactor para que no tire excepciones, que devuelva un attack status o algo asi)
 void World::validate_attack_conditions(const Player* attacker, const Character* target,
                                        bool is_healing) const {

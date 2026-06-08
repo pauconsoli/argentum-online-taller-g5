@@ -83,21 +83,9 @@ y = 3
  
 [[ground_items]]
 type = "item"
-name = "Hacha"
-x = 10
-y = 6
- 
-[[ground_items]]
-type = "item"
 name = "Martillo"
 x = 18
 y = 9
- 
-[[ground_items]]
-type = "item"
-name = "Arco simple"
-x = 28
-y = 3
  
 [[ground_items]]
 type = "item"
@@ -125,12 +113,6 @@ y = 10
  
 [[ground_items]]
 type = "item"
-name = "Armadura de cuero"
-x = 30
-y = 7
- 
-[[ground_items]]
-type = "item"
 name = "Túnica azul"
 x = 16
 y = 12
@@ -144,23 +126,9 @@ y = 6
 [[ground_items]]
 type = "item"
 name = "Pocion de vida"
-quantity = 3
-x = 6
-y = 4
- 
-[[ground_items]]
-type = "item"
-name = "Pocion de vida"
 quantity = 2
 x = 27
 y = 14
- 
-[[ground_items]]
-type = "item"
-name = "Pocion de mana"
-quantity = 3
-x = 19
-y = 3
  
 [[ground_items]]
 type = "item"
@@ -174,13 +142,7 @@ type = "gold"
 amount = 150
 x = 14
 y = 8
- 
-[[ground_items]]
-type = "gold"
-amount = 75
-x = 5
-y = 17
- 
+
 # ---------------------------------
 # Dungeon Treasure
 # ---------------------------------
@@ -203,13 +165,6 @@ name = "Pocion de vida"
 quantity = 5
 x = 45
 y = 24
- 
-[[ground_items]]
-type = "item"
-name = "Pocion de mana"
-quantity = 5
-x = 50
-y = 31
  
 [[ground_items]]
 type = "gold"

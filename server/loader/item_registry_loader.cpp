@@ -22,10 +22,8 @@ void ItemRegistryLoader::load(const std::string& config_path) {
             continue;
 
         ItemRegistry::ItemTemplate tpl;
-        if (auto val = (*item_table)["name"].value<std::string>())
-            tpl.name = *val;
-        if (auto val = (*item_table)["type"].value<std::string>())
-            tpl.type = *val;
+        tpl.name = (*item_table)["name"].value_or("");
+        tpl.type = (*item_table)["type"].value_or("");
 
         if (tpl.name.empty() || tpl.type.empty()) {
             throw std::runtime_error("items.toml: item inválido, falta name o type en " +
@@ -40,17 +38,14 @@ void ItemRegistryLoader::load(const std::string& config_path) {
         if (tpl.type == "defensive") {
             tpl.min_defense = (*item_table)["min_defense"].value_or(0);
             tpl.max_defense = (*item_table)["max_defense"].value_or(0);
-            if (auto val = (*item_table)["slot"].value<std::string>())
-                tpl.slot = *val;
+            tpl.slot = (*item_table)["slot"].value_or("");
         }
         if (tpl.type == "consumable") {
-            if (auto val = (*item_table)["consumable_type"].value<std::string>())
-                tpl.consumable_type = *val;
+            tpl.consumable_type = (*item_table)["consumable_type"].value_or("");
             tpl.restore = (*item_table)["restore"].value_or(0);
         }
         if (tpl.type == "magic_weapon") {
-            if (auto val = (*item_table)["spell_name"].value<std::string>())
-                tpl.spell_name = *val;
+            tpl.spell_name = (*item_table)["spell_name"].value_or("");
             tpl.min_heal = (*item_table)["min_heal"].value_or(0);
             tpl.max_heal = (*item_table)["max_heal"].value_or(0);
             tpl.mana_cost = (*item_table)["mana_cost"].value_or(0);

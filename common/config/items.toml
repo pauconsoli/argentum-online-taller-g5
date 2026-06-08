@@ -130,7 +130,7 @@ type = "magic_weapon"
 spell_name = "Curar"
 min_damage = 0
 max_damage = 0
-min_heal = 20    # Valores aproximados para curación, ajustar según balance
+min_heal = 20
 max_heal = 40
 mana_cost = 100
 

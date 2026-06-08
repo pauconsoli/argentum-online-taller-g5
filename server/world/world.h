@@ -72,6 +72,8 @@ class World {
 
     void drop_loot_in_world(const Position& center, Loot loot);
 
+    void add_ground_item(const Position& pos, GroundItem item);
+
     void pick_up_item(uint32_t player_id);
     void drop_item(uint32_t player_id, int slot_index);
 
