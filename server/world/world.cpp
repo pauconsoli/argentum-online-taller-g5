@@ -232,10 +232,10 @@ AttackStatus World::validate_attack_conditions(const Player* attacker, const Cha
         if (attacker->get_id() == target->get_id()) {
             return AttackStatus::INVALID_TARGET;
         }
-    }
 
-    if (!target->validate_attack_from(attacker->get_level())) {
-        return AttackStatus::INVALID_TARGET;
+        if (!target->validate_attack_from(attacker->get_level())) {
+            return AttackStatus::INVALID_TARGET;
+        }
     }
 
     if (!is_in_range_for_attack(attacker, target)) {

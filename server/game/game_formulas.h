@@ -10,6 +10,7 @@
 #include "server/game/player_race.h"
 
 class Player;
+class Weapon;
 
 struct BaseStats {
     int strength;
@@ -47,7 +48,7 @@ class GameFormulas {
     // ATAQUE
 
     static bool can_attack_by_level(int attacker_level, int target_level);
-    static int calculate_damage(const Player& attacker);
+    static int calculate_damage(const Player& attacker, const Weapon* weapon = nullptr);
     static bool calculate_critical_attack();
     static bool calculate_evasion(const Character& target);
     static int calculate_defense(const Player& target);

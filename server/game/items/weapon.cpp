@@ -31,7 +31,7 @@ int Weapon::get_mana_cost() const {
 }
 
 WeaponEffect Weapon::apply_effect(const Player& attacker) const {
-    int dmg = GameFormulas::calculate_damage(attacker);
+    int dmg = GameFormulas::calculate_damage(attacker, this);
     return {dmg, 0};
 }
 
