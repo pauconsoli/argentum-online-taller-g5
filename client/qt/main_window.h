@@ -1,6 +1,7 @@
 #ifndef QT_MAIN_WINDOW_H
 #define QT_MAIN_WINDOW_H
 
+#include <cstdint>
 #include <memory>
 
 #include <QCloseEvent>
@@ -15,6 +16,7 @@ class QLabel;
 class ConnectionWidget;
 class LobbyWidget;
 class RaceClassWidget;
+class QtClientAdapter;
 
 class MainWindow: public QMainWindow {
     Q_OBJECT
@@ -22,9 +24,6 @@ class MainWindow: public QMainWindow {
  public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
-
- signals:
-    //void gameStartRequested(std::unique_ptr<Client> client); => me rompe cuando compilo
 
  protected:
     void closeEvent(QCloseEvent* event) override;
@@ -50,12 +49,13 @@ class MainWindow: public QMainWindow {
     RaceClassWidget* race_class_page;
 
     std::unique_ptr<Client> client;
-    QString current_nick; 
+    std::unique_ptr<QtClientAdapter> adapter;
 
-    QLabel* status_user_label; 
+    QString current_nick;
+    QLabel* status_user_label;
 
     void show_error_in_current_page(const QString& msg);
-    void connect_client_signals();
+    void connect_adapter_signals();
     void update_status_bar();
     void teardown_session();
 };
