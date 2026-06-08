@@ -56,6 +56,7 @@ class ClientProtocol {
     void send_meditate();
     void send_pick_up();
     void send_drop_item(uint8_t slot_index);
+    void send_equip_item(uint8_t slot_index);
     void send_disconnect();
     void send_leave_match();
 

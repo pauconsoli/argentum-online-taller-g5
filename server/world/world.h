@@ -76,6 +76,7 @@ class World {
 
     void pick_up_item(uint32_t player_id);
     void drop_item(uint32_t player_id, int slot_index);
+    void equip_item(uint32_t player_id, int slot_index);
 
     void move_player(uint32_t player_id, Direction direction);
 

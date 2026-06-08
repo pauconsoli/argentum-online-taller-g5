@@ -80,6 +80,9 @@ void ReceiverThread::run() {
                         case ClientOpcode::SELECT_RACE_CLASS:
                             handle_select_race_class();
                             break;
+                        case ClientOpcode::EQUIP_ITEM:
+                            handle_equip_item();
+                            break;
                         default:
                             send_error(ProtocolError::COMMAND_NOT_ALLOWED,
                                        "comando no implementado en este estado");
@@ -149,8 +152,8 @@ void ReceiverThread::handle_join_match() {
     try {
         server_ops.send_world_map_to(player_conn);
     } catch (const std::exception& e) {
-        std::cerr << "[RECEIVER] No se pudo mandar el mapa a "
-                  << player_conn.get_nick() << ": " << e.what() << "\n";
+        std::cerr << "[RECEIVER] No se pudo mandar el mapa a " << player_conn.get_nick() << ": "
+                  << e.what() << "\n";
     }
 }
 
@@ -180,10 +183,21 @@ void ReceiverThread::handle_move() {
     server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 
+void ReceiverThread::handle_equip_item() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        protocol.recv_equip_item_payload(player_conn.get_player_id());
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_equip_item_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
 void ReceiverThread::handle_attack() {
     uint32_t match_id = player_conn.get_current_match_id();
     if (match_id == 0) {
-        protocol.recv_attack_payload(player_conn.get_player_id());  
+        protocol.recv_attack_payload(player_conn.get_player_id());
         send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
         return;
     }
@@ -214,7 +228,7 @@ void ReceiverThread::handle_pick_up() {
 void ReceiverThread::handle_drop_item() {
     uint32_t match_id = player_conn.get_current_match_id();
     if (match_id == 0) {
-        protocol.recv_drop_item_payload(player_conn.get_player_id()); 
+        protocol.recv_drop_item_payload(player_conn.get_player_id());
         send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
         return;
     }

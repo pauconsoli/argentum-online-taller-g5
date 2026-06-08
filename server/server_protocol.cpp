@@ -10,6 +10,7 @@
 
 #include "common/commands/attack_command.h"
 #include "common/commands/drop_item_command.h"
+#include "common/commands/equip_item_command.h"
 #include "common/commands/meditate_command.h"
 #include "common/commands/move_command.h"
 #include "common/commands/pick_up_item_command.h"
@@ -206,6 +207,11 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_pick_up_payload(uint32_t pla
 std::unique_ptr<ClientCommand> ServerProtocol::recv_drop_item_payload(uint32_t player_id) {
     uint8_t slot = recv_u8();
     return std::make_unique<DropItemCommand>(player_id, static_cast<int>(slot));
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_equip_item_payload(uint32_t player_id) {
+    uint8_t slot = recv_u8();
+    return std::make_unique<EquipItemCommand>(player_id, static_cast<int>(slot));
 }
 
 void ServerProtocol::send_update(const GameUpdate& update) {

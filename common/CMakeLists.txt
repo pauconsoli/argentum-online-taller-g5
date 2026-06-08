@@ -23,6 +23,7 @@ target_sources(taller_common
     commands/select_race_class_command.h
     commands/meditate_command.h
     commands/attack_command.h
+    commands/equip_item_command.h
     # world
     world/terrain_type.h
     # updates

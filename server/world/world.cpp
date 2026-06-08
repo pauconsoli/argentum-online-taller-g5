@@ -214,12 +214,12 @@ void World::drop_loot_in_world(const Position& center, Loot loot) {
 }
 
 void World::add_ground_item(const Position& pos, GroundItem item) {
-    if (!map.is_valid_position(pos) || map.is_position_blocked(pos)) {
-        throw std::runtime_error("World::add_ground_item: posición inválida o bloqueada");
+    if (!map.is_valid_position(pos)) {
+        throw std::runtime_error("World::add_ground_item: posición inválida");
     }
 
     Position free_pos = pos;
-    if (ground_items.find(pos) != ground_items.end()) {
+    if (map.is_position_blocked(pos) || ground_items.find(pos) != ground_items.end()) {
         free_pos = find_closest_free_ground(pos);
     }
     ground_items[free_pos] = std::move(item);
@@ -285,7 +285,7 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
     return real_damage;
 }
 
-// again esto no debería estar acá, pero por ahora solo quiero que funcione
+// again esto no debería estar acá
 MagicWeapon* World::get_healing_weapon(Player* attacker) const {
     Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
     if (MagicWeapon* magic_weapon = dynamic_cast<MagicWeapon*>(equipped_weapon)) {
@@ -437,6 +437,23 @@ void World::drop_item(uint32_t player_id, int slot_index) {
     ground_items[pos] = GroundItem{0, std::move(slot.item), slot.quantity};
 }
 
+void World::equip_item(uint32_t player_id, int slot_index) {
+    Player* player = get_player(player_id);
+    if (!player)
+        throw std::runtime_error("World::equip_item: jugador no encontrado");
+    if (player->is_dead())
+        throw std::runtime_error("World::equip_item: un fantasma no puede equipar items");
+
+    const auto& slots = player->get_inventory().get_slots();
+    if (slot_index < 0 || slot_index >= static_cast<int>(slots.size())) {
+        throw std::runtime_error("World::equip_item: índice de slot inválido");
+    }
+    if (!slots[slot_index].item) {
+        throw std::runtime_error("World::equip_item: no hay ítem en ese slot");
+    }
+
+    player->equip(*slots[slot_index].item);
+}
 
 // esto podría devolver un vector de structs (Stats o similar) o algo indicando
 // QUÉ cambió  y para QUE JUGADOR
