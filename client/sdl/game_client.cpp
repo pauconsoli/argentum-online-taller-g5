@@ -175,7 +175,7 @@ void GameClient::run() {
             running = input_handler.handle(event);
         }
 
-        const Uint8* keys = SDL_GetKeyboardState(NULL);
+        const Uint8* keys = SDL_GetKeyboardState(nullptr);
         bool moving = false;
 
         if (keys[SDL_SCANCODE_DOWN]) {
