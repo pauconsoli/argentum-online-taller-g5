@@ -88,8 +88,8 @@ constitution_bonus = 3
 # ---------------------------------
 
 [world]
-spawn_x = 11
-spawn_y = 5
+spawn_x = 22
+spawn_y = 10
 
 [level]
 initial_player_level = 1

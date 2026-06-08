@@ -198,6 +198,15 @@ void ClientProtocol::send_drop_item(uint8_t slot_index) {
     }
 }
 
+void ClientProtocol::send_equip_item(uint8_t slot_index) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::EQUIP_ITEM);
+    put_u8(buf, slot_index);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_equip_item: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
