@@ -8,13 +8,6 @@
 #include "server/game/player.h"
 #include "server/world/world.h"
 
-EquipItemCommand::EquipItemCommand(uint32_t player_id, int slot_index):
-    player_id(player_id), slot_index(slot_index) {}
-
-uint32_t EquipItemCommand::get_player_id() const {
-    return player_id;
-}
-
 std::vector<std::unique_ptr<GameUpdate>> EquipItemCommand::execute(World& world) {
     std::vector<std::unique_ptr<GameUpdate>> updates;
     try {
