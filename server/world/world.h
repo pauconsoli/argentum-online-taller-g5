@@ -21,8 +21,6 @@ struct GroundItem {  // por ahora así, no se si es lo mejor
     int quantity = 0;
 };
 
-class MagicWeapon;
-
 class World {
  private:
     WorldMap map;
@@ -46,9 +44,6 @@ class World {
     void consume_weapon_mana(Player* attacker);
     void handle_target_death(Player* attacker, Character* target);
     int handle_successful_attack(Player* attacker, Character* target, int damage);
-    MagicWeapon* get_healing_weapon(Player* attacker) const;
-    AttackResult handle_healing(uint32_t attacker_id, uint32_t target_id, Character* target,
-                                MagicWeapon* weapon) const;
 
  public:
     World(int width, int height);

@@ -5,6 +5,13 @@
 
 #include "server/game/items/item.h"
 
+class Player;
+
+struct WeaponEffect {
+    int damage = 0;
+    int healing = 0;
+};
+
 class Weapon: public Item {
  protected:
     int min_damage;
@@ -26,6 +33,10 @@ class Weapon: public Item {
     virtual bool is_ranged() const;
 
     virtual int get_mana_cost() const;
+
+    virtual WeaponEffect apply_effect(const Player& attacker) const;
+
+    virtual bool is_healing() const;
 };
 
 #endif

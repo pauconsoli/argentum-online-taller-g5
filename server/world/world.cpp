@@ -9,8 +9,6 @@
 
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
-#include "server/game/items/magic_weapon.h"
-#include "server/game/items/spell.h"
 #include "server/game/items/weapon.h"
 
 World::World(int width, int height):
@@ -114,11 +112,8 @@ bool World::is_position_occupied(const Position& position) const {
 
 bool World::is_in_range_for_attack(const Player* attacker, const Character* target) const {
     bool is_ranged = false;
-    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
-    if (equipped_weapon) {
-        Weapon* weapon = static_cast<Weapon*>(
-            equipped_weapon);  // mismo caso que en el cálculo de daño, el item equipado en ese slot
-                               // tiene que ser un arma sí o sí
+    Weapon* weapon = attacker->get_equipped_weapon();
+    if (weapon) {
         is_ranged = weapon->is_ranged();
     }
 
@@ -250,9 +245,8 @@ void World::validate_attack_conditions(const Player* attacker, const Character* 
 
 
 void World::consume_weapon_mana(Player* attacker) {
-    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
-    if (equipped_weapon) {
-        Weapon* weapon = static_cast<Weapon*>(equipped_weapon);
+    Weapon* weapon = attacker->get_equipped_weapon();
+    if (weapon) {
         int mana_cost = weapon->get_mana_cost();
 
         if (mana_cost > 0) {
@@ -283,27 +277,6 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
     attacker->add_experience(exp);
 
     return real_damage;
-}
-
-// again esto no debería estar acá
-MagicWeapon* World::get_healing_weapon(Player* attacker) const {
-    Item* equipped_weapon = attacker->get_inventory().get_equipped_item(EquipmentSlot::WEAPON);
-    if (MagicWeapon* magic_weapon = dynamic_cast<MagicWeapon*>(equipped_weapon)) {
-        if (magic_weapon->get_spell().does_heal()) {
-            return magic_weapon;
-        }
-    }
-    return nullptr;
-}
-
-AttackResult World::handle_healing(uint32_t attacker_id, uint32_t target_id, Character* target,
-                                   MagicWeapon* weapon) const {
-    int min_heal = weapon->get_spell().get_min_heal();
-    int max_heal = weapon->get_spell().get_max_heal();
-    int heal_amount = GameFormulas::calculate_healing(min_heal, max_heal);
-
-    target->heal(heal_amount);
-    return AttackResult{attacker_id, target_id, 0, false, false, true, heal_amount};
 }
 
 // REFACTOR FUTURO.
@@ -355,28 +328,35 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         throw std::runtime_error("World::attack: atacante u objetivo no existe");
     }
 
-    MagicWeapon* healing_weapon = get_healing_weapon(attacker);
-    bool is_healing = (healing_weapon != nullptr);
+    Weapon* weapon = attacker->get_equipped_weapon();
+    bool is_healing = weapon ? weapon->is_healing() : false;
 
     validate_attack_conditions(attacker, target, is_healing);
     consume_weapon_mana(attacker);
 
-    if (is_healing) {
-        return handle_healing(attacker_id, target_id, target, healing_weapon);
+    WeaponEffect effect;
+    if (weapon) {
+        effect = weapon->apply_effect(*attacker);
+    } else {
+        effect.damage = GameFormulas::calculate_damage(*attacker);  // daño base sin arma
     }
 
-    int damage = GameFormulas::calculate_damage(*attacker);
+    if (is_healing) {
+        target->heal(effect.healing);
+        return AttackResult{attacker_id, target_id, 0, false, false, true, effect.healing};
+    }
+
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
-        damage *= 2;  // extraer a config
+        effect.damage *= 2;  // extraer a config
     }
 
     bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
 
     int real_damage = 0;
     if (!evaded) {
-        real_damage = handle_successful_attack(attacker, target, damage);
+        real_damage = handle_successful_attack(attacker, target, effect.damage);
     }
 
     bool died = target->is_dead();
