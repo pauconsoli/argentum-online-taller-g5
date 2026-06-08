@@ -414,9 +414,7 @@ void ServerProtocol::send_inventory(const GameUpdate& update) {
         put_u32(buf, slot.quantity);
         put_u8(buf, slot.is_equipped ? 1 : 0);
     }
-    // TODO(Pau): el campo gold del InventoryUpdate no tiene getter, así que
-    // mandamos 0 acá. Cuando agregues get_gold(), reemplazá la línea de abajo.
-    put_u64(buf, 0);
+    put_u64(buf, u.get_gold());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_inventory: client closed connection");
     }
