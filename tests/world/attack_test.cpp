@@ -49,7 +49,8 @@ TEST_F(AttackTest, CloseAttackOutOfRange) {
     test_add_player(2, 10, 15);
 
     // distancia > 1 sin arma a distancia, debe lanzar error
-    EXPECT_THROW(world.attack(1, 2), std::runtime_error);
+    AttackResult res = world.attack(1, 2);
+    EXPECT_EQ(res.status, AttackStatus::OUT_OF_RANGE);
 }
 
 TEST_F(AttackTest, RangedAttackInRangeWithMagicWeapon) {
@@ -64,22 +65,27 @@ TEST_F(AttackTest, RangedAttackInRangeWithMagicWeapon) {
     attacker->equip(*staff_ptr);
 
     // arma mágica tiene rango, no debería fallar por distancia
-    EXPECT_NO_THROW(world.attack(1, 2));
+    AttackResult res = world.attack(1, 2);
+    EXPECT_EQ(res.status, AttackStatus::SUCCESS);
 }
 
 TEST_F(AttackTest, NewbieCannotAttackOrBeAttacked) {
     test_add_player(1, 10, 10, 5);  // newbie
     test_add_player(2, 10, 11, 20);
 
-    EXPECT_THROW(world.attack(1, 2), std::runtime_error);  // newbie atacando
-    EXPECT_THROW(world.attack(2, 1), std::runtime_error);  // atacando al newbie
+    AttackResult res1 = world.attack(1, 2);  // newbie atacando
+    EXPECT_EQ(res1.status, AttackStatus::INVALID_TARGET);
+
+    AttackResult res2 = world.attack(2, 1);  // atacando al newbie
+    EXPECT_EQ(res2.status, AttackStatus::INVALID_TARGET);
 }
 
 TEST_F(AttackTest, MaxLevelDifference) {
     test_add_player(1, 10, 10, 20);
     test_add_player(2, 10, 11, 40);  // diferencia de 20 niveles (> 10)
 
-    EXPECT_THROW(world.attack(1, 2), std::runtime_error);
+    AttackResult res = world.attack(1, 2);
+    EXPECT_EQ(res.status, AttackStatus::INVALID_TARGET);
 }
 
 TEST_F(AttackTest, DeadTargetCannotBeAttacked) {
@@ -89,7 +95,8 @@ TEST_F(AttackTest, DeadTargetCannotBeAttacked) {
     target->receive_damage(9999);
     EXPECT_TRUE(target->is_dead());
 
-    EXPECT_THROW(world.attack(1, 2), std::runtime_error);
+    AttackResult res = world.attack(1, 2);
+    EXPECT_EQ(res.status, AttackStatus::DEAD);
 }
 
 TEST_F(AttackTest, DeadAttackerCannotAttack) {
@@ -99,7 +106,8 @@ TEST_F(AttackTest, DeadAttackerCannotAttack) {
     attacker->receive_damage(9999);
     EXPECT_TRUE(attacker->is_dead());
 
-    EXPECT_THROW(world.attack(1, 2), std::runtime_error);
+    AttackResult res = world.attack(1, 2);
+    EXPECT_EQ(res.status, AttackStatus::DEAD);
 }
 
 TEST_F(AttackTest, MagicWeaponConsumesMana) {
@@ -119,7 +127,7 @@ TEST_F(AttackTest, MagicWeaponConsumesMana) {
     EXPECT_EQ(attacker->get_current_mana(), initial_mana - 15);
 }
 
-TEST_F(AttackTest, MagicWeaponInsufficientManaThrows) {
+TEST_F(AttackTest, MagicWeaponInsufficientManaFails) {
     Player* attacker = test_add_player(1, 10, 10, 20, PlayerClass::MAGE);
     test_add_player(2, 10, 11);
 
@@ -130,7 +138,8 @@ TEST_F(AttackTest, MagicWeaponInsufficientManaThrows) {
     attacker->get_inventory().add_item(std::move(staff));
     attacker->equip(*staff_ptr);
 
-    EXPECT_THROW(world.attack(1, 2), std::runtime_error);
+    AttackResult res = world.attack(1, 2);
+    EXPECT_EQ(res.status, AttackStatus::NO_MANA);
 }
 
 TEST_F(AttackTest, DeathFlowPenalties) {
@@ -194,10 +203,11 @@ TEST_F(AttackTest, AttackerGetsRewardsOnKill) {
     EXPECT_GT(attacker->get_experience(), initial_exp);
 }
 
-TEST_F(AttackTest, SelfAttackNormalThrows) {
+TEST_F(AttackTest, SelfAttackNormalFails) {
     test_add_player(1, 10, 10);
 
-    EXPECT_THROW(world.attack(1, 1), std::runtime_error);
+    AttackResult res = world.attack(1, 1);
+    EXPECT_EQ(res.status, AttackStatus::INVALID_TARGET);
 }
 
 TEST_F(AttackTest, HealingSpellSuccess) {

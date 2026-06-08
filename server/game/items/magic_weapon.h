@@ -21,6 +21,10 @@ class MagicWeapon: public Weapon {
     const Spell& get_spell() const;
 
     int get_mana_cost() const override;
+
+    WeaponEffect apply_effect(const Player& attacker) const override;
+
+    bool is_healing() const override;
 };
 
 #endif

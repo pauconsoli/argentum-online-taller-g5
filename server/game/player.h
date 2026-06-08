@@ -16,6 +16,7 @@
 #include "server/game/player_race.h"
 
 class Item;
+class Weapon;
 
 class Player: public Character {
  private:
@@ -79,6 +80,8 @@ class Player: public Character {
     const Inventory& get_inventory() const;
 
     std::vector<std::pair<EquipmentSlot, Item*>> get_equipment() const;
+
+    Weapon* get_equipped_weapon() const;
 
     void equip(Item& item);
 

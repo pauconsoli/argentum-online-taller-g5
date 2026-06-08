@@ -19,6 +19,9 @@ class Dungeon: public Zone {
     bool can_spawn() const override;
 
     const std::string& get_name() const override;
+
+    int get_entrance_x() const;
+    int get_entrance_y() const;
 };
 #endif
 
