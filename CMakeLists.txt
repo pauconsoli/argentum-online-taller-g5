@@ -119,7 +119,7 @@ target_include_directories(taller_world PUBLIC .)
 
 # Install libSDL2 and libSDL2pp (for client or editor)
 # HEY!! TODO XXX: add more dependendies (either for client, server or editor)
-if(TALLER_CLIENT OR TALLER_EDITOR)
+if(TALLER_CLIENT OR TALLER_EDITOR OR TALLER_CLIENT_QT)
     include(FetchContent)
     FetchContent_Declare(
         SDL2
@@ -232,16 +232,34 @@ if(TALLER_CLIENT_QT)
             client/client.cpp
             client/client.h
             client/client_protocol.cpp
+            client/sdl/game_client.cpp
+            client/sdl/renderer.cpp
+            client/sdl/input_handler.cpp
+            client/sdl/camera.cpp
+            client/sdl/hud.cpp
+            client/sdl/mini_chat.cpp
+            client/sdl/sprite_manager.cpp
+            client/sdl/client_map.cpp
         )
 
-        add_dependencies(taller_client_qt taller_common)
+        add_dependencies(taller_client_qt taller_common SDL2pp::SDL2pp)
 
         set_project_warnings(taller_client_qt ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+        taller_apply_sanitizers(taller_client_qt)
+
+        target_include_directories(taller_client_qt PRIVATE
+            ${libSDL2pp_SOURCE_DIR}
+            ${sdl2_image_SOURCE_DIR}/include
+            ${sdl2_ttf_SOURCE_DIR}
+        )
 
         target_link_libraries(taller_client_qt
             taller_common
             Qt5::Core
             Qt5::Widgets
+            SDL2pp::SDL2pp
+            SDL2_image
+            SDL2_ttf
             spdlog::spdlog
         )
     else()

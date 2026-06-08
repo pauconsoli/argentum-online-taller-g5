@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -23,7 +24,7 @@ class GameClient {
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
-    Client client;
+    std::unique_ptr<Client> client;
     InputHandler input_handler;
     Camera camera;
     uint32_t my_player_id;
@@ -38,10 +39,14 @@ class GameClient {
     int my_mp;
     int my_max_mp;
     int my_level;
+    bool from_handoff;
     std::map<uint32_t, PlayerSnapshot> players;
 
  public:
+    // Constructor standalone: crea y arranca su propio Client (binario taller_client).
     GameClient(int width, int height, const std::string& host, const std::string& port);
+    // Constructor de handoff Qt→SDL: recibe Client ya conectado y con lobby completado.
+    GameClient(int width, int height, std::unique_ptr<Client> client, uint8_t race, uint8_t klass);
     ~GameClient();
 
     GameClient(const GameClient&) = delete;

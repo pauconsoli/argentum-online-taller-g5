@@ -1,20 +1,12 @@
-// Entry point del cliente con menú Qt.
-//
-// Binario: taller_client_qt (ver CMakeLists raíz).
-//
-// Cuando esté integrado el handoff a SDL, este main:
-//   - Conecta gameStartRequested del MainWindow a una función que
-//     instancia el GameClient (SDL) con el Client que llega por move.
-//   - Levanta SDL en el mismo proceso después de cerrar la ventana Qt.
-//
-// Por ahora muestra solo el menú: conexión → lobby → raza/clase.
-
 #include <QApplication>
 #include <QMetaType>
+#include <memory>
+
+#include "client/client.h"
+#include "client/sdl/game_client.h"
 #include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/world_map_update.h"
-
 #include "main_window.h"
 
 int main(int argc, char* argv[]) {
@@ -104,7 +96,26 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("Argentum Online - G5");
 
     MainWindow window;
-    window.show();
 
-    return app.exec();
+    std::unique_ptr<Client> pending_client;
+    uint8_t pending_race = 0;
+    uint8_t pending_klass = 0;
+
+    QObject::connect(
+        &window, &MainWindow::gameStartRequested,
+        [&pending_client, &pending_race, &pending_klass](Client* c, uint8_t race, uint8_t klass) {
+            pending_client.reset(c);
+            pending_race = race;
+            pending_klass = klass;
+        });
+
+    window.show();
+    app.exec();
+
+    if (pending_client) {
+        GameClient game(800, 600, std::move(pending_client), pending_race, pending_klass);
+        game.run();
+    }
+
+    return 0;
 }
