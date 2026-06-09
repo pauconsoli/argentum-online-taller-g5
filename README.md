@@ -46,6 +46,9 @@ Para correr los tests unitarios:
 make run-tests
 ```
 
+- **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
+- **Servidor:** para matar el servidor de forma segura, escribe la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
+
 ## Licencias
 
 La implementación de las clases `Queue`, `Thread`, `Socket`, `Resolver`, `LibError` y `ResolverError` está basada en el código provisto por la cátedra: https://github.com/eldipa/hands-on-threads y https://github.com/eldipa/sockets-en-cpp 

@@ -147,7 +147,7 @@ mkdir -p "$CMAKE_BUILD_DIR"
 cmake -S "$BUILD_DIR" -B "$CMAKE_BUILD_DIR" \
     -DCMAKE_BUILD_TYPE=Release
 
-cmake --build "$CMAKE_BUILD_DIR" --parallel "$(nproc)"
+cmake --build "$CMAKE_BUILD_DIR"
 print_ok "Compilación exitosa"
 
 # =============================================
