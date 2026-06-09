@@ -192,13 +192,13 @@ print_step "Instalando binarios en $BIN_DIR..."
 
 # Ejecutables
 SERVER_BIN="$CMAKE_BUILD_DIR/${GAME_NAME}_server"
-CLIENT_BIN="$CMAKE_BUILD_DIR/${GAME_NAME}_client"
+CLIENT_BIN="$CMAKE_BUILD_DIR/${GAME_NAME}_client_qt"
 
 [[ -f "$SERVER_BIN" ]] || die "No se encontró el binario del servidor en $SERVER_BIN"
 [[ -f "$CLIENT_BIN" ]] || die "No se encontró el binario del cliente en $CLIENT_BIN"
 
 install -m 755 "$SERVER_BIN" "$BIN_DIR/${GAME_NAME}_server"
-install -m 755 "$CLIENT_BIN" "$BIN_DIR/${GAME_NAME}_client"
+install -m 755 "$CLIENT_BIN" "$BIN_DIR/${GAME_NAME}_client_qt"
 
 print_ok "Binarios instalados en $BIN_DIR"
 
@@ -257,17 +257,39 @@ print_ok "Limpieza completa"
 # =============================================
 #               Resumen final
 # =============================================
+
+STR_TITLE="¡Instalación de Argentum Online completada!"
+STR_BIN="Binarios   → $BIN_DIR/${GAME_NAME}_{server,client_qt}"
+STR_CONF="Configs    → $CONFIG_DIR"
+STR_DATA="Assets     → $DATA_DIR"
+STR_LAUNCH="Launchers  → $DESKTOP_DIR/{server,client}.sh"
+STR_PLAY="Para jugar:"
+STR_PLAY1="  1. Abrí una terminal y ejecutá ./server.sh"
+STR_PLAY2="  2. Abrí otra terminal y ejecutá ./client.sh"
+
+MAX_LEN=0
+for str in "$STR_TITLE" "$STR_BIN" "$STR_CONF" "$STR_DATA" "$STR_LAUNCH" "$STR_PLAY" "$STR_PLAY1" "$STR_PLAY2"; do
+    if [[ ${#str} -gt $MAX_LEN ]]; then
+        MAX_LEN=${#str}
+    fi
+done
+
+MAX_LEN=$((MAX_LEN + 4))
+
+BORDER=$(printf '%*s' "$MAX_LEN" '')
+BORDER=${BORDER// /═}
+
 echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════════════════╗"
-echo -e "║   ¡Instalación de Argentum Online completada!        ║"
-echo -e "╠══════════════════════════════════════════════════════╣"
-echo -e "║  Binarios   → $BIN_DIR/${GAME_NAME}_{server,client}  ║"
-echo -e "║  Configs    → $CONFIG_DIR                            ║"
-echo -e "║  Assets     → $DATA_DIR                              ║"
-echo -e "║  Launchers  → $DESKTOP_DIR/{server,client}.sh        ║"
-echo -e "╠══════════════════════════════════════════════════════╣"
-echo -e "║  Para jugar:                                         ║"
-echo -e "║    1. Abrí una terminal y ejecutá server.sh          ║"
-echo -e "║    2. Abrí otra terminal y ejecutá client.sh         ║"
-echo -e "╚══════════════════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}╔${BORDER}╗"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_TITLE"
+echo -e "╠${BORDER}╣"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_BIN"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_CONF"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_DATA"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_LAUNCH"
+echo -e "╠${BORDER}╣"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_PLAY"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_PLAY1"
+printf "║ %-${MAX_LEN}s ║\n" "  $STR_PLAY2"
+echo -e "╚${BORDER}╝${NC}"
 echo ""

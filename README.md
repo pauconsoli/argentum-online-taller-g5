@@ -12,7 +12,7 @@ Repositorio del TP Final de la materia Taller de Programación (TA045), cátedra
 
 El proyecto incluye un script instalador diseñado para ejecutarse en un entorno limpio (Ubuntu/Xubuntu 24.04). Este script instala todas las dependencias necesarias, compila el código en modo Release, ejecuta los tests unitarios e instala los binarios y recursos en el sistema.
 
-Para instalar el juego, ejecutar en la raíz del repositorio:
+Para instalar el juego, ejecutar en la raíz del repositorio o donde este el archivo `installer.sh`:
 
 ```bash
 sudo bash installer.sh
@@ -26,9 +26,9 @@ Una vez finalizada la instalación:
 
 ### Ejecución
 
-Ejecuta los scripts generados en el escritorio:
-1. Abre una terminal y ejecuta: `~/Desktop/server.sh` (para levantar el servidor).
-2. Abre otra terminal y ejecuta: `~/Desktop/client.sh` (para conectar el cliente).
+Ejecutá los scripts generados en el escritorio. En esa carpeta:
+1. Abrí una terminal y ejecutá: `./server.sh` (para levantar el servidor).
+2. Abrí otra terminal y ejecutá: `./client.sh` (para conectar el cliente).
 
 *Nota: para cambiar el puerto o el host, se puede editar directamente esos scripts.*
 
@@ -49,7 +49,7 @@ make run-tests
 ### Comandos de cierre:
 
 - **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
-- **Servidor:** para matar el servidor de forma segura, escribe la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
+- **Servidor:** para matar el servidor de forma segura, escribir la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
 
 ## Licencias
 
