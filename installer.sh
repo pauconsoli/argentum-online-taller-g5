@@ -26,10 +26,15 @@ DATA_DIR="/var/${GAME_NAME}"
 
 if [[ -n "$SUDO_USER" ]]; then
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    DESKTOP_DIR=$(sudo -u "$SUDO_USER" xdg-user-dir DESKTOP 2>/dev/null)
 else
     USER_HOME=$HOME
+    DESKTOP_DIR=$(xdg-user-dir DESKTOP 2>/dev/null)
 fi
-DESKTOP_DIR="$USER_HOME/Desktop"
+
+if [[ -z "$DESKTOP_DIR" ]]; then
+    DESKTOP_DIR="$USER_HOME/Desktop"
+fi
 
 # =============================================
 #                  Helpers
@@ -63,8 +68,8 @@ echo -e "${NC}"
 # =============================================
 
 print_step "Actualizando lista de paquetes..."
-apt-get update -qq
-print_ok "Lista de paquetes actualizada"
+apt-get update -qq || print_warn "Algunos repositorios fallaron al actualizar. Continuando de todos modos..."
+print_ok "Proceso de actualización finalizado"
 
 # =============================================
 #      Instalar dependencias del sistema
@@ -253,16 +258,16 @@ print_ok "Limpieza completa"
 #               Resumen final
 # =============================================
 echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════════════╗"
-echo -e "║   ¡Instalación de Argentum Online completada!   ║"
-echo -e "╠══════════════════════════════════════════════════╣"
-echo -e "║  Binarios   → $BIN_DIR/${GAME_NAME}_{server,client}   ║"
-echo -e "║  Configs    → $CONFIG_DIR                     ║"
-echo -e "║  Assets     → $DATA_DIR                       ║"
-echo -e "║  Launchers  → $DESKTOP_DIR/{server,client}.sh ║"
-echo -e "╠══════════════════════════════════════════════════╣"
-echo -e "║  Para jugar:                                     ║"
-echo -e "║    1. Abrí una terminal y ejecutá server.sh      ║"
-echo -e "║    2. Abrí otra terminal y ejecutá client.sh     ║"
-echo -e "╚══════════════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}╔══════════════════════════════════════════════════════╗"
+echo -e "║   ¡Instalación de Argentum Online completada!        ║"
+echo -e "╠══════════════════════════════════════════════════════╣"
+echo -e "║  Binarios   → $BIN_DIR/${GAME_NAME}_{server,client}  ║"
+echo -e "║  Configs    → $CONFIG_DIR                            ║"
+echo -e "║  Assets     → $DATA_DIR                              ║"
+echo -e "║  Launchers  → $DESKTOP_DIR/{server,client}.sh        ║"
+echo -e "╠══════════════════════════════════════════════════════╣"
+echo -e "║  Para jugar:                                         ║"
+echo -e "║    1. Abrí una terminal y ejecutá server.sh          ║"
+echo -e "║    2. Abrí otra terminal y ejecutá client.sh         ║"
+echo -e "╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
