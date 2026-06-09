@@ -15,6 +15,7 @@ class GameConfig {
     GameConfig();
 
     friend class GameConfigLoader;
+    friend class ConfigEnvironment;
 
     bool loaded = false;  // true al terminar GameConfigLoader::load()
 

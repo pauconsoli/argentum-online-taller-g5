@@ -1,3 +1,5 @@
+#include "server/game/game_config.h"
+
 #include <map>
 #include <string>
 
@@ -5,12 +7,6 @@
 #include "gtest/gtest.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
-
-// con esto puedo simular el config localmente sin tener que levantar el server
-// solo para testear
-#define private public
-#include "server/game/game_config.h"
-#undef private
 
 class ConfigEnvironment: public ::testing::Environment {
  public:
