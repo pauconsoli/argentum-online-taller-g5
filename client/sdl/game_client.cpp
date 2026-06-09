@@ -1,9 +1,10 @@
 #include "game_client.h"
 
 #include <algorithm>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,32 @@
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
+
+enum class ItemType { WEAPON, STAFF, ARMOR, HELMET, SHIELD, OTHER };
+
+static ItemType get_item_type(const std::string& name) {
+    static const std::unordered_map<std::string, ItemType> table = {
+        {"Espada", ItemType::WEAPON},
+        {"Hacha", ItemType::WEAPON},
+        {"Martillo", ItemType::WEAPON},
+        {"Arco simple", ItemType::WEAPON},
+        {"Arco compuesto", ItemType::WEAPON},
+        {"Vara de fresno", ItemType::STAFF},
+        {"Báculo nudoso", ItemType::STAFF},
+        {"Báculo engarzado", ItemType::STAFF},
+        {"Flauta élfica", ItemType::STAFF},
+        {"Armadura de cuero", ItemType::ARMOR},
+        {"Armadura de placas", ItemType::ARMOR},
+        {"Túnica azul", ItemType::ARMOR},
+        {"Capucha", ItemType::HELMET},
+        {"Casco de hierro", ItemType::HELMET},
+        {"Sombrero mágico", ItemType::HELMET},
+        {"Escudo de tortuga", ItemType::SHIELD},
+        {"Escudo de hierro", ItemType::SHIELD},
+    };
+    auto it = table.find(name);
+    return it != table.end() ? it->second : ItemType::OTHER;
+}
 
 // Primera cabeza del rango de cada raza (HeadAndBodyData.json, male range start).
 static uint16_t head_index_for_race(uint8_t race) {
@@ -210,6 +237,31 @@ void GameClient::run() {
                                 if (chat_input_.rfind("/tomar", 0) == 0) {
                                     client->do_pick_up();
                                     mini_chat->add_message("/tomar");
+                                } else if (chat_input_.rfind("/tirar", 0) == 0) {
+                                    std::string rest = chat_input_.substr(6);
+                                    size_t pos = rest.find_first_not_of(' ');
+                                    int slot = -1;
+                                    if (pos != std::string::npos) {
+                                        try {
+                                            slot = std::stoi(rest.substr(pos));
+                                        } catch (...) {
+                                            slot = -1;
+                                        }
+                                    } else {
+                                        slot = selected_slot_;
+                                    }
+                                    if (slot >= 0 &&
+                                        slot < static_cast<int>(inventory_slots_.size()) &&
+                                        !inventory_slots_[slot].item_name.empty()) {
+                                        client->do_drop_item(static_cast<uint8_t>(slot));
+                                        mini_chat->add_message("Tiraste el item");
+                                        selected_slot_ = -1;
+                                    } else if (pos == std::string::npos && selected_slot_ < 0) {
+                                        mini_chat->add_message(
+                                            "Seleccioná un item con click derecho primero");
+                                    } else {
+                                        mini_chat->add_message("Slot inválido o vacío");
+                                    }
                                 } else {
                                     mini_chat->add_message(chat_input_);
                                 }
@@ -252,6 +304,13 @@ void GameClient::run() {
                         !inventory_slots_[slot].item_name.empty()) {
                         client->do_equip_item(static_cast<uint8_t>(slot));
                     }
+                }
+            } else if (event.type == SDL_MOUSEBUTTONDOWN &&
+                       event.button.button == SDL_BUTTON_RIGHT) {
+                int slot = hud->get_slot_at(event.button.x, event.button.y);
+                if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
+                    !inventory_slots_[slot].item_name.empty()) {
+                    selected_slot_ = slot;
                 }
             }
         }
@@ -359,14 +418,6 @@ void GameClient::run() {
                     const auto& iu = static_cast<const InventoryUpdate&>(*update);
                     inventory_slots_ = iu.get_items();
                     my_gold = iu.get_gold();
-                    std::cout << "[INV] " << inventory_slots_.size() << " slots:\n";
-                    for (size_t i = 0; i < inventory_slots_.size(); i++) {
-                        const auto& s = inventory_slots_[i];
-                        if (!s.item_name.empty())
-                            std::cout << "  [" << i << "] " << s.item_name << " x" << s.quantity
-                                      << (s.is_equipped ? " (equipado)" : "") << "\n";
-                    }
-                    std::cout << std::flush;
                     break;
                 }
                 case UpdateType::ATTACKED: {
@@ -442,9 +493,13 @@ void GameClient::run() {
 
         // Ground items: entre terreno y jugadores
         for (const auto& gi : ground_items_) {
-            std::string item_key =
-                gi.is_gold ? "item_2" : SpriteManager::item_key_for_name(gi.name);
-            SDL_Texture* item_tex = sprite_manager->get_item(item_key);
+            SDL_Texture* item_tex = nullptr;
+            if (gi.is_gold) {
+                item_tex = sprite_manager->get_gold();
+            } else {
+                std::string item_key = SpriteManager::item_key_for_name(gi.name);
+                item_tex = sprite_manager->get_item(item_key);
+            }
             if (item_tex == nullptr)
                 item_tex = sprite_manager->get_item("item_2");
             if (item_tex != nullptr) {
@@ -489,6 +544,35 @@ void GameClient::run() {
             SDL_SetTextureAlphaMod(body_tex, 255);
             SDL_SetTextureAlphaMod(head_tex, 255);
 
+            // Items equipados visibles — solo jugador local
+            // TODO(cdelaurentis): extender a otros jugadores cuando el snapshot incluya inventario
+            // equipado
+            if (pid == my_player_id) {
+                constexpr int ISIZE = 32;
+                constexpr int HSIZE = 24;
+                for (const auto& islot : inventory_slots_) {
+                    if (!islot.is_equipped || islot.item_name.empty())
+                        continue;
+                    ItemType itype = get_item_type(islot.item_name);
+                    if (itype == ItemType::ARMOR || itype == ItemType::OTHER)
+                        continue;
+                    SDL_Texture* itex =
+                        sprite_manager->get_item(SpriteManager::item_key_for_name(islot.item_name));
+                    if (!itex)
+                        continue;
+                    if (itype == ItemType::WEAPON || itype == ItemType::STAFF) {
+                        renderer->draw_frame(itex, 0, 0, ISIZE, ISIZE, px + tile_w / 2 + 2, py);
+                    } else if (itype == ItemType::SHIELD) {
+                        renderer->draw_frame(itex, 0, 0, ISIZE, ISIZE, px - tile_w / 2 - 2 - ISIZE,
+                                             py);
+                    } else if (itype == ItemType::HELMET) {
+                        SDL_Rect src = {0, 0, ISIZE, ISIZE};
+                        SDL_Rect dst = {px + (frame_w - HSIZE) / 2, py - 12, HSIZE, HSIZE};
+                        SDL_RenderCopy(renderer->get_sdl_renderer(), itex, &src, &dst);
+                    }
+                }
+            }
+
             // Nick centrado debajo de los pies del sprite (sombra + texto blanco)
             int nick_center_x = px + frame_w / 2;
             int nick_y = py + frame_h + 3;
@@ -499,7 +583,7 @@ void GameClient::run() {
         }
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
-        hud->draw_inventory(sprite_manager, inventory_slots_);
+        hud->draw_inventory(sprite_manager, inventory_slots_, selected_slot_);
 
         mini_chat->draw();
         if (chat_active_)

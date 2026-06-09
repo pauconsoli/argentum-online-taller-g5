@@ -60,7 +60,8 @@ void Hud::draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Col
     draw_text(label, text_x, text_y, white);
 }
 
-void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlotData>& slots) {
+void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlotData>& slots,
+                         int selected_slot) {
     constexpr int COLS = 5;
     constexpr int ROWS = 4;
     constexpr int CELL = 40;
@@ -110,6 +111,13 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
             else
                 SDL_SetRenderDrawColor(sdl_renderer, 110, 110, 110, 255);
             SDL_RenderDrawRect(sdl_renderer, &fill);
+
+            // Borde celeste extra si es el slot seleccionado con click derecho
+            if (slot == selected_slot) {
+                SDL_Rect sel = {cell_x - 1, cell_y - 1, CELL + 2, CELL + 2};
+                SDL_SetRenderDrawColor(sdl_renderer, 0, 200, 255, 255);
+                SDL_RenderDrawRect(sdl_renderer, &sel);
+            }
 
             if (sprites != nullptr && occupied) {
                 std::string item_key = SpriteManager::item_key_for_name(slots[slot].item_name);

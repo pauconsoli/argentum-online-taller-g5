@@ -63,11 +63,12 @@ void SpriteManager::load_terrain_textures(const std::string& assets_dir) {
     load("terrain_dungeon_floor", assets_dir + sep + "dungeon_floor.png");
     load("terrain_dungeon_wall", assets_dir + sep + "dungeon_wall.png");
     load("tree", assets_dir + sep + "tree.png");
-    // Pociones y flauta cargadas eagerly: tienen clave de nombre en lugar de numérica.
+    // Pociones, flauta y oro cargadas eagerly: tienen clave de nombre en lugar de numérica.
     const std::string items_dir = assets_dir + sep + "items/";
     load_lazy("item_pocion_vida", items_dir + "item_pocion_vida.png");
     load_lazy("item_pocion_mana", items_dir + "item_pocion_mana.png");
     load_lazy("item_flauta_elfica", items_dir + "item_flauta_elfica.png");
+    load_lazy("item_gold", items_dir + "item_gold.png");
 }
 
 SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
@@ -150,8 +151,8 @@ std::string SpriteManager::item_key_for_name(const std::string& name) {
         {"Túnica azul", "item_1797"},
         {"Capucha", "item_132"},
         {"Casco de hierro", "item_243"},
-        {"Escudo de tortuga", "item_38"},
-        {"Escudo de hierro", "item_37"},
+        {"Escudo de tortuga", "item_1700"},
+        {"Escudo de hierro", "item_1715"},
         {"Sombrero mágico", "item_996"},
         {"Flauta élfica", "item_flauta_elfica"},
         {"Pocion de vida", "item_pocion_vida"},
@@ -165,4 +166,9 @@ SDL_Texture* SpriteManager::get_item(const std::string& key) {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
     std::string path = assets_dir + sep + "items/" + key + ".png";
     return load_lazy(key, path);
+}
+
+SDL_Texture* SpriteManager::get_gold() {
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    return load_lazy("item_gold", assets_dir + sep + "items/item_gold.png");
 }
