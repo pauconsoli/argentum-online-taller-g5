@@ -8,6 +8,7 @@
 #include "common/commands/client_command.h"
 
 class PlayerConnection;
+class GameUpdate;
 class World;
 
 class Match {
@@ -26,9 +27,13 @@ class Match {
 
     virtual void push_command(std::unique_ptr<ClientCommand> cmd) = 0;
 
-    virtual void tick(World& world) = 0;
+    virtual void tick() = 0;
+
+    virtual World& get_world() = 0;
 
     virtual void stop() = 0;
+
+    virtual void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) = 0;
 };
 
 #endif

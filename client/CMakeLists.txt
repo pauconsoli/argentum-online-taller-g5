@@ -1,4 +1,4 @@
-target_sources(taller_client
+target_sources(argentum_client
     PRIVATE
     main.cpp
     client.cpp

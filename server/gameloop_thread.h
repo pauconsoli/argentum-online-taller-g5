@@ -4,15 +4,13 @@
 #include "common/thread.h"
 
 class Server;
-class World;
 
 class GameLoopThread: public Thread {
  private:
-    World& world;
     Server& server;
 
  public:
-    GameLoopThread(Server& server, World& world);
+    explicit GameLoopThread(Server& server);
 
     void run() override;
     ~GameLoopThread() = default;

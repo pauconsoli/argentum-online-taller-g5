@@ -10,19 +10,21 @@
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/updates/game_update.h"
+#include "common/updates/player_left_update.h"
 #include "common/updates/world_map_update.h"
-#include "world/cell.h"
-#include "world/world_map.h"
 #include "game/basic_match.h"
 #include "game/player.h"
 #include "gameloop_thread.h"
 #include "player_connection.h"
+#include "world/cell.h"
 #include "world/world.h"
+#include "world/world_map.h"
 
 constexpr char SERVER_STOP_COMMAND = 'q';
 
 
-Server::Server(const std::string& service_name_, std::unique_ptr<World> world_):
+Server::Server(const std::string& service_name_,
+               std::function<std::unique_ptr<World>()> world_factory_):
     service_name(service_name_),
     clients(),
     nicks_in_use(),
@@ -30,13 +32,9 @@ Server::Server(const std::string& service_name_, std::unique_ptr<World> world_):
     next_match_id(1),
     next_player_id(1),
     keep_running(false),
-    world(std::move(world_)) {}
+    world_factory(std::move(world_factory_)) {}
 
 Server::~Server() = default;
-
-World& Server::get_world() {
-    return *world;
-}
 
 void Server::send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update) {
     std::unique_lock<std::mutex> lock(clients_mutex);
@@ -129,7 +127,7 @@ uint32_t Server::create_match(const std::string& name, uint8_t max_players,
         throw std::invalid_argument("max_players debe ser > 0");
     }
     uint32_t match_id = next_match_id.fetch_add(1);
-    auto match = std::make_unique<BasicMatch>(match_id, name, max_players);
+    auto match = std::make_unique<BasicMatch>(match_id, name, max_players, world_factory());
     std::lock_guard<std::mutex> lk(matches_mutex);
     matches.emplace(match_id, std::move(match));
     return match_id;
@@ -164,7 +162,10 @@ void Server::leave_match(PlayerConnection& conn) {
         return;
     }
     it->second->remove_player(&conn);
-    world->remove_player(conn.get_player_id());
+
+    // Avisar a todos en la partida que este jugador se desconectó
+    auto update = std::make_shared<PlayerLeftUpdate>(conn.get_player_id());
+    it->second->broadcast_update_to_all(update);
 }
 
 void Server::push_command_to_match(uint32_t match_id, std::unique_ptr<ClientCommand> cmd) {
@@ -177,8 +178,14 @@ void Server::push_command_to_match(uint32_t match_id, std::unique_ptr<ClientComm
 }
 
 void Server::send_world_map_to(PlayerConnection& conn) {
-    if (!world) return;
-    const WorldMap& m = world->get_map();
+    uint32_t match_id = conn.get_current_match_id();
+    if (match_id == 0)
+        return;
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    auto it = matches.find(match_id);
+    if (it == matches.end())
+        return;
+    const WorldMap& m = it->second->get_world().get_map();
     const int w = m.get_width();
     const int h = m.get_height();
     std::vector<MapCellData> cells;
@@ -186,13 +193,13 @@ void Server::send_world_map_to(PlayerConnection& conn) {
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             const Cell& c = m.get_cell(Position{x, y});
-            cells.push_back(MapCellData{static_cast<uint8_t>(c.get_terrain_type()),
-                                        c.is_blocking()});
+            cells.push_back(
+                MapCellData{static_cast<uint8_t>(c.get_terrain_type()), c.is_blocking()});
         }
     }
     try {
         conn.enqueue_update(std::make_shared<WorldMapUpdate>(
-                static_cast<uint16_t>(w), static_cast<uint16_t>(h), std::move(cells)));
+            static_cast<uint16_t>(w), static_cast<uint16_t>(h), std::move(cells)));
     } catch (const ClosedQueue&) {
         // El cliente se desconectó.
     }
@@ -253,7 +260,7 @@ void Server::run() {
         keep_running = true;
 
         AcceptorThread acceptor(server_socket, *this);
-        GameLoopThread gameloop(*this, *world);
+        GameLoopThread gameloop(*this);
 
         try {
             acceptor.start();
