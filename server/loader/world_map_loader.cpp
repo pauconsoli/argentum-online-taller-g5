@@ -26,10 +26,11 @@ static std::pair<TerrainType, bool> char_to_cell(char c) {
         case '#':
             return {TerrainType::STONE, true};
         case 'd':
-            return {TerrainType::STONE, false};
+            return {TerrainType::DUNGEON_FLOOR, false};  // piso de dungeon
+        case 'w':
+            return {TerrainType::DUNGEON_WALL, true};  // pared de dungeon
         case 'E':
-            return {TerrainType::GRASS, false};  // entrada dungeon, libre como pasto
-            // podría ser un tipo de terreno especial, pero por ahora lo trato como pasto
+            return {TerrainType::DUNGEON_ENTRANCE, false};  // entrada dungeon
         default:
             throw std::runtime_error(std::string("Tile desconocido en el mapa: '") + c + "'");
     }
