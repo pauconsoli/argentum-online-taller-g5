@@ -15,6 +15,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
@@ -341,6 +342,11 @@ void GameClient::run() {
                         }
                     }
                     ground_items_ = snap.ground_items;
+                    break;
+                }
+                case UpdateType::PLAYER_LEFT: {
+                    const auto& pu = static_cast<const PlayerLeftUpdate&>(*update);
+                    players.erase(pu.player_id);
                     break;
                 }
                 case UpdateType::WORLD_MAP: {

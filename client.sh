@@ -19,4 +19,4 @@ export ARGENTUM_DATA_DIR="/var/${GAME_NAME}"
 echo -e "${BLUE}[Argentum] Conectando al servidor ${HOST}:${PORT}...${NC}"
 
 cd /usr/bin
-./${GAME_NAME}_client "$HOST" "$PORT"
+./${GAME_NAME}_client_qt "$HOST" "$PORT"

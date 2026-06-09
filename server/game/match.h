@@ -8,6 +8,7 @@
 #include "common/commands/client_command.h"
 
 class PlayerConnection;
+class GameUpdate;
 class World;
 
 class Match {
@@ -29,6 +30,8 @@ class Match {
     virtual void tick(World& world) = 0;
 
     virtual void stop() = 0;
+
+    virtual void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) = 0;
 };
 
 #endif
