@@ -18,7 +18,7 @@ NC='\033[0m'  # No color
 
 GAME_NAME="argentum"
 REPO_URL="https://github.com/pauconsoli/argentum-online-taller-g5.git"
-BRANCH="main"
+BRANCH="feat/installer"
 BUILD_DIR="/tmp/${GAME_NAME}_build"
 BIN_DIR="/usr/bin"
 CONFIG_DIR="/etc/${GAME_NAME}"
