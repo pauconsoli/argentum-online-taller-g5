@@ -30,6 +30,7 @@ repos:
             "--suppress=unusedStructMember",
             "--suppress=normalCheckLevelMaxBranches",
             "--suppress=checkersReport",
+            "--library=qt",
             "--language=c++",
             "--std=c++20",
             "--error-exitcode=1"

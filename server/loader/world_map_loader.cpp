@@ -27,7 +27,7 @@ static std::pair<TerrainType, bool> char_to_cell(char c) {
             return {TerrainType::STONE, true};
         case 'd':
             return {TerrainType::DUNGEON_FLOOR, false};  // piso de dungeon
-        case 'w':
+        case 'W':
             return {TerrainType::DUNGEON_WALL, true};  // pared de dungeon
         case 'E':
             return {TerrainType::DUNGEON_ENTRANCE, false};  // entrada dungeon

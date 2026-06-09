@@ -19,7 +19,6 @@ class SpriteManager {
     static const char* terrain_key(TerrainType t);
     static std::string body_key(uint8_t race, uint8_t klass);
     static std::string head_key(uint16_t head_index);
-    static std::string item_key(uint16_t item_id);
 
     SDL_Texture* load_lazy(const std::string& key, const std::string& path);
 
@@ -35,6 +34,7 @@ class SpriteManager {
 
     void load_terrain_textures(const std::string& assets_dir);
     SDL_Texture* get_terrain(TerrainType t) const;
+    SDL_Texture* get_tree() const;
 
     void load_body_textures(const std::string& assets_dir);
     SDL_Texture* get_body(uint8_t race, uint8_t klass) const;
@@ -43,8 +43,12 @@ class SpriteManager {
     // dir 0=south, 1=north, 2=west, 3=east -> src_rect.y = dir * 64
     SDL_Texture* get_head(uint16_t head_index);
 
-    // Item icons: 32x32 RGBA.
-    SDL_Texture* get_item(uint16_t item_id);
+    // Item icons: 32x32 RGBA. key es la clave de textura (e.g. "item_2", "item_pocion_vida").
+    SDL_Texture* get_item(const std::string& key);
+
+    // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
+    // Fallback: "item_2" (Espada) si el nombre no está en la tabla.
+    static std::string item_key_for_name(const std::string& name);
 };
 
 #endif
