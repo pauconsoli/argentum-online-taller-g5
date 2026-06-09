@@ -46,6 +46,9 @@ class SpriteManager {
     // Item icons: 32x32 RGBA. key es la clave de textura (e.g. "item_2", "item_pocion_vida").
     SDL_Texture* get_item(const std::string& key);
 
+    // Sprite de monedas de oro (item_gold.png, 32x32).
+    SDL_Texture* get_gold();
+
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
     // Fallback: "item_2" (Espada) si el nombre no está en la tabla.
     static std::string item_key_for_name(const std::string& name);

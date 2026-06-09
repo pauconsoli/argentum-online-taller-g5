@@ -50,6 +50,7 @@ class GameClient {
     std::vector<InventorySlotData> inventory_slots_;
     bool chat_active_ = false;
     std::string chat_input_;
+    int selected_slot_ = -1;
 
  public:
     // Constructor standalone: crea y arranca su propio Client (binario argentum_client).

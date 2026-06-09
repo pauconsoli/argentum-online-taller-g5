@@ -56,3 +56,25 @@ make run-tests
 La implementación de las clases `Queue`, `Thread`, `Socket`, `Resolver`, `LibError` y `ResolverError` está basada en el código provisto por la cátedra: https://github.com/eldipa/hands-on-threads y https://github.com/eldipa/sockets-en-cpp 
 
 Licencia: GPL v2  
+
+---
+
+## Comandos del juego
+
+### Movimiento y acciones básicas
+
+| Acción | Control |
+|--------|---------|
+| Mover personaje | Teclas de dirección (↑ ↓ ← →) |
+| Atacar | Click izquierdo sobre otro jugador |
+| Abrir chat | `Enter` → escribir mensaje → `Enter` para enviar |
+
+### Comandos de inventario
+
+| Comando / Acción | Descripción |
+|------------------|-------------|
+| `/tomar` | Recoge el item del suelo donde estás parado |
+| `/tirar` | Tira al piso el item seleccionado (ver abajo cómo seleccionarlo) |
+| Click izquierdo sobre item en inventario | Equipar o usar el item (las pociones se consumen inmediatamente) |
+| Click derecho sobre item en inventario | Selecciona el item para `/tirar` (se marca con borde celeste) |
+
