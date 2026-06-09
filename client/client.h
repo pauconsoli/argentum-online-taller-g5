@@ -41,6 +41,7 @@ class Client {
     void do_meditate();
     void do_pick_up();
     void do_drop_item(uint8_t slot_index);
+    void do_equip_item(uint8_t slot_index);
     void do_leave_match();
     void do_disconnect();
 

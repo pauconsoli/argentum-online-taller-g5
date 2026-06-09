@@ -10,14 +10,14 @@
 #include <QVBoxLayout>
 
 ConnectionWidget::ConnectionWidget(QWidget* parent):
-        QWidget(parent),
-        host_input(new QLineEdit("127.0.0.1", this)),
-        port_input(new QLineEdit("47474", this)),
-        nick_input(new QLineEdit(this)),
-        connect_button(new QPushButton(tr("ENTRAR"), this)),
-        error_label(new QLabel(this)),
-        options_toggle(new QToolButton(this)),
-        options_panel(new QFrame(this)) {
+    QWidget(parent),
+    host_input(new QLineEdit("127.0.0.1", this)),
+    port_input(new QLineEdit("8080", this)),
+    nick_input(new QLineEdit(this)),
+    connect_button(new QPushButton(tr("ENTRAR"), this)),
+    error_label(new QLabel(this)),
+    options_toggle(new QToolButton(this)),
+    options_panel(new QFrame(this)) {
 
     auto* title = new QLabel(tr("ARGENTUM ONLINE"), this);
     auto* subtitle = new QLabel(tr("— G5 —"), this);
@@ -67,7 +67,7 @@ ConnectionWidget::ConnectionWidget(QWidget* parent):
     options_toggle->setArrowType(Qt::RightArrow);
     options_toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     options_toggle->setStyleSheet(
-            "QToolButton { background: transparent; border: none; color: #c89b3c; }");
+        "QToolButton { background: transparent; border: none; color: #c89b3c; }");
 
     options_panel->setFrameShape(QFrame::StyledPanel);
     options_panel->setVisible(false);

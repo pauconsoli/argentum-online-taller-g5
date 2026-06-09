@@ -10,7 +10,9 @@
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
@@ -319,21 +321,25 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
-    recv_u32();  // dead_id
-    recv_u32();  // killer_id
-    return nullptr;
+    uint32_t dead_id = recv_u32();
+    uint32_t killer_id = recv_u32();
+    return std::make_unique<DeathUpdate>(dead_id, killer_id);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
-    recv_u32();  // target_player_id
+    uint32_t player_id = recv_u32();
     uint16_t n = recv_u16();
+    std::vector<InventorySlotData> items;
+    items.reserve(n);
     for (uint16_t i = 0; i < n; ++i) {
-        recv_string();  // item_name
-        recv_u32();     // quantity
-        recv_u8();      // is_equipped
+        InventorySlotData slot;
+        slot.item_name = recv_string();
+        slot.quantity = recv_u32();
+        slot.is_equipped = recv_u8() != 0;
+        items.push_back(std::move(slot));
     }
-    recv_u64();  // gold
-    return nullptr;
+    uint64_t gold = recv_u64();
+    return std::make_unique<InventoryUpdate>(player_id, std::move(items), gold);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_spawned() {

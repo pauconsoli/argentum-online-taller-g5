@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 
 #include "common/liberror.h"
-\
+
 namespace {
 
 class ClientReceiverThread: public Thread {
@@ -18,7 +18,7 @@ class ClientReceiverThread: public Thread {
 
  public:
     ClientReceiverThread(ClientProtocol& p, Queue<std::unique_ptr<GameUpdate>>& q, Socket& s):
-            protocol(p), out_queue(q), socket(s) {}
+        protocol(p), out_queue(q), socket(s) {}
 
     void run() override {
         try {
@@ -52,11 +52,11 @@ class ClientReceiverThread: public Thread {
 }  // namespace
 
 Client::Client(const std::string& host, const std::string& port):
-        socket(host.c_str(), port.c_str()),
-        protocol(socket),
-        send_mutex(),
-        received_updates(),
-        receiver_thread(nullptr) {}
+    socket(host.c_str(), port.c_str()),
+    protocol(socket),
+    send_mutex(),
+    received_updates(),
+    receiver_thread(nullptr) {}
 
 Client::~Client() {
     try {
@@ -69,8 +69,7 @@ void Client::start() {
     if (receiver_thread) {
         return;
     }
-    receiver_thread =
-            std::make_unique<ClientReceiverThread>(protocol, received_updates, socket);
+    receiver_thread = std::make_unique<ClientReceiverThread>(protocol, received_updates, socket);
     receiver_thread->start();
 }
 
@@ -138,6 +137,11 @@ void Client::do_pick_up() {
 void Client::do_drop_item(uint8_t slot_index) {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_drop_item(slot_index);
+}
+
+void Client::do_equip_item(uint8_t slot_index) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_equip_item(slot_index);
 }
 
 void Client::do_leave_match() {

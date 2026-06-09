@@ -1,15 +1,14 @@
 #ifndef QT_CLIENT_ADAPTER_H
 #define QT_CLIENT_ADAPTER_H
 
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include <QMetaType>
 #include <QObject>
 #include <QString>
 #include <QTimer>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "client/client.h"
 #include "common/attack_result.h"
@@ -35,7 +34,7 @@ class QtClientAdapter: public QObject {
     QtClientAdapter& operator=(const QtClientAdapter&) = delete;
 
  signals:
-    void loginOk();
+    void loginOk(uint32_t player_id);
     void matchListReceived(const std::vector<MatchInfo>& matches);
     void matchCreated();
     void matchJoined();
@@ -43,16 +42,15 @@ class QtClientAdapter: public QObject {
     void disconnectedFromServer();
 
     void attackReceived(AttackResult result);
-    void worldMapReceived(uint16_t width, uint16_t height,
-                          std::vector<MapCellData> cells);
+    void worldMapReceived(uint16_t width, uint16_t height, std::vector<MapCellData> cells);
 
  private slots:
     void poll_updates();
 
  private:
-    Client* client; 
+    Client* client;
     QTimer* timer;
-    static constexpr int POLL_MS = 50;        
+    static constexpr int POLL_MS = 50;
     static constexpr int UPDATES_PER_TICK = 16;
 };
 
