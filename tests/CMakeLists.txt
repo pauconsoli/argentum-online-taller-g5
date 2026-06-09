@@ -1,4 +1,4 @@
-target_sources(taller_tests
+target_sources(argentum_tests
     PRIVATE
     # .cpp files - game module
     game/character_test.cpp

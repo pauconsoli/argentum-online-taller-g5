@@ -9,8 +9,13 @@
 #include "server/player_connection.h"
 #include "server/world/world.h"
 
-BasicMatch::BasicMatch(uint32_t match_id, const std::string& name, uint8_t max_players):
-    match_id(match_id), name(name), max_players(max_players), current_players(0) {}
+BasicMatch::BasicMatch(uint32_t match_id, const std::string& name, uint8_t max_players,
+                       std::unique_ptr<World> world_):
+    match_id(match_id),
+    name(name),
+    max_players(max_players),
+    current_players(0),
+    world(std::move(world_)) {}
 
 uint32_t BasicMatch::get_id() const {
     return match_id;
@@ -46,6 +51,7 @@ void BasicMatch::remove_player(PlayerConnection* conn) {
     std::lock_guard<std::mutex> lk(players_mutex);
     players.remove(conn);
     current_players.fetch_sub(1);
+    world->remove_player(conn->get_player_id());
 }
 
 void BasicMatch::push_command(std::unique_ptr<ClientCommand> cmd) {
@@ -56,12 +62,12 @@ void BasicMatch::push_command(std::unique_ptr<ClientCommand> cmd) {
 
 // el game loop llama a tick() sobre cada partida activa, y cada partida procesa los comandos
 // recibidos para esa partida en su tick()
-void BasicMatch::tick(World& world) {
+void BasicMatch::tick() {
     try {
         std::unique_ptr<ClientCommand> cmd;
         while (command_queue.try_pop(cmd)) {
             if (cmd) {
-                auto updates = cmd->execute(world);
+                auto updates = cmd->execute(*world);
                 for (auto& update : updates) {
                     if (!update)
                         continue;
@@ -77,6 +83,10 @@ void BasicMatch::tick(World& world) {
             }
         }
     } catch (const ClosedQueue&) {}
+}
+
+World& BasicMatch::get_world() {
+    return *world;
 }
 
 void BasicMatch::stop() {

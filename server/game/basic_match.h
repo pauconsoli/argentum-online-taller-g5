@@ -16,7 +16,8 @@ class ClientCommand;
 
 class BasicMatch: public Match {
  public:
-    BasicMatch(uint32_t match_id, const std::string& name, uint8_t max_players);
+    BasicMatch(uint32_t match_id, const std::string& name, uint8_t max_players,
+               std::unique_ptr<World> world);
     ~BasicMatch() override = default;
 
     uint32_t get_id() const override;
@@ -30,9 +31,13 @@ class BasicMatch: public Match {
 
     void push_command(std::unique_ptr<ClientCommand> cmd) override;
 
-    void tick(World& world) override;
+    void tick() override;
+
+    World& get_world() override;
 
     void stop() override;
+
+    void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) override;
 
  private:
     uint32_t match_id;
@@ -45,7 +50,8 @@ class BasicMatch: public Match {
 
     Queue<std::unique_ptr<ClientCommand>> command_queue;
 
-    void broadcast_update_to_all(std::shared_ptr<const class GameUpdate> update);
+    std::unique_ptr<World> world;
+
     void send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update);
 };
 

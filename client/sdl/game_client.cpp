@@ -1,6 +1,7 @@
 #include "game_client.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -15,10 +16,18 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
+
+static std::string get_base_asset_dir() {
+    if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
+        return std::string(env_dir);
+    }
+    return "client/assets";
+}
 
 // Primera cabeza del rango de cada raza (HeadAndBodyData.json, male range start).
 static uint16_t head_index_for_race(uint8_t race) {
@@ -70,11 +79,13 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     my_gold = 0;
     my_xp = 0;
     renderer = new Renderer(window);
+    std::string base_assets = get_base_asset_dir();
+    std::string font_path = base_assets + "/font.ttf";
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load_body_textures("client/assets");
-    sprite_manager->load_terrain_textures("client/assets");
-    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf", height, width);
-    mini_chat = new MiniChat(renderer->get_sdl_renderer(), "client/assets/font.ttf", width);
+    sprite_manager->load_body_textures(base_assets);
+    sprite_manager->load_terrain_textures(base_assets);
+    hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
+    mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     client->start();
 }
 
@@ -104,11 +115,13 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     my_gold = 0;
     my_xp = 0;
     renderer = new Renderer(window);
+    std::string base_assets = get_base_asset_dir();
+    std::string font_path = base_assets + "/font.ttf";
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load_body_textures("client/assets");
-    sprite_manager->load_terrain_textures("client/assets");
-    hud = new Hud(renderer->get_sdl_renderer(), "client/assets/font.ttf", height, width);
-    mini_chat = new MiniChat(renderer->get_sdl_renderer(), "client/assets/font.ttf", width);
+    sprite_manager->load_body_textures(base_assets);
+    sprite_manager->load_terrain_textures(base_assets);
+    hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
+    mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     // client->start() ya fue llamado por QtClientAdapter::start()
 }
 
@@ -136,7 +149,7 @@ void GameClient::run() {
     const int head_h = 64;
 
     if (!from_handoff) {
-        // Flujo standalone (taller_client): hace login y lobby localmente.
+        // Flujo standalone (argentum_client): hace login y lobby localmente.
         client->do_login("player1");
         auto& q = client->get_received_updates();
         bool logged_in = false;
@@ -341,6 +354,11 @@ void GameClient::run() {
                         }
                     }
                     ground_items_ = snap.ground_items;
+                    break;
+                }
+                case UpdateType::PLAYER_LEFT: {
+                    const auto& pu = static_cast<const PlayerLeftUpdate&>(*update);
+                    players.erase(pu.player_id);
                     break;
                 }
                 case UpdateType::WORLD_MAP: {

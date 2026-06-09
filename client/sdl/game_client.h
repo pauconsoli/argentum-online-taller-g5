@@ -52,7 +52,7 @@ class GameClient {
     std::string chat_input_;
 
  public:
-    // Constructor standalone: crea y arranca su propio Client (binario taller_client).
+    // Constructor standalone: crea y arranca su propio Client (binario argentum_client).
     GameClient(int width, int height, const std::string& host, const std::string& port);
     // Constructor de handoff Qt→SDL: recibe Client ya conectado y con lobby completado.
     GameClient(int width, int height, std::unique_ptr<Client> client, uint8_t race, uint8_t klass,

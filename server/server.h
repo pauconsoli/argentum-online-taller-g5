@@ -42,10 +42,10 @@ class Server: public ServerOps {
 
     std::atomic<bool> keep_running;
 
-    std::unique_ptr<World> world;
+    std::function<std::unique_ptr<World>()> world_factory;
 
  public:
-    Server(const std::string& service_name, std::unique_ptr<World> world);
+    Server(const std::string& service_name, std::function<std::unique_ptr<World>()> world_factory);
 
     void run();
 
@@ -59,8 +59,6 @@ class Server: public ServerOps {
                                     std::shared_ptr<const GameUpdate> update);
 
     void for_each_match(std::function<void(Match&)> fn);
-
-    World& get_world();
 
     bool is_running() const {
         return keep_running;

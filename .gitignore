@@ -2,6 +2,7 @@
 build/
 build_asan/
 build_ubsan/
+build_release/
 cmake-build-*/
 
 # IDEs
@@ -21,7 +22,6 @@ coverage/
 *.asan
 
 # Executables
-taller_client
-taller_server
-taller_editor
-taller_tests
+argentum_client
+argentum_server
+argentum_tests

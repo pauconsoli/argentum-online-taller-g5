@@ -16,12 +16,11 @@ project(taller_tp
     LANGUAGES CXX
     )
 
-option(TALLER_TESTS "Enable / disable tests." ON)
-option(TALLER_CLIENT "Enable / disable client program." ON)
-option(TALLER_CLIENT_CLI "Enable / disable client CLI (debug, sin GUI)." ON)
-option(TALLER_CLIENT_QT "Enable / disable client con menú Qt." ON)
-option(TALLER_SERVER "Enable / disable server program." ON)
-option(TALLER_EDITOR "Enable / disable editor program." ON)
+option(ARGENTUM_TESTS "Enable / disable tests." ON)
+option(ARGENTUM_CLIENT "Enable / disable client program." ON)
+option(ARGENTUM_CLIENT_CLI "Enable / disable client CLI (debug, sin GUI)." ON)
+option(ARGENTUM_CLIENT_QT "Enable / disable client con menú Qt." ON)
+option(ARGENTUM_SERVER "Enable / disable server program." ON)
 option(TALLER_MAKE_WARNINGS_AS_ERRORS "Enable / disable warnings as errors." ON)
 option(TALLER_ENABLE_ASAN "Enable AddressSanitizer (ASAN) for memory error detection." OFF)
 option(TALLER_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (UBSAN)." OFF)
@@ -70,7 +69,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tomlplusplus)
 
-# Define target: lib common between client, server and editor programs
+# Define target: lib common between client and server programs
 # HEY TODO XXX: change the name to something that you like
 add_library(taller_common STATIC)
 
@@ -110,16 +109,16 @@ target_include_directories(taller_game PUBLIC .)
 target_include_directories(taller_world PUBLIC .)
 
 # HEY!! TODO XXX: you need to install some runtime and dev libraries *before*
-# compiling the client/editor code.
+# compiling the client code.
 #
 # In xubuntu 24.04 these are:
 #
 # sudo apt-get install libopus-dev libopusfile-dev libxmp-dev libfluidsynth-dev fluidsynth libwavpack1 libwavpack-dev libfreetype-dev wavpack
 #
 
-# Install libSDL2 and libSDL2pp (for client or editor)
-# HEY!! TODO XXX: add more dependendies (either for client, server or editor)
-if(TALLER_CLIENT OR TALLER_EDITOR OR TALLER_CLIENT_QT)
+# Install libSDL2 and libSDL2pp (for client)
+# HEY!! TODO XXX: add more dependendies (either for client or server)
+if(ARGENTUM_CLIENT OR ARGENTUM_CLIENT_QT)
     include(FetchContent)
     FetchContent_Declare(
         SDL2
@@ -170,54 +169,54 @@ endif()
 
 # Program section
 # ---------------
-if(TALLER_CLIENT)
+if(ARGENTUM_CLIENT)
     # HEY!! TODO XXX: Change the name of the executable to the one you like!
-    add_executable(taller_client)
+    add_executable(argentum_client)
 
     # Make them depend on taller_common lib
-    add_dependencies(taller_client taller_common SDL2pp::SDL2pp)
+    add_dependencies(argentum_client taller_common SDL2pp::SDL2pp)
 
     # Add source files and enable warnings
     # HEY!! TODO XXX: add more subfolders here
     add_subdirectory(client)
 
-    set_project_warnings(taller_client ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
-    taller_apply_sanitizers(taller_client)
+    set_project_warnings(argentum_client ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(argentum_client)
 
     # add libSDL2pp's headers
-    target_include_directories(taller_client PRIVATE ${libSDL2pp_SOURCE_DIR})
-    target_include_directories(taller_client PRIVATE ${sdl2_image_SOURCE_DIR}/include)
-    target_include_directories(taller_client PRIVATE ${sdl2_ttf_SOURCE_DIR})
+    target_include_directories(argentum_client PRIVATE ${libSDL2pp_SOURCE_DIR})
+    target_include_directories(argentum_client PRIVATE ${sdl2_image_SOURCE_DIR}/include)
+    target_include_directories(argentum_client PRIVATE ${sdl2_ttf_SOURCE_DIR})
 
 
     # Link the taller_common lib target
-    target_link_libraries(taller_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf spdlog::spdlog)
+    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf spdlog::spdlog)
 endif()
 
 # Binario CLI del cliente (sin GUI). Para smoke-testear el server mientras
 # Qt/SDL no estén listos. Comparte client.cpp y client_protocol.cpp con
-# taller_client pero usa un main propio.
-if(TALLER_CLIENT_CLI)
-    add_executable(taller_client_cli
+# argentum_client pero usa un main propio.
+if(ARGENTUM_CLIENT_CLI)
+    add_executable(argentum_client_cli
         client/client_main.cpp
         client/client.cpp
         client/client_protocol.cpp
     )
-    add_dependencies(taller_client_cli taller_common)
-    set_project_warnings(taller_client_cli ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
-    taller_apply_sanitizers(taller_client_cli)
-    target_link_libraries(taller_client_cli taller_common spdlog::spdlog)
+    add_dependencies(argentum_client_cli taller_common)
+    set_project_warnings(argentum_client_cli ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(argentum_client_cli)
+    target_link_libraries(argentum_client_cli taller_common spdlog::spdlog)
 endif()
 
 # Binario del cliente con menú Qt (pre-juego). El handoff a SDL para el
 # in-game lo integra Chiari después.
-if(TALLER_CLIENT_QT)
+if(ARGENTUM_CLIENT_QT)
     find_package(Qt5 COMPONENTS Core Widgets QUIET)
     if(Qt5_FOUND)
         set(CMAKE_AUTOMOC ON)
         set(CMAKE_AUTORCC ON)
 
-        add_executable(taller_client_qt
+        add_executable(argentum_client_qt
             client/qt/qt_main.cpp
             client/qt/main_window.cpp
             client/qt/main_window.h
@@ -242,18 +241,18 @@ if(TALLER_CLIENT_QT)
             client/sdl/client_map.cpp
         )
 
-        add_dependencies(taller_client_qt taller_common SDL2pp::SDL2pp)
+        add_dependencies(argentum_client_qt taller_common SDL2pp::SDL2pp)
 
-        set_project_warnings(taller_client_qt ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
-        taller_apply_sanitizers(taller_client_qt)
+        set_project_warnings(argentum_client_qt ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+        taller_apply_sanitizers(argentum_client_qt)
 
-        target_include_directories(taller_client_qt PRIVATE
+        target_include_directories(argentum_client_qt PRIVATE
             ${libSDL2pp_SOURCE_DIR}
             ${sdl2_image_SOURCE_DIR}/include
             ${sdl2_ttf_SOURCE_DIR}
         )
 
-        target_link_libraries(taller_client_qt
+        target_link_libraries(argentum_client_qt
             taller_common
             Qt5::Core
             Qt5::Widgets
@@ -263,54 +262,32 @@ if(TALLER_CLIENT_QT)
             spdlog::spdlog
         )
     else()
-        message(WARNING "Qt5 no encontrado. Saltando taller_client_qt. Instalalo con: sudo apt-get install qtbase5-dev")
+        message(WARNING "Qt5 no encontrado. Saltando argentum_client_qt. Instalalo con: sudo apt-get install qtbase5-dev")
     endif()
 endif()
 
-if(TALLER_SERVER)
+if(ARGENTUM_SERVER)
     # HEY!! TODO XXX: Change the name of the executable to the one you like!
-    add_executable(taller_server)
+    add_executable(argentum_server)
 
     # Make them depend on taller_common, taller_game and taller_world libs
-    add_dependencies(taller_server taller_common taller_game taller_world)
+    add_dependencies(argentum_server taller_common taller_game taller_world)
 
     # Add source files and enable warnings
     # HEY!! TODO XXX: add more subfolders here
     add_subdirectory(server)
 
-    set_project_warnings(taller_server ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
-    taller_apply_sanitizers(taller_server)
+    set_project_warnings(argentum_server ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
+    taller_apply_sanitizers(argentum_server)
 
     # Link the taller_common, taller_game and taller_world lib targets
-    target_link_libraries(taller_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus)
+    target_link_libraries(argentum_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus)
 endif()
-
-if(TALLER_EDITOR)
-    # HEY!! TODO XXX: Change the name of the executable to the one you like!
-    add_executable(taller_editor)
-
-    # Make them depend on taller_common lib
-    add_dependencies(taller_editor taller_common SDL2pp::SDL2pp)
-
-    # Add source files and enable warnings
-    # HEY!! TODO XXX: add more subfolders here
-    add_subdirectory(editor)
-
-    set_project_warnings(taller_editor ${TALLER_MAKE_WARNINGS_AS_ERRORS} FALSE)
-    taller_apply_sanitizers(taller_editor)
-
-    # add libSDL2pp's headers
-    target_include_directories(taller_editor PRIVATE ${libSDL2pp_SOURCE_DIR})
-
-    # Link the taller_common lib target
-    target_link_libraries(taller_editor taller_common SDL2pp::SDL2pp spdlog::spdlog)
-endif()
-
 
 # Testing section
 # ---------------
 
-if(TALLER_TESTS)
+if(ARGENTUM_TESTS)
     # Let's use google test
     include(FetchContent)
     FetchContent_Declare(
@@ -326,26 +303,26 @@ if(TALLER_TESTS)
 
     # target for testing
     # HEY!! TODO XXX: Change the name of the executable to the one you like!
-    add_executable(taller_tests)
+    add_executable(argentum_tests)
 
     # HEY!! TODO XXX: I'm assuming that the code under testing is in taller_common
     # Change this if you have to.
-    add_dependencies(taller_tests taller_common taller_game taller_world)
+    add_dependencies(argentum_tests taller_common taller_game taller_world)
 
     # Say where to find the xoz headers
     # HEY!! TODO XXX: add more subfolders here
-    target_include_directories(taller_tests PUBLIC .)
+    target_include_directories(argentum_tests PUBLIC .)
 
-    # Add the source files to the taller_tests target
+    # Add the source files to the argentum_tests target
     # HEY!! TODO XXX: add more subfolders here
     add_subdirectory(tests/)
 
     # Set the compiler warnings to the tests target (but be a little lesser strict)
-    set_project_warnings(taller_tests ${TALLER_MAKE_WARNINGS_AS_ERRORS} TRUE)
-    taller_apply_sanitizers(taller_tests)
+    set_project_warnings(argentum_tests ${TALLER_MAKE_WARNINGS_AS_ERRORS} TRUE)
+    taller_apply_sanitizers(argentum_tests)
 
     # Say where googletest headers can be found
-    target_include_directories(taller_tests
+    target_include_directories(argentum_tests
         PUBLIC
         ${gtest_SOURCE_DIR}/include
         ${gmock_SOURCE_DIR}/include
@@ -353,7 +330,7 @@ if(TALLER_TESTS)
 
     # HEY!! TODO XXX: I'm assuming that the code under testing is in taller_common
     # Change this if you have to.
-    target_link_libraries(taller_tests
+    target_link_libraries(argentum_tests
         taller_common
         taller_game
         taller_world
