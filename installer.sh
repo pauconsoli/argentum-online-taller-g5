@@ -279,17 +279,23 @@ MAX_LEN=$((MAX_LEN + 4))
 BORDER=$(printf '%*s' "$MAX_LEN" '')
 BORDER=${BORDER// /═}
 
+print_row() {
+    local str="$1"
+    local pad=$(( MAX_LEN - ${#str} - 2 ))
+    printf "║  %s%*s║\n" "$str" "$pad" ""
+}
+
 echo ""
 echo -e "${GREEN}╔${BORDER}╗"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_TITLE"
+print_row "$STR_TITLE"
 echo -e "╠${BORDER}╣"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_BIN"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_CONF"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_DATA"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_LAUNCH"
+print_row "$STR_BIN"
+print_row "$STR_CONF"
+print_row "$STR_DATA"
+print_row "$STR_LAUNCH"
 echo -e "╠${BORDER}╣"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_PLAY"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_PLAY1"
-printf "║ %-${MAX_LEN}s ║\n" "  $STR_PLAY2"
+print_row "$STR_PLAY"
+print_row "$STR_PLAY1"
+print_row "$STR_PLAY2"
 echo -e "╚${BORDER}╝${NC}"
 echo ""
