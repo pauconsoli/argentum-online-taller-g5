@@ -322,6 +322,7 @@ void GameClient::run() {
                 }
                 case UpdateType::SNAPSHOT: {
                     const auto& snap = static_cast<const SnapshotUpdate&>(*update);
+                    players.clear();
                     for (const auto& ps : snap.players) {
                         players[ps.player_id] = ps;
                         if (ps.player_id == my_player_id) {
