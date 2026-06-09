@@ -27,7 +27,9 @@ class Match {
 
     virtual void push_command(std::unique_ptr<ClientCommand> cmd) = 0;
 
-    virtual void tick(World& world) = 0;
+    virtual void tick() = 0;
+
+    virtual World& get_world() = 0;
 
     virtual void stop() = 0;
 

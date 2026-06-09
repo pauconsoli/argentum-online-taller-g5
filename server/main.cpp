@@ -25,9 +25,12 @@ int main(int argc, char* argv[]) {
     try {
         GameConfigLoader::load(GAME_CONFIG_PATH);
         ItemRegistryLoader::load(ITEMS_CONFIG_PATH);
-        auto world = std::make_unique<World>(WorldMapLoader::load(MAP_CONFIG_PATH));
-        WorldItemLoader::load_ground_items(*world, MAP_CONFIG_PATH);
-        Server server(port, std::move(world));
+        auto world_factory = []() {
+            auto w = std::make_unique<World>(WorldMapLoader::load(MAP_CONFIG_PATH));
+            WorldItemLoader::load_ground_items(*w, MAP_CONFIG_PATH);
+            return w;
+        };
+        Server server(port, world_factory);
         server.run();
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
