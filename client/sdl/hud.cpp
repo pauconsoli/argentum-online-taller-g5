@@ -101,7 +101,7 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
 
             // cppcheck-suppress syntaxError
             const int n_slots = static_cast<int>(slots.size());
-            bool occupied = (slot < n_slots);
+            bool occupied = (slot < n_slots) && !slots[slot].item_name.empty();
             bool equipped = occupied && slots[slot].is_equipped;
 
             // Borde amarillo si equipado, gris si no
@@ -112,17 +112,60 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
             SDL_RenderDrawRect(sdl_renderer, &fill);
 
             if (sprites != nullptr && occupied) {
-                uint16_t item_id = SpriteManager::item_id_for_name(slots[slot].item_name);
-                SDL_Texture* icon = sprites->get_item(item_id);
+                std::string item_key = SpriteManager::item_key_for_name(slots[slot].item_name);
+                SDL_Texture* icon = sprites->get_item(item_key);
                 if (icon != nullptr) {
                     int ox = cell_x + (CELL - ICON) / 2;
                     int oy = cell_y + (CELL - ICON) / 2;
                     SDL_Rect dst = {ox, oy, ICON, ICON};
                     SDL_RenderCopy(sdl_renderer, icon, nullptr, &dst);
                 }
+                uint32_t qty = slots[slot].quantity;
+                if (qty > 1) {
+                    std::string qty_str = std::to_string(qty);
+                    int tw = 0, th = 0;
+                    TTF_SizeUTF8(font, qty_str.c_str(), &tw, &th);
+                    SDL_Color yellow = {255, 220, 0, 255};
+                    draw_text(qty_str, cell_x + CELL - tw - 2, cell_y + CELL - th, yellow);
+                }
             }
         }
     }
+}
+
+int Hud::get_slot_at(int screen_x, int screen_y) const {
+    constexpr int COLS = 5;
+    constexpr int ROWS = 4;
+    constexpr int CELL = 40;
+    constexpr int GAP = 2;
+    constexpr int PAD = 8;
+    constexpr int TITLE_H = 24;
+    constexpr int MARGIN = 5;
+
+    const int grid_w = COLS * CELL + (COLS - 1) * GAP;
+    const int panel_w = grid_w + 2 * PAD;
+    const int panel_x = window_width - panel_w - MARGIN;
+    const int panel_y = MARGIN;
+
+    const int grid_x = panel_x + PAD;
+    const int grid_y = panel_y + PAD + TITLE_H;
+
+    int rel_x = screen_x - grid_x;
+    int rel_y = screen_y - grid_y;
+
+    if (rel_x < 0 || rel_y < 0)
+        return -1;
+
+    int col = rel_x / (CELL + GAP);
+    int row = rel_y / (CELL + GAP);
+
+    if (col >= COLS || row >= ROWS)
+        return -1;
+
+    if (rel_x % (CELL + GAP) >= CELL || rel_y % (CELL + GAP) >= CELL)
+        return -1;
+
+    return row * COLS + col;
 }
 
 void Hud::draw(int hp, int max_hp, int mana, int max_mana, int level, uint64_t gold, uint64_t xp) {

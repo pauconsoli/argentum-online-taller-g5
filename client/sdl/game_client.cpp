@@ -9,6 +9,7 @@
 
 #include "client_map.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
@@ -192,8 +193,6 @@ void GameClient::run() {
     const Uint32 frame_time_ms = 1000 / 60;
     const Uint32 move_interval_ms = 200;  // máx 5 tiles/seg
     Uint32 last_move_time = 0;
-    bool was_moving = false;
-
     while (running) {
         Uint32 frame_start = SDL_GetTicks();
 
@@ -237,14 +236,21 @@ void GameClient::run() {
                 SDL_StartTextInput();
             } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                        event.button.button == SDL_BUTTON_LEFT) {
-                int world_x = camera.get_x() + event.button.x;
-                int world_y = camera.get_y() + event.button.y;
-                int tile_x = world_x / tile_w;
-                int tile_y = world_y / tile_h;
-                for (const auto& [pid, ps] : players) {
-                    if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
-                        client->do_attack(pid);
-                        break;
+                if (!my_is_ghost) {
+                    int world_x = camera.get_x() + event.button.x;
+                    int world_y = camera.get_y() + event.button.y;
+                    int tile_x = world_x / tile_w;
+                    int tile_y = world_y / tile_h;
+                    for (const auto& [pid, ps] : players) {
+                        if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
+                            client->do_attack(pid);
+                            break;
+                        }
+                    }
+                    int slot = hud->get_slot_at(event.button.x, event.button.y);
+                    if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
+                        !inventory_slots_[slot].item_name.empty()) {
+                        client->do_equip_item(static_cast<uint8_t>(slot));
                     }
                 }
             }
@@ -289,63 +295,29 @@ void GameClient::run() {
             }
         }
 
-        // --- DIAGNÓSTICO TEMPORAL: imprime info de tiles al iniciar movimiento ---
-        if (moving && !was_moving) {
-            int tx = player_x / tile_w;  // player_x está en píxeles → convertir a tile
-            int ty = player_y / tile_h;
-            int map_w = client_map.get_width();
-            int map_h = client_map.get_height();
-
-            auto terrain_name = [](TerrainType t) -> const char* {
-                switch (t) {
-                    case TerrainType::GRASS:
-                        return "GRASS";
-                    case TerrainType::WATER:
-                        return "WATER";
-                    case TerrainType::DIRT:
-                        return "DIRT";
-                    case TerrainType::STONE:
-                        return "STONE";
-                    case TerrainType::SAND:
-                        return "SAND";
-                }
-                return "UNKNOWN";
-            };
-
-            auto print_dir = [&](const char* label, int dcol, int drow) {
-                int nx = tx + dcol;
-                int ny = ty + drow;
-                bool in_bounds = (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h);
-                std::cout << label << " -> tile (" << nx << ", " << ny
-                          << "), in_bounds=" << (in_bounds ? "true" : "false");
-                if (in_bounds) {
-                    const auto& cell = client_map.at(nx, ny);
-                    std::cout << ", terrain=" << terrain_name(cell.terrain)
-                              << ", blocking=" << (cell.blocking ? "true" : "false");
-                }
-                std::cout << "\n";
-            };
-
-            std::cout << "[DIAG] player_tile=(" << tx << ", " << ty << "), map=(" << map_w << "x"
-                      << map_h << ")\n";
-            print_dir("  ABAJO ", 0, 1);
-            print_dir("  ARRIBA", 0, -1);
-            print_dir("  IZQ   ", -1, 0);
-            print_dir("  DER   ", 1, 0);
-        }
-        was_moving = moving;
-        // --- FIN DIAGNÓSTICO ---
-
         auto& update_queue = client->get_received_updates();
         std::unique_ptr<GameUpdate> update;
         while (update_queue.try_pop(update)) {
             switch (update->get_type()) {
                 case UpdateType::ERROR: {
                     const auto& eu = static_cast<const ErrorUpdate&>(*update);
-                    if (eu.detail.find("move_player") == std::string::npos) {
-                        mini_chat->add_message("Error: " + eu.detail);
+                    const auto& d = eu.detail;
+                    if (d.find("move_player") != std::string::npos ||
+                        d.find("mover") != std::string::npos) {
+                        break;
                     }
-                    // mini_chat->add_message("Error: " + eu.detail);
+                    if (d.find("muertos") != std::string::npos ||
+                        d.find("muerto") != std::string::npos ||
+                        d.find("ghost") != std::string::npos ||
+                        d.find("fantasma") != std::string::npos) {
+                        mini_chat->add_message("No puedes atacar a un jugador muerto");
+                    } else if (d.find("objetivo") != std::string::npos ||
+                               d.find("target") != std::string::npos ||
+                               d.find("attack") != std::string::npos) {
+                        mini_chat->add_message("Debes estar más cerca para atacar");
+                    } else {
+                        mini_chat->add_message("Error: " + d);
+                    }
                     break;
                 }
                 case UpdateType::SNAPSHOT: {
@@ -364,6 +336,7 @@ void GameClient::run() {
                             my_level = ps.level;
                             my_gold = ps.gold;
                             my_xp = ps.xp;
+                            my_is_ghost = ps.is_ghost;
                         }
                     }
                     ground_items_ = snap.ground_items;
@@ -371,8 +344,6 @@ void GameClient::run() {
                 }
                 case UpdateType::WORLD_MAP: {
                     const auto& mu = static_cast<const WorldMapUpdate&>(*update);
-                    std::cout << "[WORLD_MAP] w=" << mu.width << " h=" << mu.height
-                              << " cells=" << mu.cells.size() << "\n";
                     std::vector<MapCell> map_cells;
                     map_cells.reserve(mu.cells.size());
                     std::transform(
@@ -387,11 +358,14 @@ void GameClient::run() {
                     const auto& iu = static_cast<const InventoryUpdate&>(*update);
                     inventory_slots_ = iu.get_items();
                     my_gold = iu.get_gold();
-                    std::cout << "[INV] Recibí InventoryUpdate: " << inventory_slots_.size()
-                              << " slots, gold=" << my_gold << "\n";
-                    for (const auto& s : inventory_slots_)
-                        std::cout << "  slot: " << s.item_name << " x" << s.quantity
-                                  << " equipped=" << s.is_equipped << "\n";
+                    std::cout << "[INV] " << inventory_slots_.size() << " slots:\n";
+                    for (size_t i = 0; i < inventory_slots_.size(); i++) {
+                        const auto& s = inventory_slots_[i];
+                        if (!s.item_name.empty())
+                            std::cout << "  [" << i << "] " << s.item_name << " x" << s.quantity
+                                      << (s.is_equipped ? " (equipado)" : "") << "\n";
+                    }
+                    std::cout << std::flush;
                     break;
                 }
                 case UpdateType::ATTACKED: {
@@ -412,6 +386,14 @@ void GameClient::run() {
                             mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
                                                    " de daño");
                     }
+                    break;
+                }
+                case UpdateType::DEATH: {
+                    const auto& du = static_cast<const DeathUpdate&>(*update);
+                    if (du.get_dead_id() == my_player_id)
+                        mini_chat->add_message("Moriste. Dirigete al sanador para resucitar.");
+                    else
+                        mini_chat->add_message("Un jugador murio en combate.");
                     break;
                 }
                 default:
@@ -459,10 +441,11 @@ void GameClient::run() {
 
         // Ground items: entre terreno y jugadores
         for (const auto& gi : ground_items_) {
-            uint16_t item_id = gi.is_gold ? 2 : SpriteManager::item_id_for_name(gi.name);
-            SDL_Texture* item_tex = sprite_manager->get_item(item_id);
+            std::string item_key =
+                gi.is_gold ? "item_2" : SpriteManager::item_key_for_name(gi.name);
+            SDL_Texture* item_tex = sprite_manager->get_item(item_key);
             if (item_tex == nullptr)
-                item_tex = sprite_manager->get_item(2);
+                item_tex = sprite_manager->get_item("item_2");
             if (item_tex != nullptr) {
                 int gx = camera.get_screen_x(gi.x * tile_w);
                 int gy = camera.get_screen_y(gi.y * tile_h);
@@ -489,13 +472,21 @@ void GameClient::run() {
             int p_frame_x = p_frame_clamped * frame_w;
             int p_frame_y = p_dir * frame_h;
 
-            renderer->draw_frame(sprite_manager->get_body(ps.race, ps.klass), p_frame_x, p_frame_y,
-                                 frame_w, frame_h, px, py);
+            SDL_Texture* body_tex = sprite_manager->get_body(ps.race, ps.klass);
+            SDL_Texture* head_tex = sprite_manager->get_head(head_index_for_race(ps.race));
+            uint8_t alpha = ps.is_ghost ? 128 : 255;
+            SDL_SetTextureAlphaMod(body_tex, alpha);
+            SDL_SetTextureAlphaMod(head_tex, alpha);
+
+            renderer->draw_frame(body_tex, p_frame_x, p_frame_y, frame_w, frame_h, px, py);
 
             int hx = px + head_offset_x[p_dir];
             int hy = py + head_offset_y[p_dir];
-            renderer->draw_frame(sprite_manager->get_head(head_index_for_race(ps.race)), 0,
-                                 head_dir_to_row[p_dir] * head_h, head_w, head_h, hx, hy);
+            renderer->draw_frame(head_tex, 0, head_dir_to_row[p_dir] * head_h, head_w, head_h, hx,
+                                 hy);
+
+            SDL_SetTextureAlphaMod(body_tex, 255);
+            SDL_SetTextureAlphaMod(head_tex, 255);
 
             // Nick centrado debajo de los pies del sprite (sombra + texto blanco)
             int nick_center_x = px + frame_w / 2;
@@ -507,7 +498,6 @@ void GameClient::run() {
         }
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
-        std::cout << "[HUD] draw_inventory con " << inventory_slots_.size() << " slots\n";
         hud->draw_inventory(sprite_manager, inventory_slots_);
 
         mini_chat->draw();

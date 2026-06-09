@@ -56,6 +56,11 @@ void SpriteManager::load_terrain_textures(const std::string& assets_dir) {
     load("terrain_stone", assets_dir + sep + "stone.png");
     load("terrain_sand", assets_dir + sep + "sand.png");
     load("tree", assets_dir + sep + "tree.png");
+    // Pociones y flauta cargadas eagerly: tienen clave de nombre en lugar de numérica.
+    const std::string items_dir = assets_dir + sep + "items/";
+    load_lazy("item_pocion_vida", items_dir + "item_pocion_vida.png");
+    load_lazy("item_pocion_mana", items_dir + "item_pocion_mana.png");
+    load_lazy("item_flauta_elfica", items_dir + "item_flauta_elfica.png");
 }
 
 SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
@@ -92,10 +97,6 @@ std::string SpriteManager::head_key(uint16_t head_index) {
     return "head_" + std::to_string(head_index);
 }
 
-std::string SpriteManager::item_key(uint16_t item_id) {
-    return "item_" + std::to_string(item_id);
-}
-
 SDL_Texture* SpriteManager::load_lazy(const std::string& key, const std::string& path) {
     auto it = textures.find(key);
     if (it != textures.end()) {
@@ -127,34 +128,33 @@ SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
     return tex;
 }
 
-uint16_t SpriteManager::item_id_for_name(const std::string& name) {
-    static const std::unordered_map<std::string, uint16_t> table = {
-        {"Espada", 2},
-        {"Hacha", 3},
-        {"Martillo", 15},
-        {"Vara de fresno", 159},
-        {"Báculo nudoso", 401},
-        {"Báculo engarzado", 479},
-        {"Arco simple", 574},
-        {"Arco compuesto", 656},
-        {"Armadura de cuero", 30},
-        {"Armadura de placas", 1800},
-        {"Túnica azul", 1797},
-        {"Capucha", 132},
-        {"Casco de hierro", 243},
-        {"Escudo de tortuga", 38},
-        {"Escudo de hierro", 37},
-        {"Sombrero mágico", 996},
-        {"Flauta élfica", 401},
-        {"Pocion de vida", 2},
-        {"Pocion de mana", 2},
+std::string SpriteManager::item_key_for_name(const std::string& name) {
+    static const std::unordered_map<std::string, std::string> table = {
+        {"Espada", "item_2"},
+        {"Hacha", "item_3"},
+        {"Martillo", "item_15"},
+        {"Vara de fresno", "item_159"},
+        {"Báculo nudoso", "item_401"},
+        {"Báculo engarzado", "item_479"},
+        {"Arco simple", "item_574"},
+        {"Arco compuesto", "item_656"},
+        {"Armadura de cuero", "item_30"},
+        {"Armadura de placas", "item_1800"},
+        {"Túnica azul", "item_1797"},
+        {"Capucha", "item_132"},
+        {"Casco de hierro", "item_243"},
+        {"Escudo de tortuga", "item_38"},
+        {"Escudo de hierro", "item_37"},
+        {"Sombrero mágico", "item_996"},
+        {"Flauta élfica", "item_flauta_elfica"},
+        {"Pocion de vida", "item_pocion_vida"},
+        {"Pocion de mana", "item_pocion_mana"},
     };
     auto it = table.find(name);
-    return it != table.end() ? it->second : 2;
+    return it != table.end() ? it->second : "item_2";
 }
 
-SDL_Texture* SpriteManager::get_item(uint16_t item_id) {
-    std::string key = item_key(item_id);
+SDL_Texture* SpriteManager::get_item(const std::string& key) {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
     std::string path = assets_dir + sep + "items/" + key + ".png";
     return load_lazy(key, path);

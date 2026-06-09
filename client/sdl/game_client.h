@@ -44,6 +44,7 @@ class GameClient {
     uint64_t my_gold;
     uint64_t my_xp;
     bool from_handoff;
+    bool my_is_ghost = false;
     std::map<uint32_t, PlayerSnapshot> players;
     std::vector<GroundItemSnapshot> ground_items_;
     std::vector<InventorySlotData> inventory_slots_;
