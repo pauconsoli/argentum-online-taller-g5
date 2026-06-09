@@ -3,7 +3,7 @@
 // Sirve para smoke-testear el server desde la consola mientras
 // feat/qt-lobby no esté listo:
 //
-//   ./taller_client_cli <host> <port> <nick>
+//   ./argentum_client_cli <host> <port> <nick>
 //
 // Flujo:
 //   1. Conecta al server.
@@ -18,7 +18,7 @@
 //        "quit"              -> cerrar
 //
 // Cuando Qt esté listo, este main puede borrarse o quedar como utilidad de
-// debug (renombrar a client_cli_main.cpp y excluir del taller_client final).
+// debug (renombrar a client_cli_main.cpp y excluir del argentum_client final).
 
 #include <atomic>
 #include <chrono>
@@ -144,7 +144,7 @@ bool parse_direction(const std::string& s, Direction& out) {
 
 int main(int argc, char* argv[]) {
     if (argc != 4) {
-        std::cerr << "Uso: " << (argc > 0 ? argv[0] : "taller_client_cli")
+        std::cerr << "Uso: " << (argc > 0 ? argv[0] : "argentum_client_cli")
                   << " <host> <port> <nick>\n";
         return 1;
     }

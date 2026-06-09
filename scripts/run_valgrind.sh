@@ -17,4 +17,4 @@ valgrind \
     --track-origins=yes \
     --verbose \
     --error-exitcode=1 \
-    ./build/taller_tests
+    ./build/argentum_tests

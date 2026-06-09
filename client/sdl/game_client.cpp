@@ -136,7 +136,7 @@ void GameClient::run() {
     const int head_h = 64;
 
     if (!from_handoff) {
-        // Flujo standalone (taller_client): hace login y lobby localmente.
+        // Flujo standalone (argentum_client): hace login y lobby localmente.
         client->do_login("player1");
         auto& q = client->get_received_updates();
         bool logged_in = false;

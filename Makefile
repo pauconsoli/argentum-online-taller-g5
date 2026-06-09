@@ -1,4 +1,4 @@
-.PHONY: all test clean editor client common server build
+.PHONY: all test clean client common server build
 
 compile-debug:
 	mkdir -p build/
@@ -6,7 +6,7 @@ compile-debug:
 	cmake --build  build/ $(EXTRA_COMPILE)
 
 run-tests: compile-debug
-	./build/taller_tests
+	./build/argentum_tests
 
 all: clean run-tests
 

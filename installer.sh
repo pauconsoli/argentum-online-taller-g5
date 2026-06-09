@@ -162,14 +162,12 @@ print_step "Instalando binarios en $BIN_DIR..."
 # Ajustar si los targets tienen otro nombre.
 SERVER_BIN="$CMAKE_BUILD_DIR/server/${GAME_NAME}_server"
 CLIENT_BIN="$CMAKE_BUILD_DIR/client/${GAME_NAME}_client"
-EDITOR_BIN="$CMAKE_BUILD_DIR/editor/${GAME_NAME}_editor"
 
 [[ -f "$SERVER_BIN" ]] || die "No se encontró el binario del servidor en $SERVER_BIN"
 [[ -f "$CLIENT_BIN" ]] || die "No se encontró el binario del cliente en $CLIENT_BIN"
 
 install -m 755 "$SERVER_BIN" "$BIN_DIR/${GAME_NAME}_server"
 install -m 755 "$CLIENT_BIN" "$BIN_DIR/${GAME_NAME}_client"
-[[ -f "$EDITOR_BIN" ]] && install -m 755 "$EDITOR_BIN" "$BIN_DIR/${GAME_NAME}_editor"
 
 print_ok "Binarios instalados en $BIN_DIR"
 
