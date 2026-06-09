@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 # =============================================
 #                 Color codes
@@ -22,7 +23,13 @@ BUILD_DIR="/tmp/${GAME_NAME}_build"
 BIN_DIR="/usr/bin"
 CONFIG_DIR="/etc/${GAME_NAME}"
 DATA_DIR="/var/${GAME_NAME}"
-DESKTOP_DIR="$HOME/Desktop"
+
+if [[ -n "$SUDO_USER" ]]; then
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    USER_HOME=$HOME
+fi
+DESKTOP_DIR="$USER_HOME/Desktop"
 
 # =============================================
 #                  Helpers
@@ -71,19 +78,30 @@ PACKAGES=(
     cmake
     build-essential
     pkg-config
+    unzip
+    zip
+    curl
+    ca-certificates
 
     # SDL2
     libsdl2-dev
     libsdl2-image-dev
     libsdl2-ttf-dev
     libsdl2-mixer-dev
+    libopus-dev
+    libopusfile-dev
+    libxmp-dev
+    libfluidsynth-dev
+    fluidsynth
+    libwavpack1
+    libwavpack-dev
+    libfreetype-dev
+    wavpack
 
-    # Qt
-    qt6-base-dev
-    qt6-tools-dev
-    qt6-tools-dev-tools
-    libqt6widgets6
-    libqt6network6
+    # Qt5
+    qtbase5-dev
+    qttools5-dev
+    qttools5-dev-tools
 
     # GoogleTest (unit tests del protocolo)
     libgtest-dev
@@ -96,10 +114,11 @@ PACKAGES=(
     # Otras
     libssl-dev
     libpthread-stubs0-dev
+    valgrind
     xdg-utils        
 )
 
-apt-get install -y "${PACKAGES[@]}" 2>&1 | grep -E "(Unpacking|Setting up|already)" || true
+apt-get install -y "${PACKAGES[@]}"
 print_ok "Dependencias instaladas"
 
 # =============================================
@@ -126,11 +145,9 @@ print_step "Compilando el proyecto ..."
 CMAKE_BUILD_DIR="$BUILD_DIR/build"
 mkdir -p "$CMAKE_BUILD_DIR"
 cmake -S "$BUILD_DIR" -B "$CMAKE_BUILD_DIR" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    2>&1 | tail -5
+    -DCMAKE_BUILD_TYPE=Release
 
-cmake --build "$CMAKE_BUILD_DIR" --parallel "$(nproc)" 2>&1 | tail -10
+cmake --build "$CMAKE_BUILD_DIR" --parallel "$(nproc)"
 print_ok "Compilación exitosa"
 
 # =============================================
@@ -138,10 +155,15 @@ print_ok "Compilación exitosa"
 # =============================================
 
 print_step "Corriendo unit tests..."
-if cmake --build "$CMAKE_BUILD_DIR" --target test -- CTEST_OUTPUT_ON_FAILURE=1 2>&1; then
-    print_ok "Todos los tests pasaron"
+TEST_BIN="$CMAKE_BUILD_DIR/${GAME_NAME}_tests"
+if [[ -f "$TEST_BIN" ]]; then
+    if "$TEST_BIN"; then
+        print_ok "Todos los tests pasaron"
+    else
+        print_warn "Algunos tests fallaron — el instalador continúa de todas formas"
+    fi
 else
-    print_warn "Algunos tests fallaron — el instalador continúa de todas formas"
+    print_warn "No se encontró el binario de tests en $TEST_BIN. Saltando pruebas."
 fi
 
 # =============================================
@@ -150,7 +172,12 @@ fi
 print_step "Creando directorios de instalación..."
 mkdir -p "$CONFIG_DIR"
 mkdir -p "$DATA_DIR"
-mkdir -p "$DESKTOP_DIR"
+if [[ ! -d "$DESKTOP_DIR" ]]; then
+    mkdir -p "$DESKTOP_DIR"
+    if [[ -n "$SUDO_USER" ]]; then
+        chown "$SUDO_USER:$SUDO_USER" "$DESKTOP_DIR"
+    fi
+fi
 print_ok "Directorios creados"
 
 # =============================================
@@ -158,10 +185,9 @@ print_ok "Directorios creados"
 # =============================================
 print_step "Instalando binarios en $BIN_DIR..."
 
-# Nombres de los ejecutables que genera tu CMake.
-# Ajustar si los targets tienen otro nombre.
-SERVER_BIN="$CMAKE_BUILD_DIR/server/${GAME_NAME}_server"
-CLIENT_BIN="$CMAKE_BUILD_DIR/client/${GAME_NAME}_client"
+# Ejecutables
+SERVER_BIN="$CMAKE_BUILD_DIR/${GAME_NAME}_server"
+CLIENT_BIN="$CMAKE_BUILD_DIR/${GAME_NAME}_client"
 
 [[ -f "$SERVER_BIN" ]] || die "No se encontró el binario del servidor en $SERVER_BIN"
 [[ -f "$CLIENT_BIN" ]] || die "No se encontró el binario del cliente en $CLIENT_BIN"
@@ -201,51 +227,22 @@ done
 # ================================================
 #    Crear server.sh y client.sh en el Desktop
 # ================================================
-print_step "Creando lanzadores en el escritorio ($DESKTOP_DIR)..."
+print_step "Copiando launchers al escritorio ($DESKTOP_DIR)..."
 
-# server.sh 
-
-cat > "$DESKTOP_DIR/server.sh" << EOF
-#!/bin/bash
-# ─────────────────────────────────────────────
-#      Argentum Online — Server Launcher
-#  Cambiá el puerto aquí abajo si hace falta
-# ─────────────────────────────────────────────
-
-PORT=8080
-
-export ${GAME_NAME^^}_SERVER_CONFIG_FILE="$CONFIG_DIR/game_config.toml"
-export ${GAME_NAME^^}_DATA_DIR="$DATA_DIR"
-
-cd "$BIN_DIR"
-./${GAME_NAME}_server \$PORT
-EOF
+cp "$BUILD_DIR/server.sh" "$DESKTOP_DIR/server.sh"
+cp "$BUILD_DIR/client.sh" "$DESKTOP_DIR/client.sh"
 chmod +x "$DESKTOP_DIR/server.sh"
-print_ok "server.sh creado en $DESKTOP_DIR"
-
-# client.sh 
-
-cat > "$DESKTOP_DIR/client.sh" << EOF
-#!/bin/bash
-# ─────────────────────────────────────────────
-#      Argentum Online — Client Launcher
-#  Cambiá host y puerto aquí abajo si hace falta.
-# ─────────────────────────────────────────────
-
-HOST=localhost
-PORT=8080
-
-export ${GAME_NAME^^}_CLIENT_CONFIG_FILE="$CONFIG_DIR/game_config.toml"
-export ${GAME_NAME^^}_DATA_DIR="$DATA_DIR"
-
-cd "$BIN_DIR"
-./${GAME_NAME}_client \$HOST \$PORT
-EOF
 chmod +x "$DESKTOP_DIR/client.sh"
-print_ok "client.sh creado en $DESKTOP_DIR"
+
+if [[ -n "$SUDO_USER" ]]; then
+    chown "$SUDO_USER:$SUDO_USER" "$DESKTOP_DIR/server.sh"
+    chown "$SUDO_USER:$SUDO_USER" "$DESKTOP_DIR/client.sh"
+fi
+
+print_ok "Launchers instalados en $DESKTOP_DIR"
 
 # =============================================
-#   Limpiar build temporal (opcional)
+#      Limpiar build temporal (opcional)
 # =============================================
 
 print_step "Limpiando archivos temporales..."
