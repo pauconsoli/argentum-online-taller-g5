@@ -22,7 +22,7 @@ Una vez finalizada la instalación:
 - Los ejecutables quedan en `/usr/bin`
 - Los archivos de configuración en `/etc/argentum`
 - Los recursos (assets) en `/var/argentum`
-- Se crearán accesos directos (`server.sh` y `client.sh`) en el Escritorio.
+- Se crearán accesos directos (`server.sh` y `client.sh`) en el escritorio.
 
 ### Ejecución
 
@@ -30,7 +30,7 @@ Ejecutá los scripts generados en el escritorio. En esa carpeta:
 1. Abrí una terminal y ejecutá: `./server.sh` (para levantar el servidor).
 2. Abrí otra terminal y ejecutá: `./client.sh` (para conectar el cliente).
 
-*Nota: para cambiar el puerto o el host, se puede editar directamente esos scripts.*
+*Nota: para cambiar el puerto, el host o levantar el server con Valgrind se puede editar directamente esos scripts.*
 
 ## Comandos
 
