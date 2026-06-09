@@ -44,6 +44,11 @@ const char* SpriteManager::terrain_key(TerrainType t) {
             return "terrain_stone";
         case TerrainType::SAND:
             return "terrain_sand";
+        case TerrainType::DUNGEON_FLOOR:
+        case TerrainType::DUNGEON_ENTRANCE:
+            return "terrain_dungeon_floor";
+        case TerrainType::DUNGEON_WALL:
+            return "terrain_dungeon_wall";
     }
     return "terrain_grass";
 }
@@ -55,6 +60,8 @@ void SpriteManager::load_terrain_textures(const std::string& assets_dir) {
     load("terrain_dirt", assets_dir + sep + "dirt.png");
     load("terrain_stone", assets_dir + sep + "stone.png");
     load("terrain_sand", assets_dir + sep + "sand.png");
+    load("terrain_dungeon_floor", assets_dir + sep + "dungeon_floor.png");
+    load("terrain_dungeon_wall", assets_dir + sep + "dungeon_wall.png");
     load("tree", assets_dir + sep + "tree.png");
     // Pociones y flauta cargadas eagerly: tienen clave de nombre en lugar de numérica.
     const std::string items_dir = assets_dir + sep + "items/";
