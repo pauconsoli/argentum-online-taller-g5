@@ -71,6 +71,20 @@ x = 35
 y = 19
 width = 19
 height = 15
+
+[[zones]]
+type = "city"
+name = "Ullathorpe"
+priest_x = 10
+priest_y = 10
+merchant_x = 8
+merchant_y = 12
+banker_x = 12
+banker_y = 8
+x = 5
+y = 5
+width = 10
+height = 10
  
 # ---------------------------------
 # Ground Items

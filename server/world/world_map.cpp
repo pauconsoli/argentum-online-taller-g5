@@ -51,6 +51,38 @@ void WorldMap::add_zone(std::unique_ptr<Zone> zone, int x, int y, int w, int h) 
     }
 }
 
+void WorldMap::add_city(std::unique_ptr<City> city, int x, int y, int w, int h) {
+    add_zone(std::move(city), x, y, w, h);
+    cities.push_back(static_cast<City*>(zones_storage.back().get()));
+}
+
+void WorldMap::add_dungeon(std::unique_ptr<Dungeon> dungeon, int x, int y, int w, int h) {
+    add_zone(std::move(dungeon), x, y, w, h);
+    dungeons.push_back(static_cast<Dungeon*>(zones_storage.back().get()));
+}
+
+City* WorldMap::get_closest_city(const Position& pos) const {
+    City* closest = nullptr;
+    int min_dist = -1;
+
+    for (City* city : cities) {
+        Position priest_pos = city->get_priest_position();
+        // distancia al cuadrado para no tener que calcular la raíz
+        int dist_sq = (priest_pos.x - pos.x) * (priest_pos.x - pos.x) +
+                      (priest_pos.y - pos.y) * (priest_pos.y - pos.y);
+        if (closest == nullptr || dist_sq < min_dist) {
+            closest = city;
+            min_dist = dist_sq;
+        }
+    }
+
+    return closest;
+}
+
+const std::vector<Dungeon*>& WorldMap::get_dungeons() const {
+    return dungeons;
+}
+
 void WorldMap::set_cell(const Position& pos, const Cell& cell) {
     if (!is_valid_position(pos))
         return;

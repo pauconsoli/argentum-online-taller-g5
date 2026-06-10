@@ -9,6 +9,7 @@
 
 #include "common/world/terrain_type.h"
 #include "server/world/cell.h"
+#include "server/world/city.h"
 #include "server/world/dungeon.h"
 
 static std::pair<TerrainType, bool> char_to_cell(char c) {
@@ -90,22 +91,40 @@ WorldMap WorldMapLoader::load(const std::string& config_path) {
             auto y_z = (*zone_table)["y"].value<int>();
             auto w_z = (*zone_table)["width"].value<int>();
             auto h_z = (*zone_table)["height"].value<int>();
-            auto ent_x = (*zone_table)["entrance_x"].value<int>();
-            auto ent_y = (*zone_table)["entrance_y"].value<int>();
 
-            if (!type_z || !name_z || !x_z || !y_z || !w_z || !h_z || !ent_x || !ent_y) {
+            if (!type_z || !name_z || !x_z || !y_z || !w_z || !h_z) {
                 throw std::runtime_error(
-                    "map.toml: faltan atributos en una de las definiciones de [[zones]]");
+                    "map.toml: faltan atributos básicos en una de las definiciones de [[zones]]");
             }
 
-            std::unique_ptr<Zone> new_zone;
             if (*type_z == "dungeon") {
-                new_zone = std::make_unique<Dungeon>(*name_z, *ent_x, *ent_y);
+                auto ent_x = (*zone_table)["entrance_x"].value<int>();
+                auto ent_y = (*zone_table)["entrance_y"].value<int>();
+                if (!ent_x || !ent_y)
+                    throw std::runtime_error("map.toml: faltan entrance_x o entrance_y en dungeon");
+
+                map.add_dungeon(std::make_unique<Dungeon>(*name_z, *ent_x, *ent_y), *x_z, *y_z,
+                                *w_z, *h_z);
+            } else if (*type_z == "city") {
+                auto priest_x = (*zone_table)["priest_x"].value<int>();
+                auto priest_y = (*zone_table)["priest_y"].value<int>();
+                auto merchant_x = (*zone_table)["merchant_x"].value<int>();
+                auto merchant_y = (*zone_table)["merchant_y"].value<int>();
+                auto banker_x = (*zone_table)["banker_x"].value<int>();
+                auto banker_y = (*zone_table)["banker_y"].value<int>();
+
+                if (!priest_x || !priest_y || !merchant_x || !merchant_y || !banker_x ||
+                    !banker_y) {
+                    throw std::runtime_error("map.toml: faltan posiciones de NPCs en city");
+                }
+
+                map.add_city(std::make_unique<City>(*name_z, Position{*priest_x, *priest_y},
+                                                    Position{*merchant_x, *merchant_y},
+                                                    Position{*banker_x, *banker_y}),
+                             *x_z, *y_z, *w_z, *h_z);
             } else {
                 throw std::runtime_error("map.toml: tipo de zona desconocido '" + *type_z + "'");
             }
-
-            map.add_zone(std::move(new_zone), *x_z, *y_z, *w_z, *h_z);
         }
     }
 

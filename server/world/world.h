@@ -39,6 +39,7 @@ class World {
     bool is_in_range_for_attack(const Player* attacker, const Character* target) const;
 
     std::optional<Position> find_closest_free_ground(const Position& start) const;
+    std::optional<Position> find_closest_unoccupied_position(const Position& start) const;
 
     AttackStatus validate_attack_conditions(const Player* attacker, const Character* target,
                                             bool is_healing) const;
@@ -75,6 +76,9 @@ class World {
     bool equip_item(uint32_t player_id, int slot_index);
 
     bool move_player(uint32_t player_id, Direction direction);
+
+    bool teleport_player(uint32_t player_id, const Position& dest);
+    bool start_resurrection(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
 

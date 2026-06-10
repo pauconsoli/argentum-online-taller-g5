@@ -190,6 +190,36 @@ std::optional<Position> World::find_closest_free_ground(const Position& start) c
     return std::nullopt;
 }
 
+std::optional<Position> World::find_closest_unoccupied_position(const Position& start) const {
+    std::queue<Position> q;
+    std::set<Position> visited;
+
+    q.push(start);
+    visited.insert(start);
+
+    while (!q.empty()) {
+        Position curr = q.front();
+        q.pop();
+        if (map.is_valid_position(curr) && !map.is_position_blocked(curr)) {
+            if (!is_position_occupied(curr)) {
+                return curr;
+            }
+        }
+
+        const Position neighbors[] = {
+            {curr.x, curr.y - 1}, {curr.x, curr.y + 1}, {curr.x - 1, curr.y}, {curr.x + 1, curr.y}};
+
+        for (const Position& neighbor : neighbors) {
+            if (map.is_valid_position(neighbor) && !map.is_position_blocked(neighbor)) {
+                if (visited.insert(neighbor).second) {
+                    q.push(neighbor);
+                }
+            }
+        }
+    }
+    return std::nullopt;
+}
+
 void World::drop_loot_in_world(const Position& center, Loot loot) {
     if (loot.dropped_gold > 0) {
         if (auto free_pos = find_closest_free_ground(center)) {
@@ -234,6 +264,11 @@ AttackStatus World::validate_attack_conditions(const Player* attacker, const Cha
         }
 
         if (!target->validate_attack_from(attacker->get_level())) {
+            return AttackStatus::INVALID_TARGET;
+        }
+
+        // En zonas seguras (ciudades y pueblos) no se puede atacar ni ser atacado
+        if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
             return AttackStatus::INVALID_TARGET;
         }
     }
@@ -311,6 +346,48 @@ bool World::move_player(uint32_t player_id, Direction direction) {
     player->set_position(next);
     occupied[next.y][next.x] = true;
     return true;
+}
+
+bool World::teleport_player(uint32_t player_id, const Position& dest) {
+    Player* player = get_player(player_id);
+    if (!player)
+        return false;
+
+    auto maybe_dest = find_closest_unoccupied_position(dest);
+    if (!maybe_dest)
+        return false;
+
+    Position final_dest = *maybe_dest;
+    Position current = player->get_position();
+    occupied[current.y][current.x] = false;
+    player->set_position(final_dest);
+    occupied[final_dest.y][final_dest.x] = true;
+    return true;
+}
+
+bool World::start_resurrection(uint32_t player_id) {
+    Player* player = get_player(player_id);
+    if (!player || !player->is_dead()) {
+        return false;
+    }
+
+    const City* closest_city = map.get_closest_city(player->get_position());
+    if (!closest_city) {
+        return false;  // no hay ciudades
+    }
+
+    // TODO(Pau): La operación no debería ser inmediata según el enunciado.
+    // El fantasma debería quedar inmovilizado un tiempo proporcional a la distancia
+    // entre él y el sanador antes de trasladarse y resucitar
+
+    Position priest_pos = closest_city->get_priest_position();
+
+    if (teleport_player(player_id, priest_pos)) {
+        // TODO(Pau): Acá se debería llamar a la lógica en Player para restaurar salud, etc.
+        return true;
+    }
+
+    return false;
 }
 
 // SOLO PARA TESTS
@@ -438,15 +515,16 @@ bool World::equip_item(uint32_t player_id, int slot_index) {
     if (player->is_dead())
         return false;
 
-    const auto& slots = player->get_inventory().get_slots();
-    if (slot_index < 0 || slot_index >= static_cast<int>(slots.size())) {
+    const auto& inv_slots = player->get_inventory().get_slots();
+    int num_slots = inv_slots.size();
+    if (slot_index < 0 || slot_index >= num_slots) {
         return false;
     }
-    if (!slots[slot_index].item) {
+    if (!inv_slots[slot_index].item) {
         return false;
     }
 
-    player->equip(*slots[slot_index].item);
+    player->equip(*inv_slots[slot_index].item);
     return true;
 }
 
