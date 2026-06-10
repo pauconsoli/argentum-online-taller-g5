@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "common/position.h"
+#include "server/game/loot.h"
 
 class Character {
  protected:
@@ -40,6 +41,14 @@ class Character {
 
     virtual bool can_cast_magic() const = 0;
 
+    virtual int get_defense()
+        const = 0;  // para NPCs que no tengan inventario valor fijo, para Players se calcula con el
+                    // inventario equipado usando la formula de GameFormulas
+
+    virtual bool validate_attack_from(int attacker_level) const = 0;
+
+    virtual Loot drop_loot() = 0;
+
     void receive_damage(int damage);
 
     void heal(int amount);
@@ -64,6 +73,7 @@ class Character {
     const Position& get_position() const;
 
     void set_position(const Position& new_position);
+    void set_level(int new_level);
 };
 
 #endif

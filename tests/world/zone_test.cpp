@@ -11,13 +11,18 @@ class CityTest: public ::testing::Test {
 
 class DungeonTest: public ::testing::Test {
  protected:
-    Dungeon dungeon;
+    Dungeon dungeon{"Caverna", 0, 0};
 };
 
 class ZonePolymorphismTest: public ::testing::Test {
  protected:
     Zone* city_zone = new City();
-    Zone* dungeon_zone = new Dungeon();
+    Zone* dungeon_zone = new Dungeon("Caverna", 0, 0);
+
+    ~ZonePolymorphismTest() override {
+        delete city_zone;
+        delete dungeon_zone;
+    }
 };
 
 TEST_F(CityTest, CityIsSafe) {
@@ -47,21 +52,19 @@ TEST_F(ZonePolymorphismTest, DungeonPolymorphism) {
 }
 
 TEST_F(ZonePolymorphismTest, VirtualDestructor) {
-    delete city_zone;
-    delete dungeon_zone;
-    // ver que funciona el destructor virtual
+    // ver si no hay memory leaks al destruir las zonas a través de punteros a la clase base
 }
 
 TEST(ZoneTest, SafetyDifference) {
     City city;
-    Dungeon dungeon;
+    Dungeon dungeon{"Caverna", 0, 0};
 
     EXPECT_NE(city.is_safe(), dungeon.is_safe());
 }
 
 TEST(ZoneTest, BothCanSpawn) {
     City city;
-    Dungeon dungeon;
+    Dungeon dungeon{"Caverna", 0, 0};
 
     EXPECT_TRUE(city.can_spawn());
     EXPECT_TRUE(dungeon.can_spawn());

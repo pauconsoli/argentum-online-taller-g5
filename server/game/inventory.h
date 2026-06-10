@@ -39,6 +39,8 @@ class Inventory {
                   int quantity = 1);  // por defecto es 1, pero se puede agregar más de una unidad
                                       // para el caso del loot
 
+    bool can_add_item(const Item& item) const;
+
     bool equip(Item& item, Player& player);
 
     bool unequip(EquipmentSlot slot);
@@ -56,6 +58,8 @@ class Inventory {
     bool slot_has_item(EquipmentSlot slot) const;
 
     InventorySlot pop_slot(int slot_index);
+
+    std::vector<InventorySlot> drop_all();
 };
 
 #endif

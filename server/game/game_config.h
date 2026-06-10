@@ -15,6 +15,7 @@ class GameConfig {
     GameConfig();
 
     friend class GameConfigLoader;
+    friend class ConfigEnvironment;
 
     bool loaded = false;  // true al terminar GameConfigLoader::load()
 
@@ -40,6 +41,8 @@ class GameConfig {
 
     Position spawn_position;
 
+    int initial_player_level;
+
     float gold_max_safe_base;
     float gold_max_safe_exp;
     float gold_excess_factor;
@@ -48,9 +51,10 @@ class GameConfig {
     float level_limit_base;
     float level_limit_exp;
     float kill_bonus_factor;
+    float death_exp_loss_mult;
 
     float critical_chance;
-    float dodge_threshold;
+    float evasion_threshold;
     int newbie_max_level;
     int max_level_difference;
 
@@ -91,6 +95,8 @@ class GameConfig {
 
     Position get_spawn_position() const;
 
+    int get_initial_player_level() const;
+
     float get_gold_max_safe_base() const;
     float get_gold_max_safe_exp() const;
     float get_gold_excess_factor() const;
@@ -99,9 +105,10 @@ class GameConfig {
     float get_level_limit_base() const;
     float get_level_limit_exp() const;
     float get_kill_bonus_factor() const;
+    float get_death_exp_loss_mult() const;
 
     float get_critical_chance() const;
-    float get_dodge_threshold() const;
+    float get_evasion_threshold() const;
     int get_newbie_max_level() const;
     int get_max_level_difference() const;
 

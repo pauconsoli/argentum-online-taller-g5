@@ -191,3 +191,62 @@ TEST_F(GameFormulasTest, DwarfHasMoreHPThanElf) {
     EXPECT_LT(GameFormulas::calculate_max_hp(elf_warrior),
               GameFormulas::calculate_max_hp(dwarf_warrior));
 }
+
+TEST_F(GameFormulasTest, CalculateLevelUpLimit) {
+    EXPECT_EQ(GameFormulas::calculate_level_up_limit(1), 1000);
+    EXPECT_GT(GameFormulas::calculate_level_up_limit(10), 1000);
+}
+
+TEST_F(GameFormulasTest, CalculateBaseStats) {
+    BaseStats stats = GameFormulas::calculate_base_stats(PlayerRace::HUMAN, PlayerClass::MAGE);
+    EXPECT_EQ(stats.strength, 10 + 0);      // fuerza humana + bono de mago
+    EXPECT_EQ(stats.intelligence, 10 + 4);  // int humana + bono de mago
+}
+
+TEST_F(GameFormulasTest, HealthRecovery) {
+    int regen = GameFormulas::calculate_health_recovery(human_mage, 1.0f);
+    EXPECT_EQ(regen, 1);
+}
+
+TEST_F(GameFormulasTest, TimeManaRecovery) {
+    int regen = GameFormulas::calculate_time_mana_recovery(human_mage, 1.0f);
+    EXPECT_EQ(regen, 1);
+}
+
+TEST_F(GameFormulasTest, MeditationManaRecovery) {
+    // human_mage está inicializado en el test con inteligencia 16.
+    // factor de meditación mago = 1.5
+    int regen = GameFormulas::calculate_meditation_mana_recovery(human_mage, 1.0f);
+    EXPECT_EQ(regen, 24);  // 1.5 * 16 * 1.0
+}
+
+TEST_F(GameFormulasTest, CanAttackByLevel) {
+    // Nivel máximo newbie = 12, max diferencia = 10
+    EXPECT_FALSE(GameFormulas::can_attack_by_level(5, 10));   // ambos newbies
+    EXPECT_FALSE(GameFormulas::can_attack_by_level(15, 10));  // target newbie
+    EXPECT_FALSE(GameFormulas::can_attack_by_level(10, 15));  // attacker newbie
+    EXPECT_TRUE(GameFormulas::can_attack_by_level(15, 20));   // diferencia 5 (válido)
+    EXPECT_FALSE(GameFormulas::can_attack_by_level(15, 30));  // diferencia 15 (inválido)
+}
+
+TEST_F(GameFormulasTest, CalculateAttackExperienceGain) {
+    // actual_damage = 50 (valor de prueba explícito)
+    // atacante nivel = 5, target nivel = 5 -> multiplicador = max(5 - 5 + 10, 0) = 10
+    // exp = 50 * 10 = 500
+    int exp = GameFormulas::calculate_attack_experience_gain(human_mage, human_warrior, 50);
+    EXPECT_EQ(exp, 500);
+}
+
+TEST_F(GameFormulasTest, CalculateKillExperienceGain) {
+    // human_warrior max_hp = 112
+    // factor de diferencia de nivel = max(5 - 5 + 10, 0) = 10
+    // random float entre 0.0 y 0.1
+    int exp = GameFormulas::calculate_kill_experience_gain(human_mage, human_warrior);
+    EXPECT_GE(exp, 0);
+    EXPECT_LE(exp, 112);  // 0.1 * 1120 = 112
+}
+
+TEST_F(GameFormulasTest, CalculateDefenseUnarmed) {
+    int def = GameFormulas::calculate_defense(human_warrior);
+    EXPECT_EQ(def, 0);  // No tiene items equipados
+}

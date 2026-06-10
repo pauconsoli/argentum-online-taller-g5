@@ -88,8 +88,11 @@ constitution_bonus = 3
 # ---------------------------------
 
 [world]
-spawn_x = 5
-spawn_y = 5
+spawn_x = 22
+spawn_y = 10
+
+[level]
+initial_player_level = 1
 
 # ---------------------------------
 # Inventory 
@@ -116,6 +119,7 @@ npc_drop_factor  = 0.2
 level_limit_base = 1000   
 level_limit_exp  = 1.8
 kill_bonus_factor = 0.1
+death_exp_loss_mult = 0.4
 
 # ---------------------------------
 # Combat 
@@ -123,8 +127,8 @@ kill_bonus_factor = 0.1
 
 [combat]
 critical_chance = 0.05
-dodge_threshold = 0.001
-newbie_max_level = 12    
+evasion_threshold = 0.001
+newbie_max_level = 0     # DEMO: en prod debería ser 12
 max_level_difference = 10
 
 # ---------------------------------

@@ -1,4 +1,4 @@
-target_sources(taller_server
+target_sources(argentum_server
     PRIVATE
     # .cpp files
     main.cpp
@@ -13,9 +13,16 @@ target_sources(taller_server
     # commands
     commands/move_command.cpp
     commands/select_race_class_command.cpp
+    commands/meditate_command.cpp
+    commands/attack_command.cpp
+    commands/drop_item_command.cpp
+    commands/pick_up_item_command.cpp
+    commands/equip_item_command.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp
+    loader/item_registry_loader.cpp
+    loader/world_item_loader.cpp
     PUBLIC
     # .h files
     server.h
@@ -30,4 +37,6 @@ target_sources(taller_server
     game/match.h
     loader/world_map_loader.h
     loader/game_config_loader.h
-    )
+    loader/item_registry_loader.h
+    loader/world_item_loader.h
+)

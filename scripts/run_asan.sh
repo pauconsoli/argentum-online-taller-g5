@@ -44,10 +44,10 @@ echo ""
 # - log_path=asan.log: Logs en archivo
 export ASAN_OPTIONS="halt_on_error=1:verbosity=1"
 
-if [ -f "./build_asan/taller_tests" ]; then
-    ./build_asan/taller_tests
+if [ -f "./build_asan/argentum_tests" ]; then
+    ./build_asan/argentum_tests
     echo -e "${GREEN}✓${NC} Tests completados sin errores de ASAN"
 else
-    echo -e "${RED}Error: No se encontró ./build_asan/taller_tests${NC}"
+    echo -e "${RED}Error: No se encontró ./build_asan/argentum_tests${NC}"
     exit 1
 fi

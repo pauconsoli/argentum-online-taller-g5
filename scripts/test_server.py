@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test manual del protocolo cliente-servidor.
-Corre el servidor primero:  ./build/taller_server 8080
+Corre el servidor primero:  ./build/argentum_server 8080
 Luego ejecuta:              python3 scripts/test_server.py
 """
 
@@ -131,7 +131,7 @@ def main():
         s = socket.create_connection((HOST, PORT), timeout=5)
     except ConnectionRefusedError:
         print("ERROR: No se pudo conectar. ¿El servidor está corriendo?")
-        print(f"  Inicialo con:  ./build/taller_server {PORT}")
+        print(f"  Inicialo con:  ./build/argentum_server {PORT}")
         sys.exit(1)
 
     print("Conectado.")

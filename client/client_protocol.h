@@ -34,8 +34,13 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_match_joined();
     std::unique_ptr<GameUpdate> recv_player_joined();
     std::unique_ptr<GameUpdate> recv_player_left();
+    std::unique_ptr<GameUpdate> recv_player_spawned();
+    std::unique_ptr<GameUpdate> recv_world_map();
     std::unique_ptr<GameUpdate> recv_snapshot();
     std::unique_ptr<GameUpdate> recv_moved();
+    std::unique_ptr<GameUpdate> recv_attacked();
+    std::unique_ptr<GameUpdate> recv_death();
+    std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_error();
 
  public:
@@ -47,6 +52,11 @@ class ClientProtocol {
     void send_join_match(uint32_t match_id);
     void send_select_race_class(uint8_t race, uint8_t klass);
     void send_move(Direction dir);
+    void send_attack(uint32_t target_id);
+    void send_meditate();
+    void send_pick_up();
+    void send_drop_item(uint8_t slot_index);
+    void send_equip_item(uint8_t slot_index);
     void send_disconnect();
     void send_leave_match();
 

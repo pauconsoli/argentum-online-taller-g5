@@ -8,7 +8,6 @@
 
 #include "common/liberror.h"
 
-
 namespace {
 
 class ClientReceiverThread: public Thread {
@@ -30,7 +29,7 @@ class ClientReceiverThread: public Thread {
                 }
             }
         } catch (const ClosedQueue&) {
-            // salgo
+            // Cierre normal: la GUI cerró su queue.
         } catch (const LibError& e) {
             std::cerr << "[CLIENT-RECEIVER] Conexión cerrada: " << e.what() << "\n";
         } catch (const std::exception& e) {
@@ -118,6 +117,31 @@ void Client::do_select_race_class(uint8_t race, uint8_t klass) {
 void Client::do_move(Direction dir) {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_move(dir);
+}
+
+void Client::do_attack(uint32_t target_id) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_attack(target_id);
+}
+
+void Client::do_meditate() {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_meditate();
+}
+
+void Client::do_pick_up() {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_pick_up();
+}
+
+void Client::do_drop_item(uint8_t slot_index) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_drop_item(slot_index);
+}
+
+void Client::do_equip_item(uint8_t slot_index) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_equip_item(slot_index);
 }
 
 void Client::do_leave_match() {

@@ -44,10 +44,10 @@ echo ""
 # - verbosity=1: Output detallado
 export UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1:verbosity=1"
 
-if [ -f "./build_ubsan/taller_tests" ]; then
-    ./build_ubsan/taller_tests
+if [ -f "./build_ubsan/argentum_tests" ]; then
+    ./build_ubsan/argentum_tests
     echo -e "${GREEN}✓${NC} Tests completados sin errores de UBSAN"
 else
-    echo -e "${RED}Error: No se encontró ./build_ubsan/taller_tests${NC}"
+    echo -e "${RED}Error: No se encontró ./build_ubsan/argentum_tests${NC}"
     exit 1
 fi

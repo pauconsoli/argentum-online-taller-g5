@@ -3,7 +3,6 @@
 #include "server/game/items/defensive_item.h"
 #include "server/game/items/item.h"
 #include "server/game/items/magic_weapon.h"
-#include "server/game/items/normal_weapon.h"
 #include "server/game/items/spell.h"
 #include "server/game/items/weapon.h"
 
@@ -52,13 +51,16 @@ TEST_F(SpellTest, HealSpell) {
 
 class WeaponTest: public ::testing::Test {
  protected:
-    Weapon sword{"Excalibur"};
-    Weapon dagger{"Dagger"};
+    Weapon sword{"Excalibur", 15, 25, false};
+    Weapon dagger{"Dagger", 5, 10, false};
 };
 
 TEST_F(WeaponTest, WeaponInitialization) {
     EXPECT_EQ(sword.get_name(), "Excalibur");
     EXPECT_EQ(dagger.get_name(), "Dagger");
+    EXPECT_EQ(sword.get_min_damage(), 15);
+    EXPECT_EQ(sword.get_max_damage(), 25);
+    EXPECT_FALSE(sword.is_ranged());
 }
 
 TEST_F(WeaponTest, WeaponEquipmentSlot) {
@@ -68,36 +70,36 @@ TEST_F(WeaponTest, WeaponEquipmentSlot) {
 }
 
 
-class NormalWeaponTest: public ::testing::Test {
+class WeaponAttributeTest: public ::testing::Test {
  protected:
-    NormalWeapon long_sword{"Long Sword", 15, 30, false};
-    NormalWeapon bow{"Bow", 10, 20, true};
-    NormalWeapon dagger{"Dagger", 5, 12, false};
+    Weapon long_sword{"Long Sword", 15, 30, false};
+    Weapon bow{"Bow", 10, 20, true};
+    Weapon dagger{"Dagger", 5, 12, false};
 };
 
-TEST_F(NormalWeaponTest, NormalWeaponInitialization) {
+TEST_F(WeaponAttributeTest, WeaponInitialization) {
     EXPECT_EQ(long_sword.get_name(), "Long Sword");
     EXPECT_EQ(bow.get_name(), "Bow");
 }
 
-TEST_F(NormalWeaponTest, NormalWeaponDamageRange) {
+TEST_F(WeaponAttributeTest, WeaponDamageRange) {
     EXPECT_EQ(long_sword.get_min_damage(), 15);
     EXPECT_EQ(long_sword.get_max_damage(), 30);
     EXPECT_EQ(dagger.get_min_damage(), 5);
     EXPECT_EQ(dagger.get_max_damage(), 12);
 }
 
-TEST_F(NormalWeaponTest, RangedWeapon) {
+TEST_F(WeaponAttributeTest, RangedWeapon) {
     EXPECT_TRUE(bow.is_ranged());
     EXPECT_FALSE(long_sword.is_ranged());
     EXPECT_FALSE(dagger.is_ranged());
 }
 
-TEST_F(NormalWeaponTest, MeleeWeapon) {
+TEST_F(WeaponAttributeTest, MeleeWeapon) {
     EXPECT_FALSE(long_sword.is_ranged());
 }
 
-TEST_F(NormalWeaponTest, NormalWeaponIsEquippable) {
+TEST_F(WeaponAttributeTest, WeaponIsEquippable) {
     auto slot = long_sword.get_slot();
     ASSERT_TRUE(slot.has_value());
     EXPECT_EQ(slot.value(), EquipmentSlot::WEAPON);

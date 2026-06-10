@@ -23,10 +23,8 @@ std::optional<EquipmentSlot> ConsumableItem::get_slot() const {
 
 void ConsumableItem::use(Player& player) {
     if (type == ConsumableType::HEALTH) {
-        player.restore_health(restore);
+        player.heal(restore);
     } else {
         player.restore_mana(restore);
     }
-    // eliminar el consumible del inventario del jugador, pero eso lo hace el player, no el item
-    // ?
 }

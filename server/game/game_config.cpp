@@ -9,6 +9,7 @@ GameConfig::GameConfig():
     loaded(false),
     max_inventory_items(0),
     spawn_position{},
+    initial_player_level(0),
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
@@ -16,8 +17,9 @@ GameConfig::GameConfig():
     level_limit_base(0.0f),
     level_limit_exp(0.0f),
     kill_bonus_factor(0.0f),
+    death_exp_loss_mult(0.0f),
     critical_chance(0.0f),
-    dodge_threshold(0.0f),
+    evasion_threshold(0.0f),
     newbie_max_level(0),
     max_level_difference(0),
     clan_max_members(0),
@@ -151,6 +153,11 @@ int GameConfig::get_max_inventory_items() const {
     return max_inventory_items;
 }
 
+int GameConfig::get_initial_player_level() const {
+    check_loaded(loaded);
+    return initial_player_level;
+}
+
 float GameConfig::get_gold_max_safe_base() const {
     check_loaded(loaded);
     return gold_max_safe_base;
@@ -181,13 +188,18 @@ float GameConfig::get_kill_bonus_factor() const {
     return kill_bonus_factor;
 }
 
+float GameConfig::get_death_exp_loss_mult() const {
+    check_loaded(loaded);
+    return death_exp_loss_mult;
+}
+
 float GameConfig::get_critical_chance() const {
     check_loaded(loaded);
     return critical_chance;
 }
-float GameConfig::get_dodge_threshold() const {
+float GameConfig::get_evasion_threshold() const {
     check_loaded(loaded);
-    return dodge_threshold;
+    return evasion_threshold;
 }
 int GameConfig::get_newbie_max_level() const {
     check_loaded(loaded);

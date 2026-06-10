@@ -11,17 +11,20 @@ class Spell;
 class MagicWeapon: public Weapon {
  private:
     std::unique_ptr<Spell> spell;
-
     int mana_cost;
 
  public:
     MagicWeapon(const std::string& name, std::unique_ptr<Spell> spell, int mana_cost);
 
-    ~MagicWeapon() override;
+    ~MagicWeapon() override = default;
 
     const Spell& get_spell() const;
 
-    int get_mana_cost() const;
+    int get_mana_cost() const override;
+
+    WeaponEffect apply_effect(const Player& attacker) const override;
+
+    bool is_healing() const override;
 };
 
 #endif

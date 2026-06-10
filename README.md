@@ -1,50 +1,80 @@
-# Ejemplo de CMAKE para el TP Final
+# Argentum Online - Grupo 5
 
-**Importante:** el primer commit de este repositorio tiene el setup
-básico para el TP Final que incluye la instalación de la lib de Google
-Tests, `SDL2` y `SDL2pp` (el wrapper de C++).
+Repositorio del TP Final de la materia Taller de Programación (TA045), cátedra Veiga, 1C2026.
 
-El resto de los commits son a modo de ejemplo de como se pueden
-agregar mas código fuente al proyecto.
+## Integrantes
 
-Este ejemplo **no** incluye instalarse otras libs que son dependencias
-tanto de `SDL2` como de `SDL2pp` (pero si estan documentadas en el
-`CMakeFile` para Xubuntu 24.04).
+- Paula Consoli (108576)
+- Chiara De Laurentiis (110367)
+- Renata Bruno (106860)
 
-Este repo **no** incluye tampoco un instalador.
+## Instalación
 
-**Se deben agregar las librerias necesarias y el instalador.**
+El proyecto incluye un script instalador diseñado para ejecutarse en un entorno limpio (Ubuntu/Xubuntu 24.04). Este script instala todas las dependencias necesarias, compila el código en modo Release, ejecuta los tests unitarios e instala los binarios y recursos en el sistema.
 
-También el ejemplo usa una estructura de carpetas muy simple:
+Para instalar el juego, ejecutar en la raíz del repositorio o donde este el archivo `installer.sh`:
 
-```
-client/
-server/
-editor/
-common/
+```bash
+sudo bash installer.sh
 ```
 
-Bien se puede mejorar (cambiando el cmakefile) agregando mas
-sub-carpetas.
+Una vez finalizada la instalación:
+- Los ejecutables quedan en `/usr/bin`
+- Los archivos de configuración en `/etc/argentum`
+- Los recursos (assets) en `/var/argentum`
+- Se crearán accesos directos (`server.sh` y `client.sh`) en el escritorio.
 
-Asi tambien **deben** ser cambiados los *targets* del cmake (`taller_client`,
-`taller_server`, ...) por nombres mas acordes al TP que se este
-haciendo.
+### Ejecución
 
-Tambien, por default solo se compila una version *debug* sin
-optimizar. Si se quiere compilar binarios optimizados
-(lo que cmake llama *release*) se puede, solo hay modificar
-cmake.
+Ejecutá los scripts generados en el escritorio. En esa carpeta:
+1. Abrí una terminal y ejecutá: `./server.sh` (para levantar el servidor).
+2. Abrí otra terminal y ejecutá: `./client.sh` (para conectar el cliente).
 
-Aprender del ejemplo para saber como extenderlo!
+*Nota: para cambiar el puerto, el host o levantar el server con Valgrind se puede editar directamente esos scripts.*
 
-**Importante:** este repositorio **no** incluye pre-commits hooks,
-ni scripts adicionales (como correr valgrind).
+## Comandos
 
-**Eso esta a cargo de los estudiantes,** tal como fue mostrado
-en los tps individuales, recaps y hands-on.
+Para compilar localmente en modo Debug, podes utilizar el `Makefile` incluido:
 
+```bash
+make compile-debug
+```
+
+Para correr los tests unitarios:
+
+```bash
+make run-tests
+```
+
+### Comandos de cierre:
+
+- **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
+- **Servidor:** para matar el servidor de forma segura, escribir la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
+
+## Licencias
 
 La implementación de las clases `Queue`, `Thread`, `Socket`, `Resolver`, `LibError` y `ResolverError` está basada en el código provisto por la cátedra: https://github.com/eldipa/hands-on-threads y https://github.com/eldipa/sockets-en-cpp 
 
 Licencia: GPL v2  
+
+---
+
+## Comandos del juego
+
+### Movimiento y acciones básicas
+
+| Acción | Control |
+|--------|---------|
+| Mover personaje | Teclas de dirección (↑ ↓ ← →) |
+| Atacar | Click izquierdo sobre otro jugador |
+| Abrir chat | `Enter` → escribir mensaje → `Enter` para enviar |
+
+### Comandos de inventario
+
+| Comando / Acción | Descripción |
+|------------------|-------------|
+| `/tomar` | Recoge el item del suelo donde estás parado |
+| `/tirar` | Tira al piso el item seleccionado (ver abajo cómo seleccionarlo) |
+| Click izquierdo sobre item en inventario | Equipar o usar el item (las pociones se consumen inmediatamente) |
+| Click derecho sobre item en inventario | Selecciona el item para `/tirar` (se marca con borde celeste) |
+

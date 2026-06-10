@@ -42,7 +42,7 @@ class Queue {
     explicit Queue(const unsigned int max_size): max_size(max_size), closed(false) {}
 
 
-    bool try_push(T const& val) {
+    bool try_push(T val) {
         std::unique_lock<std::mutex> lck(mtx);
 
         if (closed) {
@@ -57,7 +57,7 @@ class Queue {
             is_not_empty.notify_all();
         }
 
-        q.push(val);
+        q.push(std::move(val));
         return true;
     }
 
@@ -80,23 +80,23 @@ class Queue {
         return true;
     }
 
-    void push(T const& val) {
-        std::unique_lock<std::mutex> lck(mtx);
+    // void push(T val) {
+    //     std::unique_lock<std::mutex> lck(mtx);
 
-        if (closed) {
-            throw ClosedQueue();
-        }
+    //     if (closed) {
+    //         throw ClosedQueue();
+    //     }
 
-        while (q.size() == this->max_size) {
-            is_not_full.wait(lck);
-        }
+    //     while (q.size() == this->max_size) {
+    //         is_not_full.wait(lck);
+    //     }
 
-        if (q.empty()) {
-            is_not_empty.notify_all();
-        }
+    //     if (q.empty()) {
+    //         is_not_empty.notify_all();
+    //     }
 
-        q.push(val);
-    }
+    //     q.push(std::move(val));
+    // }
 
     void push(T&& val) {
         std::unique_lock<std::mutex> lck(mtx);
@@ -244,7 +244,10 @@ class Queue<void*> {
             is_not_full.notify_all();
         }
 
-        void* const val = q.front();
+        // void* const val = q.front();
+        // q.pop();
+
+        void* const val = std::move(q.front());
         q.pop();
 
         return val;

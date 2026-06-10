@@ -14,6 +14,18 @@ class TestCharacter: public Character {
     bool can_cast_magic() const override {
         return true;
     }
+
+    int get_defense() const override {  // DUMMY
+        return 0;
+    }
+
+    bool validate_attack_from(int) const override {  // DUMMY
+        return true;
+    }
+
+    Loot drop_loot() override {  // DUMMY
+        return Loot{};
+    }
 };
 
 class CharacterTest: public ::testing::Test {

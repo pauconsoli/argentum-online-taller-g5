@@ -1,16 +1,25 @@
 #include "server_protocol.h"
 
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include <arpa/inet.h>
 
+#include "common/commands/attack_command.h"
+#include "common/commands/drop_item_command.h"
+#include "common/commands/equip_item_command.h"
+#include "common/commands/meditate_command.h"
 #include "common/commands/move_command.h"
+#include "common/commands/pick_up_item_command.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
+#include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
@@ -19,6 +28,8 @@
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/spawned_update.h"
+#include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
@@ -180,6 +191,29 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_move_payload(uint32_t player
     return std::make_unique<MoveCommand>(player_id, dir);
 }
 
+std::unique_ptr<ClientCommand> ServerProtocol::recv_attack_payload(uint32_t player_id) {
+    uint32_t target_id = recv_u32();
+    return std::make_unique<AttackCommand>(player_id, target_id);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_meditate_payload(uint32_t player_id) {
+    return std::make_unique<MeditateCommand>(player_id);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_pick_up_payload(uint32_t player_id) {
+    return std::make_unique<PickUpItemCommand>(player_id);
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_drop_item_payload(uint32_t player_id) {
+    uint8_t slot = recv_u8();
+    return std::make_unique<DropItemCommand>(player_id, static_cast<int>(slot));
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_equip_item_payload(uint32_t player_id) {
+    uint8_t slot = recv_u8();
+    return std::make_unique<EquipItemCommand>(player_id, static_cast<int>(slot));
+}
+
 void ServerProtocol::send_update(const GameUpdate& update) {
     switch (update.get_type()) {
         case UpdateType::LOGIN_OK:
@@ -200,18 +234,37 @@ void ServerProtocol::send_update(const GameUpdate& update) {
         case UpdateType::PLAYER_LEFT:
             send_player_left(update);
             break;
+        case UpdateType::PLAYER_SPAWNED:
+            send_player_spawned(update);
+            break;
+        case UpdateType::WORLD_MAP:
+            send_world_map(update);
+            break;
         case UpdateType::SNAPSHOT:
             send_snapshot(update);
             break;
         case UpdateType::MOVED:
             send_moved(update);
             break;
+        case UpdateType::ATTACKED:
+            send_attacked(update);
+            break;
+        case UpdateType::DEATH:
+            send_death(update);
+            break;
+        case UpdateType::INVENTORY:
+            send_inventory(update);
+            break;
         case UpdateType::ERROR:
             send_error(update);
             break;
         default:
-            throw LibError(0, "ServerProtocol::send_update: UpdateType no implementado: %d",
-                           static_cast<int>(update.get_type()));
+            // Tolerante: si llega un tipo que aún no implementé (STATS, REVIVE,
+            // CHAT_MSG, etc.), lo loggeo y lo descarto. Así no rompe la conexión del cliente — solo
+            // se pierde ese mensaje en particular
+            std::cerr << "[PROTOCOL] UpdateType no implementado (descartado): "
+                      << static_cast<int>(update.get_type()) << "\n";
+            break;
     }
 }
 
@@ -290,6 +343,89 @@ void ServerProtocol::send_player_left(const GameUpdate& update) {
     }
 }
 
+void ServerProtocol::send_player_spawned(const GameUpdate& update) {
+    const auto& u = static_cast<const SpawnedUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::PLAYER_SPAWNED);
+    put_u32(buf, u.get_player_id());
+    put_string(buf, u.get_nick());
+    put_u8(buf, static_cast<uint8_t>(u.get_race()));
+    put_u8(buf, static_cast<uint8_t>(u.get_class()));
+    put_i32(buf, u.get_pos().x);
+    put_i32(buf, u.get_pos().y);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_player_spawned: client closed connection");
+    }
+}
+
+void ServerProtocol::send_world_map(const GameUpdate& update) {
+    const auto& u = static_cast<const WorldMapUpdate&>(update);
+    if (static_cast<size_t>(u.width) * static_cast<size_t>(u.height) != u.cells.size()) {
+        throw std::length_error("send_world_map: width*height != cells.size()");
+    }
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::WORLD_MAP);
+    put_u16(buf, u.width);
+    put_u16(buf, u.height);
+    buf.reserve(buf.size() + u.cells.size() * 2);
+    for (const auto& c : u.cells) {
+        put_u8(buf, c.terrain_type);
+        put_u8(buf, c.blocking ? 1 : 0);
+    }
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_world_map: client closed connection");
+    }
+}
+
+void ServerProtocol::send_attacked(const GameUpdate& update) {
+    const auto& u = static_cast<const AttackUpdate&>(update);
+    const AttackResult& r = u.get_result();
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::ATTACKED);
+    put_u32(buf, r.attacker_id);
+    put_u32(buf, r.target_id);
+    put_i32(buf, r.damage);
+    put_u8(buf, r.evaded ? 1 : 0);
+    put_u8(buf, r.target_died ? 1 : 0);
+    put_u8(buf, r.is_healing ? 1 : 0);
+    put_i32(buf, r.heal_amount);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_attacked: client closed connection");
+    }
+}
+
+void ServerProtocol::send_death(const GameUpdate& update) {
+    const auto& u = static_cast<const DeathUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::DEATH);
+    put_u32(buf, u.get_dead_id());
+    put_u32(buf, u.get_killer_id());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_death: client closed connection");
+    }
+}
+
+void ServerProtocol::send_inventory(const GameUpdate& update) {
+    const auto& u = static_cast<const InventoryUpdate&>(update);
+    const auto& items = u.get_items();
+    if (items.size() > UINT16_MAX) {
+        throw std::length_error("send_inventory: demasiados items");
+    }
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::INVENTORY);
+    put_u32(buf, u.get_target_player_id());
+    put_u16(buf, static_cast<uint16_t>(items.size()));
+    for (const auto& slot : items) {
+        put_string(buf, slot.item_name);
+        put_u32(buf, slot.quantity);
+        put_u8(buf, slot.is_equipped ? 1 : 0);
+    }
+    put_u64(buf, u.get_gold());
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_inventory: client closed connection");
+    }
+}
+
 void ServerProtocol::send_snapshot(const GameUpdate& update) {
     const auto& u = static_cast<const SnapshotUpdate&>(update);
     if (u.players.size() > UINT16_MAX) {
@@ -314,7 +450,21 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         put_u64(buf, p.gold);
         put_u16(buf, p.level);
         put_u8(buf, p.is_ghost ? 1 : 0);
+        put_u8(buf, p.is_meditating ? 1 : 0);
     }
+
+    if (u.ground_items.size() > UINT16_MAX) {
+        throw std::length_error("send_snapshot: demasiados items en el suelo");
+    }
+    put_u16(buf, static_cast<uint16_t>(u.ground_items.size()));
+    for (const auto& gi : u.ground_items) {
+        put_i32(buf, gi.x);
+        put_i32(buf, gi.y);
+        put_u8(buf, gi.is_gold ? 1 : 0);
+        put_u64(buf, gi.quantity);
+        put_string(buf, gi.name);
+    }
+
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_snapshot: client closed connection");
     }
