@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "cell.h"
+#include "city.h"
 #include "common/position.h"
+#include "dungeon.h"
 #include "zone.h"
 
 class WorldMap {
@@ -19,6 +21,8 @@ class WorldMap {
 
     std::vector<std::vector<Zone*>> zones;
     std::vector<std::unique_ptr<Zone>> zones_storage;
+    std::vector<City*> cities;
+    std::vector<Dungeon*> dungeons;
 
     int width;
     int height;
@@ -36,6 +40,12 @@ class WorldMap {
     Zone* get_zone(const Position& pos) const;
     void set_zone(const Position& pos, Zone* zone);
     void add_zone(std::unique_ptr<Zone> zone, int x, int y, int w, int h);
+    void add_city(std::unique_ptr<City> city, int x, int y, int w, int h);
+    void add_dungeon(std::unique_ptr<Dungeon> dungeon, int x, int y, int w, int h);
+
+    City* get_closest_city(const Position& pos) const;
+
+    const std::vector<Dungeon*>& get_dungeons() const;
 
     bool is_safe(const Position& pos) const;
 

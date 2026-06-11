@@ -45,6 +45,18 @@ Para correr los tests unitarios:
 ```bash
 make run-tests
 ```
+Para levantar Server y Client (en la raíz):
+
+```bash
+./build/argentum_server 8080
+
+./build/argentum_client_qt
+```
+Para levantar Server con Valgrind:
+
+```bash
+valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/argentum_server 8080
+```
 
 ### Comandos de cierre:
 

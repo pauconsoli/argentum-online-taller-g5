@@ -7,9 +7,17 @@ enum class TerrainType {
     DIRT,
     STONE,
     SAND,
-    DUNGEON_ENTRANCE,
-    DUNGEON_FLOOR,
-    DUNGEON_WALL
+    WOOD,
+    DUNGEON_ENTRANCE_1,
+    DUNGEON_FLOOR_1,
+    DUNGEON_WALL_1,
+    DUNGEON_ENTRANCE_2,
+    DUNGEON_FLOOR_2,
+    DUNGEON_WALL_2,
+    CITY_FLOOR_1,
+    CITY_WALL_1,
+    CITY_FLOOR_2,
+    CITY_WALL_2
 };
 
 #endif
