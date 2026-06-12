@@ -12,12 +12,18 @@
 Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClass player_class,
                int level, int max_hp, int max_mana, int strength, int agility, int intelligence,
                int constitution, const Position& position):
-    Character(id, level, max_hp, max_mana, strength, agility, intelligence, constitution, position),
+    Character(id, level, max_hp, position),
     name(name),
     p_race(race),
     p_class(player_class),
     gold(0),
     experience(0),
+    current_mana(max_mana),
+    max_mana(max_mana),
+    strength(strength),
+    agility(agility),
+    intelligence(intelligence),
+    constitution(constitution),
     meditating(false),
     inventory(std::make_unique<Inventory>()) {}
 
@@ -31,6 +37,10 @@ int Player::get_defense() const {
 
 bool Player::validate_attack_from(int attacker_level) const {
     return GameFormulas::can_attack_by_level(attacker_level, this->get_level());
+}
+
+int Player::get_agility() const {
+    return agility;
 }
 
 Loot Player::drop_loot() {
@@ -135,6 +145,26 @@ uint64_t Player::get_gold() const {
 
 uint64_t Player::get_experience() const {
     return experience;
+}
+
+int Player::get_current_mana() const {
+    return current_mana;
+}
+
+int Player::get_max_mana() const {
+    return max_mana;
+}
+
+int Player::get_strength() const {
+    return strength;
+}
+
+int Player::get_intelligence() const {
+    return intelligence;
+}
+
+int Player::get_constitution() const {
+    return constitution;
 }
 
 // SOBRECARGA: una por si quiero modificar el inventario, otra solo para lectura

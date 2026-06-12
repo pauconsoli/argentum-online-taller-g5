@@ -21,21 +21,12 @@ class Character {
     int current_hp;
     int max_hp;
 
-    int current_mana;
-    int max_mana;
-
-    int strength;
-    int agility;
-    int intelligence;
-    int constitution;
-
     Position position;
 
     bool dead;
 
  public:
-    Character(uint32_t id, int level, int max_hp, int max_mana, int strength, int agility,
-              int intelligence, int constitution, const Position& position);
+    Character(uint32_t id, int level, int max_hp, const Position& position);
 
     virtual ~Character() = default;
 
@@ -46,6 +37,8 @@ class Character {
                     // inventario equipado usando la formula de GameFormulas
 
     virtual bool validate_attack_from(int attacker_level) const = 0;
+
+    virtual int get_agility() const = 0;
 
     virtual Loot drop_loot() = 0;
 
@@ -61,14 +54,6 @@ class Character {
 
     int get_current_hp() const;
     int get_max_hp() const;
-
-    int get_current_mana() const;
-    int get_max_mana() const;
-
-    int get_strength() const;
-    int get_agility() const;
-    int get_intelligence() const;
-    int get_constitution() const;
 
     const Position& get_position() const;
 
