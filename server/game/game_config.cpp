@@ -30,6 +30,8 @@ GameConfig::GameConfig():
     npc_drop_item_prob(0.0f),
     npc_gold_drop_min_factor(0.0f),
     npc_gold_drop_max_factor(0.0f),
+    npc_population_limit(0),
+    npc_spawn_time_seconds(0),
     server_game_loop_sleep_ms(0) {}
 
 static float lookup(const std::map<PlayerRace, float>& m, PlayerRace key, const char* field) {
@@ -242,6 +244,16 @@ float GameConfig::get_npc_gold_drop_min_factor() const {
 float GameConfig::get_npc_gold_drop_max_factor() const {
     check_loaded(loaded);
     return npc_gold_drop_max_factor;
+}
+
+int GameConfig::get_npc_population_limit() const {
+    check_loaded(loaded);
+    return npc_population_limit;
+}
+
+int GameConfig::get_npc_spawn_time_seconds() const {
+    check_loaded(loaded);
+    return npc_spawn_time_seconds;
 }
 
 int GameConfig::get_server_game_loop_sleep_ms() const {

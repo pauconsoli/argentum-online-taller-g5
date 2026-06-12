@@ -243,3 +243,11 @@ uint64_t GameFormulas::calculate_player_dropped_experience(const Player& player)
     return static_cast<uint64_t>(player.get_experience() *
                                  config.get_death_exp_loss_mult());  // exp * 0.4
 }
+
+uint64_t GameFormulas::calculate_npc_dropped_gold(const Character& npc) {
+    const GameConfig& config = GameConfig::get_instance();
+    float min_factor = config.get_npc_gold_drop_min_factor();
+    float max_factor = config.get_npc_gold_drop_max_factor();
+    float random_factor = get_random_float(min_factor, max_factor);
+    return static_cast<uint64_t>(random_factor * npc.get_max_hp());
+}

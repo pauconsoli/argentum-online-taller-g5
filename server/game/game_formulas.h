@@ -62,6 +62,7 @@ class GameFormulas {
     // MUERTE Y DROPS
     static uint64_t calculate_player_dropped_gold(const Player& player);
     static uint64_t calculate_player_dropped_experience(const Player& player);
+    static uint64_t calculate_npc_dropped_gold(const Character& npc);
 };
 
 #endif

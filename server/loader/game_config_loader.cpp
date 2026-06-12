@@ -127,6 +127,8 @@ void GameConfigLoader::load(const std::string& config_path) {
     gc.npc_drop_item_prob = require_float(*npc, "npc", "drop_item_prob");
     gc.npc_gold_drop_min_factor = require_float(*npc, "npc", "gold_drop_min_factor");
     gc.npc_gold_drop_max_factor = require_float(*npc, "npc", "gold_drop_max_factor");
+    gc.npc_population_limit = require_int(*npc, "npc", "population_limit");
+    gc.npc_spawn_time_seconds = require_int(*npc, "npc", "spawn_time_seconds");
 
     const auto* server = root["server"].as_table();
     if (!server)

@@ -67,6 +67,8 @@ class GameConfig {
     float npc_drop_item_prob;
     float npc_gold_drop_min_factor;
     float npc_gold_drop_max_factor;
+    int npc_population_limit;
+    int npc_spawn_time_seconds;
 
     int server_game_loop_sleep_ms;
 
@@ -121,6 +123,9 @@ class GameConfig {
     float get_npc_drop_item_prob() const;
     float get_npc_gold_drop_min_factor() const;
     float get_npc_gold_drop_max_factor() const;
+
+    int get_npc_population_limit() const;
+    int get_npc_spawn_time_seconds() const;
 
     int get_server_game_loop_sleep_ms() const;
 };
