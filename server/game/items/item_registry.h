@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "server/game/items/item.h"
 
@@ -28,6 +29,8 @@ class ItemRegistry {
 
  private:
     std::unordered_map<std::string, ItemTemplate> templates;
+    std::vector<std::string> potion_keys;
+    std::vector<std::string> other_keys;
 
     ItemRegistry() = default;
 
@@ -40,6 +43,8 @@ class ItemRegistry {
     void add_template(const std::string& name, const ItemTemplate& tpl);
 
     std::unique_ptr<Item> create_item(const std::string& name) const;
+    std::unique_ptr<Item> create_random_potion() const;
+    std::unique_ptr<Item> create_random_other_item() const;
 };
 
 #endif

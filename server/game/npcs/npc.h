@@ -31,7 +31,7 @@ class NPC: public Character {
     bool can_cast_magic() const override {
         return false;
     }
-    bool validate_attack_from(int attacker_level) const override {
+    bool validate_attack_from(int /*attacker_level*/) const override {
         return true;
     }
     int get_defense() const override;

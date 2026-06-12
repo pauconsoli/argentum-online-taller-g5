@@ -20,11 +20,10 @@ struct BaseStats {
 };
 
 class GameFormulas {
- private:
+ public:
     static int get_random_int(int min, int max);
     static float get_random_float(float min, float max);
 
- public:
     // STATS
 
     static int calculate_max_hp(const Player& player);
@@ -49,6 +48,7 @@ class GameFormulas {
 
     static bool can_attack_by_level(int attacker_level, int target_level);
     static int calculate_damage(const Player& attacker, const Weapon* weapon = nullptr);
+    static int calculate_npc_damage(int min_damage, int max_damage);
     static bool calculate_critical_attack();
     static bool calculate_evasion(const Character& target);
     static int calculate_defense(const Player& target);

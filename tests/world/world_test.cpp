@@ -84,38 +84,38 @@ TEST_F(WorldTest, PlayerExistsFalse) {
 
 TEST_F(WorldTest, MovePlayerUp) {
     world.add_player(create_player(1, 50, 50));
-    EXPECT_TRUE(world.move_player(1, Direction::UP));
+    EXPECT_TRUE(world.move_character(1, Direction::UP));
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 49);
 }
 
 TEST_F(WorldTest, MovePlayerDown) {
     world.add_player(create_player(1, 50, 50));
-    EXPECT_TRUE(world.move_player(1, Direction::DOWN));
+    EXPECT_TRUE(world.move_character(1, Direction::DOWN));
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 51);
 }
 
 TEST_F(WorldTest, MovePlayerLeft) {
     world.add_player(create_player(1, 50, 50));
-    EXPECT_TRUE(world.move_player(1, Direction::LEFT));
+    EXPECT_TRUE(world.move_character(1, Direction::LEFT));
     EXPECT_EQ(world.get_player(1)->get_position().x, 49);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
 }
 
 TEST_F(WorldTest, MovePlayerRight) {
     world.add_player(create_player(1, 50, 50));
-    EXPECT_TRUE(world.move_player(1, Direction::RIGHT));
+    EXPECT_TRUE(world.move_character(1, Direction::RIGHT));
     EXPECT_EQ(world.get_player(1)->get_position().x, 51);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
 }
 
 TEST_F(WorldTest, MovePlayerMultipleTimes) {
     world.add_player(create_player(1, 50, 50));
-    world.move_player(1, Direction::UP);
-    world.move_player(1, Direction::RIGHT);
-    world.move_player(1, Direction::DOWN);
-    world.move_player(1, Direction::RIGHT);
+    world.move_character(1, Direction::UP);
+    world.move_character(1, Direction::RIGHT);
+    world.move_character(1, Direction::DOWN);
+    world.move_character(1, Direction::RIGHT);
 
     EXPECT_EQ(world.get_player(1)->get_position().x, 52);
     EXPECT_EQ(world.get_player(1)->get_position().y, 50);
@@ -124,7 +124,7 @@ TEST_F(WorldTest, MovePlayerMultipleTimes) {
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsUp) {
     world.add_player(create_player(1, 50, 0));
 
-    EXPECT_FALSE(world.move_player(1, Direction::UP));
+    EXPECT_FALSE(world.move_character(1, Direction::UP));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 0);
@@ -133,7 +133,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsUp) {
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsDown) {
     world.add_player(create_player(1, 50, 79));  // valido de 0 a 79
 
-    EXPECT_FALSE(world.move_player(1, Direction::DOWN));
+    EXPECT_FALSE(world.move_character(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 79);
@@ -142,7 +142,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsDown) {
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsLeft) {
     world.add_player(create_player(1, 0, 50));
 
-    EXPECT_FALSE(world.move_player(1, Direction::LEFT));
+    EXPECT_FALSE(world.move_character(1, Direction::LEFT));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 0);
     EXPECT_EQ(pos.y, 50);
@@ -151,7 +151,7 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsLeft) {
 TEST_F(WorldTest, MovePlayerBoundOutOfBoundsRight) {
     world.add_player(create_player(1, 99, 50));  // valido de 0 a 99
 
-    EXPECT_FALSE(world.move_player(1, Direction::RIGHT));
+    EXPECT_FALSE(world.move_character(1, Direction::RIGHT));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 99);
     EXPECT_EQ(pos.y, 50);
@@ -159,13 +159,13 @@ TEST_F(WorldTest, MovePlayerBoundOutOfBoundsRight) {
 
 TEST_F(WorldTest, MovePlayerAtAllCorners) {
     world.add_player(create_player(1, 0, 0));
-    EXPECT_FALSE(world.move_player(1, Direction::UP));
-    EXPECT_FALSE(world.move_player(1, Direction::LEFT));
+    EXPECT_FALSE(world.move_character(1, Direction::UP));
+    EXPECT_FALSE(world.move_character(1, Direction::LEFT));
 
     world.remove_player(1);
     world.add_player(create_player(2, 99, 79));
-    EXPECT_FALSE(world.move_player(2, Direction::DOWN));
-    EXPECT_FALSE(world.move_player(2, Direction::RIGHT));
+    EXPECT_FALSE(world.move_character(2, Direction::DOWN));
+    EXPECT_FALSE(world.move_character(2, Direction::RIGHT));
 }
 
 TEST_F(WorldTest, MovePlayerBlockingTerrain) {
@@ -173,7 +173,7 @@ TEST_F(WorldTest, MovePlayerBlockingTerrain) {
     Cell blocking(TerrainType::WATER, true);
     world.set_cell(Position{50, 51}, blocking);
 
-    EXPECT_FALSE(world.move_player(1, Direction::DOWN));
+    EXPECT_FALSE(world.move_character(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -184,7 +184,7 @@ TEST_F(WorldTest, MovePlayerNonBlockingTerrain) {
     Cell grass(TerrainType::GRASS, false);
     world.set_cell(Position{50, 51}, grass);
 
-    EXPECT_TRUE(world.move_player(1, Direction::DOWN));
+    EXPECT_TRUE(world.move_character(1, Direction::DOWN));
     EXPECT_EQ(world.get_player(1)->get_position().x, 50);
     EXPECT_EQ(world.get_player(1)->get_position().y, 51);
 }
@@ -193,7 +193,7 @@ TEST_F(WorldTest, MovePlayerCollisionWithAnotherPlayer) {
     world.add_player(create_player(1, 50, 50));
     world.add_player(create_player(2, 50, 51));
 
-    EXPECT_FALSE(world.move_player(1, Direction::DOWN));
+    EXPECT_FALSE(world.move_character(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -203,7 +203,7 @@ TEST_F(WorldTest, MovePlayerNoCollisionWhenPathClear) {
     world.add_player(create_player(1, 50, 50));
     world.add_player(create_player(2, 50, 52));
 
-    EXPECT_TRUE(world.move_player(1, Direction::DOWN));
+    EXPECT_TRUE(world.move_character(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 51);
@@ -216,10 +216,10 @@ TEST_F(WorldTest, MovePlayerSurrounded) {
     world.add_player(create_player(4, 50, 49));
     world.add_player(create_player(5, 50, 51));
 
-    EXPECT_FALSE(world.move_player(1, Direction::UP));
-    EXPECT_FALSE(world.move_player(1, Direction::DOWN));
-    EXPECT_FALSE(world.move_player(1, Direction::LEFT));
-    EXPECT_FALSE(world.move_player(1, Direction::RIGHT));
+    EXPECT_FALSE(world.move_character(1, Direction::UP));
+    EXPECT_FALSE(world.move_character(1, Direction::DOWN));
+    EXPECT_FALSE(world.move_character(1, Direction::LEFT));
+    EXPECT_FALSE(world.move_character(1, Direction::RIGHT));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);
@@ -230,14 +230,14 @@ TEST_F(WorldTest, MovePlayerCollisionAfterRemoval) {
     world.add_player(create_player(2, 50, 51));
 
     world.remove_player(2);
-    EXPECT_TRUE(world.move_player(1, Direction::DOWN));
+    EXPECT_TRUE(world.move_character(1, Direction::DOWN));
     auto pos = world.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 51);
 }
 
 TEST_F(WorldTest, MovePlayerNonExistent) {
-    EXPECT_FALSE(world.move_player(999, Direction::UP));
+    EXPECT_FALSE(world.move_character(999, Direction::UP));
 }
 
 TEST_F(WorldTest, MovePlayerCombinedBoundsAndTerrain) {
@@ -245,7 +245,7 @@ TEST_F(WorldTest, MovePlayerCombinedBoundsAndTerrain) {
     Cell blocking(TerrainType::WATER, true);
     world.set_cell(Position{50, 1}, blocking);
 
-    EXPECT_FALSE(world.move_player(1, Direction::DOWN));
+    EXPECT_FALSE(world.move_character(1, Direction::DOWN));
 }
 
 TEST_F(WorldTest, MovePlayerCombinedTerrainAndCollision) {
@@ -254,17 +254,17 @@ TEST_F(WorldTest, MovePlayerCombinedTerrainAndCollision) {
     Cell blocking(TerrainType::STONE, true);
     world.set_cell(Position{49, 50}, blocking);
 
-    EXPECT_FALSE(world.move_player(1, Direction::LEFT));
+    EXPECT_FALSE(world.move_character(1, Direction::LEFT));
 }
 
 TEST_F(WorldTest, PositionMapConsistencyMultipleMoves) {
     world.add_player(create_player(1, 50, 50));
     world.add_player(create_player(2, 60, 60));
 
-    world.move_player(1, Direction::UP);
-    world.move_player(2, Direction::DOWN);
-    world.move_player(1, Direction::LEFT);
-    world.move_player(2, Direction::RIGHT);
+    world.move_character(1, Direction::UP);
+    world.move_character(2, Direction::DOWN);
+    world.move_character(1, Direction::LEFT);
+    world.move_character(2, Direction::RIGHT);
 
     auto pos1 = world.get_player(1)->get_position();
     auto pos2 = world.get_player(2)->get_position();
@@ -278,15 +278,15 @@ TEST_F(WorldTest, LargeWorld) {
     World large(1000, 800);
     large.add_player(create_player(1, 999, 799));
 
-    EXPECT_FALSE(large.move_player(1, Direction::DOWN));
-    EXPECT_FALSE(large.move_player(1, Direction::RIGHT));
+    EXPECT_FALSE(large.move_character(1, Direction::DOWN));
+    EXPECT_FALSE(large.move_character(1, Direction::RIGHT));
 }
 
 TEST_F(WorldTest, SmallWorldMovement) {
     World small(3, 3);
     small.add_player(create_player(1, 1, 1));
 
-    EXPECT_TRUE(small.move_player(1, Direction::UP));
+    EXPECT_TRUE(small.move_character(1, Direction::UP));
     auto pos = small.get_player(1)->get_position();
     EXPECT_EQ(pos.x, 1);
     EXPECT_EQ(pos.y, 0);
@@ -296,10 +296,10 @@ TEST_F(WorldTest, MultiplePlayersIndependent) {
     world.add_player(create_player(1, 25, 25));
     world.add_player(create_player(2, 75, 75));
 
-    world.move_player(1, Direction::UP);
-    world.move_player(1, Direction::LEFT);
-    world.move_player(2, Direction::DOWN);
-    world.move_player(2, Direction::RIGHT);
+    world.move_character(1, Direction::UP);
+    world.move_character(1, Direction::LEFT);
+    world.move_character(2, Direction::DOWN);
+    world.move_character(2, Direction::RIGHT);
 
     auto pos1 = world.get_player(1)->get_position();
     auto pos2 = world.get_player(2)->get_position();
@@ -314,7 +314,7 @@ TEST_F(WorldTest, PlayerRemovalDoesNotAffectOthers) {
     world.add_player(create_player(2, 50, 51));
 
     world.remove_player(1);
-    EXPECT_TRUE(world.move_player(2, Direction::UP));
+    EXPECT_TRUE(world.move_character(2, Direction::UP));
     auto pos = world.get_player(2)->get_position();
     EXPECT_EQ(pos.x, 50);
     EXPECT_EQ(pos.y, 50);

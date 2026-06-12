@@ -20,7 +20,7 @@ std::vector<std::unique_ptr<GameUpdate>> MoveCommand::execute(World& world) {
 
     player->stop_meditating();
 
-    bool success = world.move_player(player_id, direction);
+    bool success = world.move_character(player_id, direction);
 
     if (success) {
         updates.push_back(std::make_unique<MovedUpdate>(player_id, player->get_position()));

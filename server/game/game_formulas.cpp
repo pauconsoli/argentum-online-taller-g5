@@ -173,6 +173,10 @@ int GameFormulas::calculate_damage(const Player& attacker, const Weapon* weapon)
     return attacker.get_strength() * weapon_damage;
 }
 
+int GameFormulas::calculate_npc_damage(int min_damage, int max_damage) {
+    return get_random_int(min_damage, max_damage);
+}
+
 // Esquivar si rand(0, 1) ^ Agilidad < 0.001
 bool GameFormulas::calculate_evasion(const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
