@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/attack_result.h"
 #include "server/game/character.h"
 #include "server/game/inventory.h"
 #include "server/game/player_class.h"
@@ -65,7 +66,13 @@ class Player: public Character {
 
     void remove_experience(uint64_t amount);
 
-    void add_experience(uint64_t amount);
+    void add_experience(uint64_t amount) override;
+
+    bool is_healing_attack() const override;
+    bool is_ranged_attack() const override;
+    int calculate_base_damage() const override;
+    int calculate_base_healing() const override;
+    AttackStatus consume_attack_resources() override;
 
     void level_up();
 

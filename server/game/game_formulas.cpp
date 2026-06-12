@@ -211,14 +211,15 @@ int GameFormulas::calculate_healing(int min_heal, int max_heal) {
 }
 
 // Exp = Daño * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_attack_experience_gain(const Player& attacker, const Character& target,
-                                                   int damage) {
+int GameFormulas::calculate_attack_experience_gain(const Character& attacker,
+                                                   const Character& target, int damage) {
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
     return static_cast<int>(damage * level_multiplier);
 }
 
 // Exp = rand(0, 0.1) * VidaMaxDelOtro * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const Character& target) {
+int GameFormulas::calculate_kill_experience_gain(const Character& attacker,
+                                                 const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
     int target_max_hp = target.get_max_hp();
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);

@@ -36,6 +36,7 @@ class NPC: public Character {
     }
     int get_defense() const override;
     int get_agility() const override;
+    int calculate_base_damage() const override;
 
     virtual NPCBehavior update(float time, const std::vector<Player*>& nearby_targets) = 0;
     virtual bool is_hostile() const = 0;

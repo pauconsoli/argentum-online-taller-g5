@@ -99,6 +99,39 @@ void Player::add_experience(uint64_t amount) {
     }
 }
 
+bool Player::is_healing_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_healing() : false;
+}
+
+bool Player::is_ranged_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_ranged() : false;
+}
+
+int Player::calculate_base_damage() const {
+    Weapon* weapon = get_equipped_weapon();
+    if (weapon) {
+        return weapon->apply_effect(*this).damage;
+    }
+    return GameFormulas::calculate_damage(*this);
+}
+
+int Player::calculate_base_healing() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->apply_effect(*this).healing : 0;
+}
+
+AttackStatus Player::consume_attack_resources() {
+    Weapon* weapon = get_equipped_weapon();
+    if (weapon && weapon->get_mana_cost() > 0) {
+        if (current_mana < weapon->get_mana_cost())
+            return AttackStatus::NO_MANA;
+        consume_mana(weapon->get_mana_cost());
+    }
+    return AttackStatus::SUCCESS;
+}
+
 void Player::level_up() {
 
     int new_level = get_level() + 1;

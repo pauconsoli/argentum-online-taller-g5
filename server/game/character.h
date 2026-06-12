@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "common/attack_result.h"
 #include "common/position.h"
 #include "server/game/loot.h"
 
@@ -41,6 +42,22 @@ class Character {
     virtual int get_agility() const = 0;
 
     virtual Loot drop_loot() = 0;
+
+    virtual void add_experience(uint64_t /*amount*/) {}
+
+    virtual bool is_healing_attack() const {
+        return false;
+    }
+    virtual bool is_ranged_attack() const {
+        return false;
+    }
+    virtual int calculate_base_damage() const = 0;
+    virtual int calculate_base_healing() const {
+        return 0;
+    }
+    virtual AttackStatus consume_attack_resources() {
+        return AttackStatus::SUCCESS;
+    }
 
     void receive_damage(int damage);
 

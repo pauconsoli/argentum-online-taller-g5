@@ -110,13 +110,8 @@ bool World::is_position_occupied(const Position& position) const {
     return occupied[position.y][position.x];
 }
 
-bool World::is_in_range_for_attack(const Player* attacker, const Character* target) const {
-    bool is_ranged = false;
-    Weapon* weapon = attacker->get_equipped_weapon();
-    if (weapon) {
-        is_ranged = weapon->is_ranged();
-    }
-
+bool World::is_in_range_for_attack(const Character* attacker, const Character* target) const {
+    bool is_ranged = attacker->is_ranged_attack();
     if (!is_ranged) {
         Position attacker_pos = attacker->get_position();
         Position target_pos = target->get_position();
@@ -252,7 +247,7 @@ void World::add_ground_item(const Position& pos, GroundItem item) {
     ground_items[free_pos] = std::move(item);
 }
 
-AttackStatus World::validate_attack_conditions(const Player* attacker, const Character* target,
+AttackStatus World::validate_attack_conditions(const Character* attacker, const Character* target,
                                                bool is_healing) const {
     if (attacker->is_dead() || target->is_dead()) {
         return AttackStatus::DEAD;
@@ -280,24 +275,7 @@ AttackStatus World::validate_attack_conditions(const Player* attacker, const Cha
     return AttackStatus::SUCCESS;
 }
 
-
-AttackStatus World::consume_weapon_mana(Player* attacker) {
-    Weapon* weapon = attacker->get_equipped_weapon();
-    if (weapon) {
-        int mana_cost = weapon->get_mana_cost();
-
-        if (mana_cost > 0) {
-            if (attacker->get_current_mana() < mana_cost) {
-                return AttackStatus::NO_MANA;
-            }
-            attacker->consume_mana(mana_cost);
-        }
-    }
-    return AttackStatus::SUCCESS;
-}
-
-
-void World::handle_target_death(Player* attacker, Character* target) {
+void World::handle_target_death(Character* attacker, Character* target) {
     int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker, *target);
     attacker->add_experience(bonus_exp);
 
@@ -306,7 +284,7 @@ void World::handle_target_death(Player* attacker, Character* target) {
 }
 
 
-int World::handle_successful_attack(Player* attacker, Character* target, int damage) {
+int World::handle_successful_attack(Character* attacker, Character* target, int damage) {
     int defense = target->get_defense();
     int real_damage = std::max(0, damage - defense);
     target->receive_damage(real_damage);
@@ -317,16 +295,13 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
     return real_damage;
 }
 
-// REFACTOR FUTURO.
-// TODO(Pau): que se use Character* para poder usarlo para NPCs cuando existan
-bool World::move_player(uint32_t player_id, Direction direction) {
-    auto it = players.find(player_id);
-    if (it == players.end()) {
+bool World::move_character(uint32_t character_id, Direction direction) {
+    Character* character = get_character(character_id);
+    if (!character) {
         return false;
     }
 
-    Player* player = it->second.get();
-    Position current = player->get_position();
+    Position current = character->get_position();
     Position next = calculate_destination(current, direction);
 
     if (!map.is_valid_position(next)) {
@@ -343,7 +318,7 @@ bool World::move_player(uint32_t player_id, Direction direction) {
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
     occupied[current.y][current.x] = false;
-    player->set_position(next);
+    character->set_position(next);
     occupied[next.y][next.x] = true;
     return true;
 }
@@ -402,7 +377,7 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 
 // otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
-    Player* attacker = get_player(attacker_id);
+    Character* attacker = get_character(attacker_id);
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
@@ -410,42 +385,36 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
                             false,       false,     0, AttackStatus::INVALID_TARGET};
     }
 
-    Weapon* weapon = attacker->get_equipped_weapon();
-    bool is_healing = weapon ? weapon->is_healing() : false;
+    bool is_healing = attacker->is_healing_attack();
 
     AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
     }
-    status = consume_weapon_mana(attacker);
+    status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
     }
 
-    WeaponEffect effect;
-    if (weapon) {
-        effect = weapon->apply_effect(*attacker);
-    } else {
-        effect.damage = GameFormulas::calculate_damage(*attacker);  // daño base sin arma
-    }
-
     if (is_healing) {
-        target->heal(effect.healing);
-        return AttackResult{attacker_id,          target_id, 0, false, false, true, effect.healing,
-                            AttackStatus::SUCCESS};
+        int healing = attacker->calculate_base_healing();
+        target->heal(healing);
+        return AttackResult{attacker_id, target_id, 0,       false,
+                            false,       true,      healing, AttackStatus::SUCCESS};
     }
 
+    int base_damage = attacker->calculate_base_damage();
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
-        effect.damage *= 2;  // extraer a config
+        base_damage *= 2;  // extraer a config
     }
 
     bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
 
     int real_damage = 0;
     if (!evaded) {
-        real_damage = handle_successful_attack(attacker, target, effect.damage);
+        real_damage = handle_successful_attack(attacker, target, base_damage);
     }
 
     bool died = target->is_dead();
