@@ -80,6 +80,8 @@ class Player: public Character {
 
     void stop_meditating();
 
+    void resurrect();
+
     bool is_meditating() const;
 
     const std::string& get_name() const;

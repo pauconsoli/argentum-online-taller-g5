@@ -156,6 +156,14 @@ void Player::stop_meditating() {
     meditating = false;
 }
 
+void Player::resurrect() {
+    if (dead) {
+        dead = false;
+        current_hp = max_hp;
+        current_mana = max_mana;
+    }
+}
+
 bool Player::is_meditating() const {
     return meditating;
 }
