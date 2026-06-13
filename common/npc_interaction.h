@@ -1,0 +1,6 @@
+#ifndef NPC_INTERACTION_H
+#define NPC_INTERACTION_H
+
+enum class NPCInteraction { HEAL, RESURRECT, BUY, SELL, DEPOSIT, WITHDRAW, LIST };
+
+#endif
