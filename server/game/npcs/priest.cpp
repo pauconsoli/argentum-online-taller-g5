@@ -27,7 +27,7 @@ InteractResult Priest::on_heal(Player& player) {
     return InteractResult{InteractStatus::SUCCESS};
 }
 
-InteractResult Priest::on_resurrect(Player& player, Bank& /*bank*/) {
+InteractResult Priest::on_resurrect(Player& player) {
 
     if (!player.is_dead()) {
         return InteractResult{InteractStatus::PLAYER_NOT_DEAD};
@@ -68,7 +68,7 @@ InteractResult Priest::on_buy(const std::string& item_name, Player& player) {
     return InteractResult{InteractStatus::SUCCESS, item_name, price};
 }
 
-InteractResult Priest::on_list(Player& player) {
+InteractResult Priest::on_list(Player& player, Bank& /*bank*/) {
     if (player.is_dead()) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }

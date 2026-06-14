@@ -8,7 +8,7 @@
 class Merchant: public CityNPC {
  protected:
     InteractResult on_buy(const std::string& item_name, Player& player) override;
-    InteractResult on_list(Player& player) override;
+    InteractResult on_list(Player& player, Bank& bank) override;
     InteractResult on_sell(const std::string& item_name, Player& player) override;
 
  public:

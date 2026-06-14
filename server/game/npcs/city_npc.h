@@ -17,14 +17,16 @@ class Bank;
 class CityNPC: public NPC {
  protected:
     virtual InteractResult on_heal(Player& player);
-    virtual InteractResult on_resurrect(Player& player, Bank& bank);
+    virtual InteractResult on_resurrect(Player& player);
     virtual InteractResult on_buy(const std::string& item_name, Player& player);
     virtual InteractResult on_sell(const std::string& item_name, Player& player);
-    virtual InteractResult on_deposit(const std::string& what, int amount, Player& player,
-                                      Bank& bank);
-    virtual InteractResult on_withdraw(const std::string& what, int amount, Player& player,
-                                       Bank& bank);
-    virtual InteractResult on_list(Player& player);
+    virtual InteractResult on_deposit_gold(int amount, Player& player, Bank& bank);
+    virtual InteractResult on_deposit_item(const std::string& item_name, Player& player,
+                                           Bank& bank);
+    virtual InteractResult on_withdraw_gold(int amount, Player& player, Bank& bank);
+    virtual InteractResult on_withdraw_item(const std::string& item_name, Player& player,
+                                            Bank& bank);
+    virtual InteractResult on_list(Player& player, Bank& bank);
 
  public:
     CityNPC(uint32_t id, const std::string& name, const Position& pos);

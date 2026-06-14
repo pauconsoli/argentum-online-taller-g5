@@ -7,6 +7,7 @@ target_sources(taller_game
     game_config.cpp
     game_formulas.cpp
     inventory.cpp
+    bank.cpp
     items/item.cpp
     items/weapon.cpp
     items/magic_weapon.cpp
@@ -31,6 +32,7 @@ target_sources(taller_game
     player_class.h
     player_race.h
     inventory.h
+    bank.h
     items/item.h
     items/weapon.h
     items/magic_weapon.h

@@ -20,17 +20,21 @@ InteractResult CityNPC::interact(NPCInteraction type, const std::string& arg, in
         case NPCInteraction::HEAL:
             return on_heal(player);
         case NPCInteraction::RESURRECT:
-            return on_resurrect(player, bank);
+            return on_resurrect(player);
         case NPCInteraction::BUY:
             return on_buy(arg, player);
         case NPCInteraction::SELL:
             return on_sell(arg, player);
-        case NPCInteraction::DEPOSIT:
-            return on_deposit(arg, amount, player, bank);
-        case NPCInteraction::WITHDRAW:
-            return on_withdraw(arg, amount, player, bank);
+        case NPCInteraction::DEPOSIT_GOLD:
+            return on_deposit_gold(amount, player, bank);
+        case NPCInteraction::DEPOSIT_ITEM:
+            return on_deposit_item(arg, player, bank);
+        case NPCInteraction::WITHDRAW_GOLD:
+            return on_withdraw_gold(amount, player, bank);
+        case NPCInteraction::WITHDRAW_ITEM:
+            return on_withdraw_item(arg, player, bank);
         case NPCInteraction::LIST:
-            return on_list(player);
+            return on_list(player, bank);
     }
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }
@@ -41,7 +45,7 @@ InteractResult CityNPC::on_heal(Player& /*player*/) {
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }
 
-InteractResult CityNPC::on_resurrect(Player& /*player*/, Bank& /*bank*/) {
+InteractResult CityNPC::on_resurrect(Player& /*player*/) {
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }
 
@@ -53,16 +57,24 @@ InteractResult CityNPC::on_sell(const std::string& /*item_name*/, Player& /*play
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }
 
-InteractResult CityNPC::on_deposit(const std::string& /*what*/, int /*amount*/, Player& /*player*/,
-                                   Bank& /*bank*/) {
+InteractResult CityNPC::on_deposit_gold(int /*amount*/, Player& /*player*/, Bank& /*bank*/) {
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }
 
-InteractResult CityNPC::on_withdraw(const std::string& /*what*/, int /*amount*/, Player& /*player*/,
-                                    Bank& /*bank*/) {
+InteractResult CityNPC::on_deposit_item(const std::string& /*item_name*/, Player& /*player*/,
+                                        Bank& /*bank*/) {
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }
 
-InteractResult CityNPC::on_list(Player& /*player*/) {
+InteractResult CityNPC::on_withdraw_gold(int /*amount*/, Player& /*player*/, Bank& /*bank*/) {
+    return InteractResult{InteractStatus::NOT_ALLOWED};
+}
+
+InteractResult CityNPC::on_withdraw_item(const std::string& /*item_name*/, Player& /*player*/,
+                                         Bank& /*bank*/) {
+    return InteractResult{InteractStatus::NOT_ALLOWED};
+}
+
+InteractResult CityNPC::on_list(Player& /*player*/, Bank& /*bank*/) {
     return InteractResult{InteractStatus::NOT_ALLOWED};
 }

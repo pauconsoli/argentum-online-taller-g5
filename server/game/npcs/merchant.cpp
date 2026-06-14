@@ -16,15 +16,18 @@ InteractResult Merchant::on_buy(const std::string& item_name, Player& player) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }
 
-    if (!registry.exists(item_name))
+    if (!registry.exists(item_name)) {
         return InteractResult{InteractStatus::ITEM_NOT_FOUND};
+    }
 
-    if (registry.is_magic_weapon(item_name))
+    if (registry.is_magic_weapon(item_name)) {
         return InteractResult{InteractStatus::NOT_ALLOWED};
+    }
 
     uint64_t price = registry.get_price(item_name);
-    if (!player.remove_gold(price))
+    if (!player.remove_gold(price)) {
         return InteractResult{InteractStatus::INSUFFICIENT_GOLD};
+    }
 
     auto item = registry.create_item(item_name);
     if (!player.get_inventory().can_add_item(*item)) {
@@ -58,7 +61,7 @@ InteractResult Merchant::on_sell(const std::string& item_name, Player& player) {
 }
 
 // para una primera instancia estoy considerando que todos los merchants venden pociones
-InteractResult Merchant::on_list(Player& player) {
+InteractResult Merchant::on_list(Player& player, Bank& /*bank*/) {
     if (player.is_dead()) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }

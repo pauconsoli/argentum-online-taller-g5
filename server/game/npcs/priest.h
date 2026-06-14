@@ -8,9 +8,9 @@
 class Priest: public CityNPC {
  protected:
     InteractResult on_heal(Player& player) override;
-    InteractResult on_resurrect(Player& player, Bank& bank) override;
+    InteractResult on_resurrect(Player& player) override;
     InteractResult on_buy(const std::string& item_name, Player& player) override;
-    InteractResult on_list(Player& player) override;
+    InteractResult on_list(Player& player, Bank& bank) override;
 
  public:
     Priest(uint32_t id, const Position& pos);

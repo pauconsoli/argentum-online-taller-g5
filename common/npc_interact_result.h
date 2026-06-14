@@ -15,6 +15,7 @@ enum class InteractStatus {
     PLAYER_DEAD,
     PLAYER_NOT_DEAD,  // intentó resucitar estando vivo
     ALREADY_FULL,
+    INVALID_AMOUNT
 };
 
 struct InteractResult {
@@ -26,6 +27,8 @@ struct InteractResult {
     // constructores para que Werror no me tire error
     InteractResult() = default;
     explicit InteractResult(InteractStatus status): status(status) {}
+    InteractResult(InteractStatus status, std::string item_name):
+        status(status), item_name(std::move(item_name)) {}
     InteractResult(InteractStatus status, std::string item_name, uint64_t gold_amount):
         status(status), item_name(std::move(item_name)), gold_amount(gold_amount) {}
 };
