@@ -406,6 +406,15 @@ NPC* World::get_npc(uint32_t npc_id) {
     return (it != npcs.end()) ? it->second.get() : nullptr;
 }
 
+std::vector<NPC*> World::get_npcs() {
+    std::vector<NPC*> active_npcs;
+    active_npcs.reserve(npcs.size());
+    for (auto& [id, npc] : npcs) {
+        active_npcs.push_back(npc.get());
+    }
+    return active_npcs;
+}
+
 CityNPC* World::get_city_npc(uint32_t npc_id) {
     return dynamic_cast<CityNPC*>(get_npc(npc_id));
 }

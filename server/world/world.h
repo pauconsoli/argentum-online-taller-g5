@@ -115,6 +115,9 @@ class World {
 
     void add_npc(std::unique_ptr<NPC> npc);
     NPC* get_npc(uint32_t npc_id);
+
+    std::vector<NPC*> get_npcs();
+
     CityNPC* get_city_npc(uint32_t npc_id);
     std::vector<Player*> get_players_near(const Position& pos, float range) const;
     InteractResult interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,

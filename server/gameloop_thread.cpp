@@ -64,6 +64,22 @@ void GameLoopThread::run() {
                     snapshots.push_back(ps);
                 }
 
+                std::vector<NPCSnapshot> npc_snapshots;
+                for (NPC* n : world.get_npcs()) {
+                    if (n->is_dead())
+                        continue;
+
+                    NPCSnapshot ns;
+                    ns.npc_id = n->get_id();
+                    ns.name = n->get_name();
+                    ns.x = n->get_position().x;
+                    ns.y = n->get_position().y;
+                    ns.hp = n->get_current_hp();
+                    ns.max_hp = n->get_max_hp();
+                    ns.is_hostile = n->is_hostile();
+                    npc_snapshots.push_back(ns);
+                }
+
                 std::vector<GroundItemSnapshot> ground_snapshots;
                 for (const auto& [pos, ground_item] : world.get_ground_items()) {
                     GroundItemSnapshot world_ground_item;
@@ -84,7 +100,8 @@ void GameLoopThread::run() {
                 // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo
                 // de los que cambiaron por ej
                 auto snapshot_update = std::make_shared<SnapshotUpdate>(
-                    tick_id, std::move(snapshots), std::move(ground_snapshots));
+                    tick_id, std::move(snapshots), std::move(npc_snapshots),
+                    std::move(ground_snapshots));
                 match.broadcast_update_to_all(snapshot_update);
             });
 
