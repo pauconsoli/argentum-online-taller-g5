@@ -11,16 +11,23 @@
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
+#include "server/game/npcs/banker.h"
 #include "server/game/npcs/hostile_npc.h"
+#include "server/game/npcs/merchant.h"
 #include "server/game/npcs/npc_registry.h"
+#include "server/game/npcs/priest.h"
 #include "server/world/dungeon.h"
 
 World::World(int width, int height):
-    map(width, height), occupied(height, std::vector<bool>(width, false)) {}
+    map(width, height), occupied(height, std::vector<bool>(width, false)) {
+    spawn_city_npcs();
+}
 
 World::World(WorldMap world_map):
     map(std::move(world_map)),
-    occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {}
+    occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {
+    spawn_city_npcs();
+}
 
 
 void World::add_player(std::unique_ptr<Player> player) {
@@ -628,6 +635,20 @@ void World::try_spawn_npc() {
             next_npc_id++, tpl->name, tpl->level, tpl->max_hp, tpl->defense, tpl->agility,
             tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
         add_npc(std::move(npc));
+    }
+}
+
+
+void World::spawn_city_npcs() {
+    for (const City* city : map.get_cities()) {
+        auto priest = std::make_unique<Priest>(next_npc_id++, city->get_priest_position());
+        add_npc(std::move(priest));
+
+        auto merchant = std::make_unique<Merchant>(next_npc_id++, city->get_merchant_position());
+        add_npc(std::move(merchant));
+
+        auto banker = std::make_unique<Banker>(next_npc_id++, city->get_banker_position());
+        add_npc(std::move(banker));
     }
 }
 

@@ -45,6 +45,7 @@ class WorldMap {
 
     City* get_closest_city(const Position& pos) const;
 
+    const std::vector<City*>& get_cities() const;
     const std::vector<Dungeon*>& get_dungeons() const;
 
     bool is_safe(const Position& pos) const;

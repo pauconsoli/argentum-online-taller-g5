@@ -61,6 +61,7 @@ class World {
     void try_spawn_npc();
     std::optional<Position> find_random_spawn_position(
         const std::vector<std::string>& allowed_zones) const;
+    void spawn_city_npcs();
 
  public:
     World(int width, int height);
