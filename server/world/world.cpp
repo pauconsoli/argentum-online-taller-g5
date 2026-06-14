@@ -21,12 +21,14 @@
 World::World(int width, int height):
     map(width, height), occupied(height, std::vector<bool>(width, false)) {
     spawn_city_npcs();
+    spawn_initial_hostile_npcs();
 }
 
 World::World(WorldMap world_map):
     map(std::move(world_map)),
     occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {
     spawn_city_npcs();
+    spawn_initial_hostile_npcs();
 }
 
 
@@ -671,6 +673,14 @@ void World::spawn_city_npcs() {
         auto banker = std::make_unique<Banker>(next_npc_id++, city->get_banker_position());
         add_npc(std::move(banker));
     }
+}
+
+void World::spawn_initial_hostile_npcs() {
+    int max_npcs = GameConfig::get_instance().get_npc_population_limit();
+    for (int i = 0; i < max_npcs; ++i) {
+        try_spawn_npc();
+    }
+    pending_events.clear();  // limpio los mensajes de aparición iniciales
 }
 
 void World::update(float tick_seconds) {
