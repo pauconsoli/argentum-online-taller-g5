@@ -26,6 +26,11 @@ struct GroundItem {  // por ahora así, no se si es lo mejor
     int quantity = 0;
 };
 
+struct PendingResurrection {
+    float timer;
+    Position destination;
+};
+
 class World {
  private:
     WorldMap map;
@@ -41,6 +46,8 @@ class World {
     uint32_t next_npc_id = 1;
 
     std::map<Position, GroundItem> ground_items;
+
+    std::map<uint32_t, PendingResurrection> pending_resurrections;
 
     Position calculate_destination(const Position& current, Direction direction) const;
 

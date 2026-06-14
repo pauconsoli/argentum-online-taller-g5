@@ -9,16 +9,19 @@ GameConfig::GameConfig():
     loaded(false),
     max_inventory_items(0),
     spawn_position{},
+    resurrect_still_factor(0.0f),
     initial_player_level(0),
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
     npc_gold_drop_factor(0.0f),
+    npc_buy_item_factor(0),
     level_limit_base(0.0f),
     level_limit_exp(0.0f),
     kill_bonus_factor(0.0f),
     death_exp_loss_mult(0.0f),
     critical_chance(0.0f),
+    critical_multiplier(0),
     evasion_threshold(0.0f),
     newbie_max_level(0),
     max_level_difference(0),
@@ -160,6 +163,11 @@ int GameConfig::get_initial_player_level() const {
     return initial_player_level;
 }
 
+float GameConfig::get_resurrect_still_factor() const {
+    check_loaded(loaded);
+    return resurrect_still_factor;
+}
+
 float GameConfig::get_gold_max_safe_base() const {
     check_loaded(loaded);
     return gold_max_safe_base;
@@ -175,6 +183,11 @@ float GameConfig::get_gold_excess_factor() const {
 float GameConfig::get_npc_gold_drop_factor() const {
     check_loaded(loaded);
     return npc_gold_drop_factor;
+}
+
+int GameConfig::get_npc_buy_item_factor() const {
+    check_loaded(loaded);
+    return npc_buy_item_factor;
 }
 
 float GameConfig::get_level_limit_base() const {
@@ -199,6 +212,11 @@ float GameConfig::get_critical_chance() const {
     check_loaded(loaded);
     return critical_chance;
 }
+int GameConfig::get_critical_multiplier() const {
+    check_loaded(loaded);
+    return critical_multiplier;
+}
+
 float GameConfig::get_evasion_threshold() const {
     check_loaded(loaded);
     return evasion_threshold;

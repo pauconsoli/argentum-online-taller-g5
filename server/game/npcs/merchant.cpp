@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 
+#include "server/game/game_config.h"
 #include "server/game/inventory.h"
 #include "server/game/items/item_registry.h"
 #include "server/game/player.h"
@@ -53,8 +54,8 @@ InteractResult Merchant::on_sell(const std::string& item_name, Player& player) {
     if (!item) {
         return InteractResult{InteractStatus::ITEM_NOT_FOUND};
     }
-    uint64_t sell_price = registry.get_price(item_name) /
-                          2;  // lo vendo a la mitad del precio original. ver de extraer al config
+    uint64_t sell_price =
+        registry.get_price(item_name) / GameConfig::get_instance().get_npc_buy_item_factor();
     player.add_gold(sell_price);
 
     return InteractResult{InteractStatus::SUCCESS, item_name, sell_price};

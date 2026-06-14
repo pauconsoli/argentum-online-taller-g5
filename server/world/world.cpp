@@ -63,8 +63,9 @@ void World::remove_player(uint32_t player_id) {
     auto it = players.find(player_id);
     if (it != players.end()) {
         Position pos = it->second->get_position();
-        occupied[pos.y][pos.x] = false;  // marco la posición como libre
-        players.erase(it);               // elimino el jugador
+        occupied[pos.y][pos.x] = false;          // marco la posición como libre
+        players.erase(it);                       // elimino el jugador
+        pending_resurrections.erase(player_id);  // cancelo la resurrección si se desconecta
     }
 }
 
@@ -314,6 +315,10 @@ bool World::move_character(uint32_t character_id, Direction direction) {
         return false;
     }
 
+    if (pending_resurrections.count(character_id)) {
+        return false;  // el fantasma está inmovilizado esperando la resurrección
+    }
+
     Position current = character->get_position();
     Position next = calculate_destination(current, direction);
 
@@ -364,18 +369,24 @@ bool World::start_resurrection(uint32_t player_id) {
         return false;  // no hay ciudades
     }
 
-    // TODO(Pau): La operación no debería ser inmediata según el enunciado.
-    // El fantasma debería quedar inmovilizado un tiempo proporcional a la distancia
-    // entre él y el sanador antes de trasladarse y resucitar
-
-    Position priest_pos = closest_city->get_priest_position();
-
-    if (teleport_player(player_id, priest_pos)) {
-        // TODO(Pau): Acá se debería llamar a la lógica en Player para restaurar salud, etc.
-        return true;
+    if (pending_resurrections.count(player_id)) {
+        return false;  // ya está en proceso de resurrección
     }
 
-    return false;
+    Position priest_pos = closest_city->get_priest_position();
+    Position player_pos = player->get_position();
+
+    // calculo distancia entre el jugador y el sacerdote para determinar el tiempo de espera antes
+    // de la resurrección
+    int dx = priest_pos.x - player_pos.x;
+    int dy = priest_pos.y - player_pos.y;
+    float distance = std::sqrt(dx * dx + dy * dy);
+
+    // Tiempo base: 0.1 segundos por cada tile de distancia (configurable si lo pasás a toml luego)
+    float wait_time = distance * GameConfig::get_instance().get_resurrect_still_factor();
+
+    pending_resurrections[player_id] = {wait_time, priest_pos};
+    return true;
 }
 
 void World::add_npc(std::unique_ptr<NPC> npc) {
@@ -471,7 +482,7 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
-        base_damage *= 2;  // extraer a config
+        base_damage *= GameConfig::get_instance().get_critical_multiplier();
     }
 
     bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
@@ -669,6 +680,23 @@ void World::update(float tick_seconds) {
                 GameFormulas::calculate_meditation_mana_recovery(*player, tick_seconds) :
                 GameFormulas::calculate_time_mana_recovery(*player, tick_seconds);
         player->restore_mana(mana_regen);
+    }
+
+    // procesar resurrecciones pendientes
+    for (auto it = pending_resurrections.begin(); it != pending_resurrections.end();) {
+        it->second.timer -= tick_seconds;
+        if (it->second.timer <= 0.0f) {
+            uint32_t pid = it->first;
+            if (teleport_player(pid, it->second.destination)) {
+                if (Player* p = get_player(pid)) {
+                    p->resurrect();  // le restaura salud, mana y quita el estado fantasma
+                    // chat message?
+                }
+            }
+            it = pending_resurrections.erase(it);
+        } else {
+            ++it;
+        }
     }
 
     // acciones de NPCs hostiles
