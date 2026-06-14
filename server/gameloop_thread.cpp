@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/updates/chat_message_update.h"
 #include "common/updates/snapshot_update.h"
 #include "game/game_config.h"
 #include "game/match.h"
@@ -25,11 +26,21 @@ void GameLoopThread::run() {
 
         while (should_keep_running()) {
 
-            server.for_each_match([tick_seconds, tick_id](Match& match) {
+            server.for_each_match([this, tick_seconds, tick_id](Match& match) {
                 match.tick();
 
                 World& world = match.get_world();
                 world.update(tick_seconds);
+
+                auto events = world.pop_events();
+                for (const auto& ev : events) {
+                    auto msg_update = std::make_shared<ChatMessageUpdate>(ev.target_id, ev.message);
+                    if (ev.target_id == 0) {
+                        match.broadcast_update_to_all(msg_update);
+                    } else {
+                        server.send_update_to_player(ev.target_id, msg_update);
+                    }
+                }
 
                 std::vector<PlayerSnapshot> snapshots;
                 for (Player* p : world.get_players()) {

@@ -589,10 +589,19 @@ void World::npc_move_towards(NPC* npc, const Position& target_pos) {
 void World::npc_attack(NPC* npc, Character* target) {
     int base_damage = npc->calculate_base_damage();
     bool evaded = GameFormulas::calculate_evasion(*target);
-    if (!evaded)
-        handle_successful_attack(npc, target, base_damage);
-    if (target->is_dead())
+
+    if (!evaded) {
+        int real_damage = handle_successful_attack(npc, target, base_damage);
+        pending_events.push_back({target->get_id(), npc->get_name() + " te causó " +
+                                                        std::to_string(real_damage) + " de daño"});
+    } else {
+        pending_events.push_back({target->get_id(), "Esquivaste el ataque de " + npc->get_name()});
+    }
+
+    if (target->is_dead()) {
         handle_target_death(npc, target);
+        pending_events.push_back({target->get_id(), "¡" + npc->get_name() + " te mató!"});
+    }
 }
 
 std::optional<Position> World::find_random_spawn_position(
@@ -645,6 +654,7 @@ void World::try_spawn_npc() {
         auto npc = std::make_unique<HostileNPC>(
             next_npc_id++, tpl->name, tpl->level, tpl->max_hp, tpl->defense, tpl->agility,
             tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
+        pending_events.push_back({0, "¡Un " + npc->get_name() + " apareció en el mundo!"});
         add_npc(std::move(npc));
     }
 }
@@ -663,8 +673,6 @@ void World::spawn_city_npcs() {
     }
 }
 
-// esto podría devolver un vector de structs (Stats o similar) o algo indicando
-// QUÉ cambió  y para QUE JUGADOR
 void World::update(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())
@@ -690,7 +698,9 @@ void World::update(float tick_seconds) {
             if (teleport_player(pid, it->second.destination)) {
                 if (Player* p = get_player(pid)) {
                     p->resurrect();  // le restaura salud, mana y quita el estado fantasma
-                    // chat message?
+                    pending_events.push_back(
+                        {pid, "¡Resucitaste en " +
+                                  map.get_closest_city(p->get_position())->get_name() + "!"});
                 }
             }
             it = pending_resurrections.erase(it);
@@ -728,4 +738,10 @@ void World::update(float tick_seconds) {
         npc_spawn_timer = 0.0f;
         try_spawn_npc();
     }
+}
+
+std::vector<WorldEvent> World::pop_events() {
+    std::vector<WorldEvent> events = std::move(pending_events);
+    pending_events.clear();
+    return events;
 }

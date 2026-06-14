@@ -31,6 +31,11 @@ struct PendingResurrection {
     Position destination;
 };
 
+struct WorldEvent {
+    uint32_t target_id;  // 0 indica un broadcast a todos, >0 es a un jugador especifico
+    std::string message;
+};
+
 class World {
  private:
     WorldMap map;
@@ -48,6 +53,7 @@ class World {
     std::map<Position, GroundItem> ground_items;
 
     std::map<uint32_t, PendingResurrection> pending_resurrections;
+    std::vector<WorldEvent> pending_events;
 
     Position calculate_destination(const Position& current, Direction direction) const;
 
@@ -114,6 +120,7 @@ class World {
     Bank& get_bank();
 
     void update(float tick_seconds);
+    std::vector<WorldEvent> pop_events();
 
     // solo lo uso para poner celdas bloqueantes en el mapa en los tests
     void set_cell(const Position& pos, const Cell& cell);
