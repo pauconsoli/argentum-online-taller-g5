@@ -59,7 +59,8 @@ class World {
     void npc_move_towards(NPC* npc, const Position& target_pos);
     void npc_attack(NPC* npc, Character* target);
     void try_spawn_npc();
-    std::optional<Position> find_random_spawn_position() const;
+    std::optional<Position> find_random_spawn_position(
+        const std::vector<std::string>& allowed_zones) const;
 
  public:
     World(int width, int height);

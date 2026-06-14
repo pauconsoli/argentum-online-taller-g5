@@ -11,6 +11,9 @@
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
+#include "server/game/npcs/hostile_npc.h"
+#include "server/game/npcs/npc_registry.h"
+#include "server/world/dungeon.h"
 
 World::World(int width, int height):
     map(width, height), occupied(height, std::vector<bool>(width, false)) {}
@@ -574,6 +577,35 @@ void World::npc_attack(NPC* npc, Character* target) {
         handle_target_death(npc, target);
 }
 
+std::optional<Position> World::find_random_spawn_position(
+    const std::vector<std::string>& allowed_zones) const {
+    static constexpr int MAX_ATTEMPTS =
+        50;  // para evitar loops infinitos si el mapa está muy lleno o no hay zonas válidas
+
+    for (int i = 0; i < MAX_ATTEMPTS; ++i) {
+        int x = GameFormulas::get_random_int(0, map.get_width() - 1);
+        int y = GameFormulas::get_random_int(0, map.get_height() - 1);
+        Position pos{x, y};
+
+        // descartar posiciones inválidas
+        if (map.is_position_blocked(pos) || is_position_occupied(pos) || map.is_safe(pos))
+            continue;
+
+        const Zone* zone = map.get_zone(pos);
+        bool is_dungeon = (dynamic_cast<const Dungeon*>(zone) != nullptr);
+
+        // all no incluye dungeons (ni zonas seguras obviamente)
+        // dungeon es solo mazmorras
+        for (const std::string& z : allowed_zones) {
+            if (z == "all" && !is_dungeon)
+                return pos;
+            if (z == "dungeon" && is_dungeon)
+                return pos;
+        }
+    }
+    return std::nullopt;
+}
+
 void World::try_spawn_npc() {
     int current = static_cast<int>(std::count_if(npcs.begin(), npcs.end(), [](const auto& kv) {
         return kv.second->is_hostile() && !kv.second->is_dead();
@@ -583,7 +615,20 @@ void World::try_spawn_npc() {
     if (current >= max_npcs)
         return;
 
-    // TODO(Pau): elegir zona válida (dungeon o zona no segura)
+    auto templates = NPCRegistry::get_instance().get_all_templates();
+    if (templates.empty())
+        return;
+
+    int template_idx = GameFormulas::get_random_int(0, templates.size() - 1);
+    const NPCTemplate* tpl = templates[template_idx];
+
+    if (auto pos =
+            find_random_spawn_position(tpl->zones)) {  // busco con las ZONAS PERMITIDAS de ese NPC
+        auto npc = std::make_unique<HostileNPC>(
+            next_npc_id++, tpl->name, tpl->level, tpl->max_hp, tpl->defense, tpl->agility,
+            tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
+        add_npc(std::move(npc));
+    }
 }
 
 // esto podría devolver un vector de structs (Stats o similar) o algo indicando
