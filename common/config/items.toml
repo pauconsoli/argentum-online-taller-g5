@@ -9,6 +9,7 @@ type = "weapon"
 min_damage = 2
 max_damage = 5
 ranged = false
+price = 10
 
 [items.axe]
 name = "Hacha"
@@ -16,6 +17,7 @@ type = "weapon"
 min_damage = 4
 max_damage = 5
 ranged = false
+price = 20
 
 [items.hammer]
 name = "Martillo"
@@ -23,6 +25,7 @@ type = "weapon"
 min_damage = 1
 max_damage = 9
 ranged = false
+price = 15
 
 [items.simple_bow]
 name = "Arco simple"
@@ -30,6 +33,7 @@ type = "weapon"
 min_damage = 1
 max_damage = 4
 ranged = true
+price = 10
 
 [items.compound_bow]
 name = "Arco compuesto"
@@ -37,6 +41,7 @@ type = "weapon"
 min_damage = 4
 max_damage = 16
 ranged = true
+price = 50
 
 [items.leather_armor]
 name = "Armadura de cuero"
@@ -44,6 +49,7 @@ type = "defensive"
 slot = "armor"
 min_defense = 2
 max_defense = 6
+price = 10
 
 [items.plate_armor]
 name = "Armadura de placas"
@@ -51,6 +57,7 @@ type = "defensive"
 slot = "armor"
 min_defense = 15
 max_defense = 30
+price = 100
 
 [items.blue_tunic]
 name = "Túnica azul"
@@ -58,6 +65,7 @@ type = "defensive"
 slot = "armor"
 min_defense = 6
 max_defense = 10
+price = 20
 
 [items.hood]
 name = "Capucha"
@@ -65,6 +73,7 @@ type = "defensive"
 slot = "helmet"
 min_defense = 1
 max_defense = 4
+price = 10
 
 [items.iron_helmet]
 name = "Casco de hierro"
@@ -72,6 +81,7 @@ type = "defensive"
 slot = "helmet"
 min_defense = 4
 max_defense = 8
+price = 30
 
 [items.magic_hat]
 name = "Sombrero mágico"
@@ -79,6 +89,7 @@ type = "defensive"
 slot = "helmet"
 min_defense = 4
 max_defense = 12
+price = 50
 
 [items.turtle_shield]
 name = "Escudo de tortuga"
@@ -86,6 +97,7 @@ type = "defensive"
 slot = "shield"
 min_defense = 1
 max_defense = 2
+price = 5
 
 [items.iron_shield]
 name = "Escudo de hierro"
@@ -93,6 +105,7 @@ type = "defensive"
 slot = "shield"
 min_defense = 1
 max_defense = 4
+price = 10
 
 [items.ash_branch]
 name = "Vara de fresno"
@@ -103,6 +116,7 @@ max_damage = 4
 min_heal = 0
 max_heal = 0
 mana_cost = 5
+price = 10
 
 [items.knobby_staff]
 name = "Báculo nudoso"
@@ -113,6 +127,7 @@ max_damage = 8
 min_heal = 0
 max_heal = 0
 mana_cost = 15
+price = 20
 
 [items.attached_staff]
 name = "Báculo engarzado"
@@ -123,6 +138,7 @@ max_damage = 20
 min_heal = 0
 max_heal = 0
 mana_cost = 30
+price = 50
 
 [items.elven_flute]
 name = "Flauta élfica"
@@ -133,15 +149,18 @@ max_damage = 0
 min_heal = 20
 max_heal = 40
 mana_cost = 100
+price = 100
 
 [items.health_potion]
 name = "Pocion de vida"
 type = "consumable"
 consumable_type = "health"
 restore = 50
+price = 30
 
 [items.mana_potion]
 name = "Pocion de mana"
 type = "consumable"
 consumable_type = "mana"
 restore = 50
+price = 30

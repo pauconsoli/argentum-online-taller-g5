@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 enum class InteractStatus {
@@ -21,6 +22,12 @@ struct InteractResult {
     std::string item_name;     // qué item se compró/vendió/depositó (puede estar vacío)
     uint64_t gold_amount = 0;  // cuánto oro se movió en la transacción (puede ser 0)
     std::vector<std::string> catalog;  // para cuando se necesite
+
+    // constructores para que Werror no me tire error
+    InteractResult() = default;
+    explicit InteractResult(InteractStatus status): status(status) {}
+    InteractResult(InteractStatus status, std::string item_name, uint64_t gold_amount):
+        status(status), item_name(std::move(item_name)), gold_amount(gold_amount) {}
 };
 
 #endif

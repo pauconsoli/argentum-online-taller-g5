@@ -1,10 +1,15 @@
 #include "server/game/npcs/priest.h"
 
+#include <utility>
+
+#include "server/game/inventory.h"
+#include "server/game/items/item_registry.h"
 #include "server/game/player.h"
 
 Priest::Priest(uint32_t id, const Position& pos): CityNPC(id, "Sacerdote", pos) {}
 
 InteractResult Priest::on_heal(Player& player) {
+
     if (player.is_dead()) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }
@@ -23,6 +28,7 @@ InteractResult Priest::on_heal(Player& player) {
 }
 
 InteractResult Priest::on_resurrect(Player& player, Bank& /*bank*/) {
+
     if (!player.is_dead()) {
         return InteractResult{InteractStatus::PLAYER_NOT_DEAD};
     }
@@ -33,16 +39,33 @@ InteractResult Priest::on_resurrect(Player& player, Bank& /*bank*/) {
 }
 
 InteractResult Priest::on_buy(const std::string& item_name, Player& player) {
+    const ItemRegistry& registry = ItemRegistry::get_instance();
+
     if (player.is_dead()) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }
 
-    // TODO(Pau): Validar que el item (item_name) sea una poción, báculo o vara.
-    // TODO(Pau): Obtener el precio del item (ej. desde ItemRegistry).
-    // TODO(Pau): Verificar saldo con player.get_gold() y descontar con player.remove_gold()
-    // TODO(Pau): Verificar espacio y agregarlo con player.get_inventory().add_item()
+    if (!registry.exists(item_name)) {
+        return InteractResult{InteractStatus::ITEM_NOT_FOUND};
+    }
 
-    return InteractResult{InteractStatus::SUCCESS, item_name, 0};
+    if (!registry.is_potion(item_name) && !registry.is_magic_weapon(item_name)) {
+        return InteractResult{InteractStatus::NOT_ALLOWED};
+    }
+
+    uint64_t price = registry.get_price(item_name);
+    if (!player.remove_gold(price)) {
+        return InteractResult{InteractStatus::INSUFFICIENT_GOLD};
+    }
+
+    auto item = registry.create_item(item_name);
+    if (!player.get_inventory().can_add_item(*item)) {
+        player.add_gold(price);  // revertir el cobro
+        return InteractResult{InteractStatus::INVENTORY_FULL};
+    }
+
+    player.get_inventory().add_item(std::move(item), 1);
+    return InteractResult{InteractStatus::SUCCESS, item_name, price};
 }
 
 InteractResult Priest::on_list(Player& player) {
@@ -50,8 +73,14 @@ InteractResult Priest::on_list(Player& player) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }
 
-    // TODO(Pau): Enviar al jugador la lista de los ítems en venta por el sacerdote
-    // (Pociones, varas y báculos).
+    const ItemRegistry& registry = ItemRegistry::get_instance();
+    InteractResult result{InteractStatus::SUCCESS};
 
-    return InteractResult{InteractStatus::SUCCESS};
+    const auto& potions = registry.get_potion_keys();
+    const auto& magic = registry.get_magic_weapon_keys();
+
+    result.catalog.insert(result.catalog.end(), potions.begin(), potions.end());
+    result.catalog.insert(result.catalog.end(), magic.begin(), magic.end());
+
+    return result;
 }
