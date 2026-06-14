@@ -439,7 +439,10 @@ void GameClient::run() {
                     my_gold = iu.get_gold();
                     break;
                 }
-                case UpdateType::ATTACKED: {
+                case UpdateType::ATTACKED: {  // TODO(Chiari): o reni, hay que ver si los mensajes
+                                              // dejarlos acá o que se manden en un
+                                              // ChatMessageUpdate desde el server
+                    // ver cómo lo hago en interact_npc_command.cpp
                     const auto& au = static_cast<const AttackUpdate&>(*update);
                     const AttackResult& r = au.get_result();
                     if (r.evaded) {
