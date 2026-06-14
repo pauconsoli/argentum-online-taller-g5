@@ -5,6 +5,7 @@
 #include <queue>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "server/game/game_config.h"
@@ -82,7 +83,9 @@ Character* World::get_character(uint32_t id) {
     if (Player* p = get_player(id)) {
         return p;
     }
-    // TODO(Pau): buscar en mapa de NPCs cuando existan
+    if (NPC* n = get_npc(id)) {
+        return n;
+    }
     return nullptr;
 }
 
@@ -365,15 +368,66 @@ bool World::start_resurrection(uint32_t player_id) {
     return false;
 }
 
+void World::add_npc(std::unique_ptr<NPC> npc) {
+    if (!npc)
+        return;
+    Position pos = npc->get_position();
+    if (!map.is_valid_position(pos) || map.is_position_blocked(pos) || is_position_occupied(pos))
+        return;
+    occupied[pos.y][pos.x] = true;
+    npcs[npc->get_id()] = std::move(npc);
+}
+
+NPC* World::get_npc(uint32_t npc_id) {
+    auto it = npcs.find(npc_id);
+    return (it != npcs.end()) ? it->second.get() : nullptr;
+}
+
+CityNPC* World::get_city_npc(uint32_t npc_id) {
+    return dynamic_cast<CityNPC*>(get_npc(npc_id));
+}
+
+Bank& World::get_bank() {
+    return bank;
+}
+
+std::vector<Player*> World::get_players_near(const Position& pos, float range) const {
+    std::vector<Player*> nearby;
+    for (auto& [id, player] : players) {
+        if (player->is_dead())
+            continue;
+        int dx = player->get_position().x - pos.x;
+        int dy = player->get_position().y - pos.y;
+        if ((dx * dx + dy * dy) <= static_cast<int>(range * range))
+            nearby.push_back(player.get());
+    }
+    return nearby;
+}
+
+InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
+                                        const std::string& arg, int amount) {
+    Player* player = get_player(player_id);
+    CityNPC* npc = get_city_npc(npc_id);
+
+    if (!player || !npc)
+        return InteractResult{InteractStatus::INVALID_TARGET};
+
+    // el jugador tiene que estar adyacente al NPC
+    const Position& pp = player->get_position();
+    const Position& np = npc->get_position();
+    if (std::abs(pp.x - np.x) > 1 || std::abs(pp.y - np.y) > 1)
+        return InteractResult{InteractStatus::OUT_OF_RANGE};
+
+    return npc->interact(type, arg, amount, *player, bank);
+}
+
 // SOLO PARA TESTS
 void World::set_cell(const Position& pos, const Cell& cell) {
     map.set_cell(pos, cell);
 }
 
 
-// TODO(Pau): clanes y zonas seguras
-// esto hay que adaptarlo bien a NPCs, esta adaptado a la mitad
-// el target puede ser NPC, pero en este momento no puede usarse para que un NPC ataqie
+// TODO(Pau): clanes
 
 // otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
@@ -497,6 +551,41 @@ bool World::equip_item(uint32_t player_id, int slot_index) {
     return true;
 }
 
+void World::npc_move_towards(NPC* npc, const Position& target_pos) {
+    Position curr = npc->get_position();
+    int dx = target_pos.x - curr.x;
+    int dy = target_pos.y - curr.y;
+
+    Direction dir;
+    if (std::abs(dx) >= std::abs(dy))
+        dir = (dx > 0) ? Direction::RIGHT : Direction::LEFT;
+    else
+        dir = (dy > 0) ? Direction::DOWN : Direction::UP;
+
+    move_character(npc->get_id(), dir);
+}
+
+void World::npc_attack(NPC* npc, Character* target) {
+    int base_damage = npc->calculate_base_damage();
+    bool evaded = GameFormulas::calculate_evasion(*target);
+    if (!evaded)
+        handle_successful_attack(npc, target, base_damage);
+    if (target->is_dead())
+        handle_target_death(npc, target);
+}
+
+void World::try_spawn_npc() {
+    int current = static_cast<int>(std::count_if(npcs.begin(), npcs.end(), [](const auto& kv) {
+        return kv.second->is_hostile() && !kv.second->is_dead();
+    }));
+
+    int max_npcs = GameConfig::get_instance().get_npc_population_limit();
+    if (current >= max_npcs)
+        return;
+
+    // TODO(Pau): elegir zona válida (dungeon o zona no segura)
+}
+
 // esto podría devolver un vector de structs (Stats o similar) o algo indicando
 // QUÉ cambió  y para QUE JUGADOR
 void World::update(float tick_seconds) {
@@ -516,6 +605,33 @@ void World::update(float tick_seconds) {
         player->restore_mana(mana_regen);
     }
 
-    // TODO(Pau): Update NPC states
-    // TODO(Pau): Process world events (respawns, item drops, etc)
+    // acciones de NPCs hostiles
+    for (auto& [id, npc] : npcs) {
+        if (npc->is_dead() || !npc->is_hostile())
+            continue;
+
+        auto nearby = get_players_near(npc->get_position(), npc->get_attack_range());
+        NPCBehavior behavior = npc->update(tick_seconds, nearby);
+
+        switch (behavior.action) {
+            case NPCAction::CHASE:
+                npc_move_towards(npc.get(), behavior.target_position);
+                break;
+            case NPCAction::ATTACK: {
+                Character* target = get_character(behavior.target_id);
+                if (target)
+                    npc_attack(npc.get(), target);
+                break;
+            }
+            case NPCAction::STILL:
+                break;
+        }
+    }
+
+    // spawn de NPCs hostiles
+    npc_spawn_timer += tick_seconds;
+    if (npc_spawn_timer >= GameConfig::get_instance().get_npc_spawn_time_seconds()) {
+        npc_spawn_timer = 0.0f;
+        try_spawn_npc();
+    }
 }

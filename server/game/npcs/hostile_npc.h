@@ -31,6 +31,10 @@ class HostileNPC: public NPC {
     }
 
     Loot drop_loot() override;
+
+    int get_attack_range() const {
+        return attack_range;
+    }
 };
 
 #endif

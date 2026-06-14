@@ -5,14 +5,18 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "common/attack_result.h"
 #include "common/direction.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
+#include "server/game/bank.h"
 #include "server/game/items/item.h"
 #include "server/game/loot.h"
+#include "server/game/npcs/city_npc.h"
+#include "server/game/npcs/npc.h"
 #include "server/game/player.h"
 #include "world_map.h"
 
@@ -30,6 +34,12 @@ class World {
     std::vector<std::vector<bool>>
         occupied;  // matriz booleana para saber si una posición está ocupada (true) o no (false)
 
+    std::map<uint32_t, std::unique_ptr<NPC>> npcs;  // npc_id -> NPC
+    Bank bank;
+
+    float npc_spawn_timer = 0.0f;
+    uint32_t next_npc_id = 1;
+
     std::map<Position, GroundItem> ground_items;
 
     Position calculate_destination(const Position& current, Direction direction) const;
@@ -45,6 +55,11 @@ class World {
                                             bool is_healing) const;
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
+
+    void npc_move_towards(NPC* npc, const Position& target_pos);
+    void npc_attack(NPC* npc, Character* target);
+    void try_spawn_npc();
+    std::optional<Position> find_random_spawn_position() const;
 
  public:
     World(int width, int height);
@@ -80,6 +95,14 @@ class World {
     bool start_resurrection(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
+
+    void add_npc(std::unique_ptr<NPC> npc);
+    NPC* get_npc(uint32_t npc_id);
+    CityNPC* get_city_npc(uint32_t npc_id);
+    std::vector<Player*> get_players_near(const Position& pos, float range) const;
+    InteractResult interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
+                                     const std::string& arg, int amount);
+    Bank& get_bank();
 
     void update(float tick_seconds);
 

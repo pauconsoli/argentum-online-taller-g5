@@ -41,6 +41,10 @@ class NPC: public Character {
     virtual NPCBehavior update(float time, const std::vector<Player*>& nearby_targets) = 0;
     virtual bool is_hostile() const = 0;
 
+    virtual int get_attack_range() const {
+        return 0;
+    }
+
     const std::string& get_name() const;
 };
 

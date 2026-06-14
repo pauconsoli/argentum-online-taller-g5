@@ -13,7 +13,7 @@ int NPC::get_agility() const {
 }
 
 int NPC::calculate_base_damage() const {
-    return 0;  // TODO(pau): implementar rand(min_damage, max_damage)
+    return 0;
 }
 
 const std::string& NPC::get_name() const {

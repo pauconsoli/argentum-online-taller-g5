@@ -15,7 +15,9 @@ enum class InteractStatus {
     PLAYER_DEAD,
     PLAYER_NOT_DEAD,  // intentó resucitar estando vivo
     ALREADY_FULL,
-    INVALID_AMOUNT
+    INVALID_AMOUNT,
+    OUT_OF_RANGE,
+    INVALID_TARGET
 };
 
 struct InteractResult {
