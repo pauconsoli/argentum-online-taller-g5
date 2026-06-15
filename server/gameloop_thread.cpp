@@ -1,6 +1,7 @@
 #include "gameloop_thread.h"
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <utility>
@@ -23,6 +24,13 @@ void GameLoopThread::run() {
         float tick_seconds =
             sleep_ms /
             1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
+
+        // OPTIMIZACIÓN DEL GAMELOOP
+        using Clock = std::chrono::steady_clock;
+        using Ms = std::chrono::duration<double, std::milli>;
+        const Ms rate(sleep_ms);
+
+        auto t1 = Clock::now();
 
         while (should_keep_running()) {
 
@@ -107,8 +115,26 @@ void GameLoopThread::run() {
 
             tick_id++;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+            // OPTIMIZACIÓN DEL GAMELOOP: calculo lo que tardó el tick y sleep solo el tiempo restante
+            auto t2 = Clock::now();
+            Ms passed = t2 - t1;
+            Ms rest = rate - passed;
+
+            if (rest.count() < 0) {
+                Ms behind = -rest;  // para que sea +
+                Ms skipped_time = Ms(behind.count() - std::fmod(behind.count(), rate.count()));
+                uint32_t skipped_ticks = static_cast<uint32_t>(skipped_time.count() / rate.count());
+
+                t1 += std::chrono::duration_cast<Clock::duration>(skipped_time);
+                tick_id += skipped_ticks;
+
+                rest = rate - Ms(std::fmod(behind.count(), rate.count()));
+            }
+
+            std::this_thread::sleep_for(rest);
+            t1 += std::chrono::duration_cast<Clock::duration>(rate);
         }
+
     } catch (const std::exception& e) {
         std::cerr << "[GAMELOOP] Error: " << e.what() << "\n";
     }
