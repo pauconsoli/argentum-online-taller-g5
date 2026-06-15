@@ -200,6 +200,7 @@ void MainWindow::connect_adapter_signals() {
             return;
         QMessageBox::warning(this, tr("Desconectado"), tr("Se cerró la conexión con el servidor."));
         teardown_session();
+        close();
     });
 }
 
