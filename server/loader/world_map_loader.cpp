@@ -26,7 +26,7 @@ static std::pair<TerrainType, bool> char_to_cell(char c) {
             return {TerrainType::WATER, true};
         case '#':
             return {TerrainType::STONE, true};
-        case 'w':
+        case 'W':
             return {TerrainType::WOOD, false};
         case 'd':
             return {TerrainType::DUNGEON_FLOOR_1, false};

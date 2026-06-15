@@ -90,6 +90,7 @@ constitution_bonus = 3
 [world]
 spawn_x = 22
 spawn_y = 10
+resurrect_still_factor = 0.1
 
 [level]
 initial_player_level = 1
@@ -110,6 +111,7 @@ max_safe_base = 100
 max_safe_exp = 1.1
 excess_factor = 0.5
 npc_drop_factor  = 0.2
+npc_buy_item_factor = 2
 
 # ---------------------------------
 # Experience 
@@ -127,6 +129,7 @@ death_exp_loss_mult = 0.4
 
 [combat]
 critical_chance = 0.05
+critical_multiplier = 2
 evasion_threshold = 0.001
 newbie_max_level = 0     # DEMO: en prod debería ser 12
 max_level_difference = 10
@@ -150,6 +153,8 @@ drop_potion_prob = 0.01
 drop_item_prob = 0.01
 gold_drop_min_factor = 0.01   
 gold_drop_max_factor = 0.20
+population_limit = 15
+spawn_time_seconds = 10
 
 # ---------------------------------
 # Server 

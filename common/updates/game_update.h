@@ -22,6 +22,7 @@ enum class UpdateType : uint8_t {
     ATTACKED,
     REVIVE,
     INVENTORY,
+    CATALOG,
     CHAT_MSG,
 };
 

@@ -1,0 +1,86 @@
+#include "server/game/npcs/priest.h"
+
+#include <utility>
+
+#include "server/game/inventory.h"
+#include "server/game/items/item_registry.h"
+#include "server/game/player.h"
+
+Priest::Priest(uint32_t id, const Position& pos): CityNPC(id, "Sacerdote", pos) {}
+
+InteractResult Priest::on_heal(Player& player) {
+
+    if (player.is_dead()) {
+        return InteractResult{InteractStatus::PLAYER_DEAD};
+    }
+
+    bool hp_full = player.get_current_hp() == player.get_max_hp();
+    bool mana_full = player.get_current_mana() == player.get_max_mana();
+
+    if (hp_full && mana_full) {
+        return InteractResult{InteractStatus::ALREADY_FULL};
+    }
+
+    player.heal(player.get_max_hp());
+    player.restore_mana(player.get_max_mana());
+
+    return InteractResult{InteractStatus::SUCCESS};
+}
+
+InteractResult Priest::on_resurrect(Player& player) {
+
+    if (!player.is_dead()) {
+        return InteractResult{InteractStatus::PLAYER_NOT_DEAD};
+    }
+
+    player.resurrect();
+
+    return InteractResult{InteractStatus::SUCCESS};
+}
+
+InteractResult Priest::on_buy(const std::string& item_name, Player& player) {
+    const ItemRegistry& registry = ItemRegistry::get_instance();
+
+    if (player.is_dead()) {
+        return InteractResult{InteractStatus::PLAYER_DEAD};
+    }
+
+    if (!registry.exists(item_name)) {
+        return InteractResult{InteractStatus::ITEM_NOT_FOUND};
+    }
+
+    if (!registry.is_potion(item_name) && !registry.is_magic_weapon(item_name)) {
+        return InteractResult{InteractStatus::NOT_ALLOWED};
+    }
+
+    uint64_t price = registry.get_price(item_name);
+    if (!player.remove_gold(price)) {
+        return InteractResult{InteractStatus::INSUFFICIENT_GOLD};
+    }
+
+    auto item = registry.create_item(item_name);
+    if (!player.get_inventory().can_add_item(*item)) {
+        player.add_gold(price);  // revertir el cobro
+        return InteractResult{InteractStatus::INVENTORY_FULL};
+    }
+
+    player.get_inventory().add_item(std::move(item), 1);
+    return InteractResult{InteractStatus::SUCCESS, item_name, price};
+}
+
+InteractResult Priest::on_list(Player& player, Bank& /*bank*/) {
+    if (player.is_dead()) {
+        return InteractResult{InteractStatus::PLAYER_DEAD};
+    }
+
+    const ItemRegistry& registry = ItemRegistry::get_instance();
+    InteractResult result{InteractStatus::SUCCESS};
+
+    const auto& potions = registry.get_potion_keys();
+    const auto& magic = registry.get_magic_weapon_keys();
+
+    result.catalog.insert(result.catalog.end(), potions.begin(), potions.end());
+    result.catalog.insert(result.catalog.end(), magic.begin(), magic.end());
+
+    return result;
+}

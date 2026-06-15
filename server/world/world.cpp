@@ -5,18 +5,31 @@
 #include <queue>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
+#include "server/game/npcs/banker.h"
+#include "server/game/npcs/hostile_npc.h"
+#include "server/game/npcs/merchant.h"
+#include "server/game/npcs/npc_registry.h"
+#include "server/game/npcs/priest.h"
+#include "server/world/dungeon.h"
 
 World::World(int width, int height):
-    map(width, height), occupied(height, std::vector<bool>(width, false)) {}
+    map(width, height), occupied(height, std::vector<bool>(width, false)) {
+    spawn_city_npcs();
+    spawn_initial_hostile_npcs();
+}
 
 World::World(WorldMap world_map):
     map(std::move(world_map)),
-    occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {}
+    occupied(map.get_height(), std::vector<bool>(map.get_width(), false)) {
+    spawn_city_npcs();
+    spawn_initial_hostile_npcs();
+}
 
 
 void World::add_player(std::unique_ptr<Player> player) {
@@ -52,8 +65,9 @@ void World::remove_player(uint32_t player_id) {
     auto it = players.find(player_id);
     if (it != players.end()) {
         Position pos = it->second->get_position();
-        occupied[pos.y][pos.x] = false;  // marco la posición como libre
-        players.erase(it);               // elimino el jugador
+        occupied[pos.y][pos.x] = false;          // marco la posición como libre
+        players.erase(it);                       // elimino el jugador
+        pending_resurrections.erase(player_id);  // cancelo la resurrección si se desconecta
     }
 }
 
@@ -82,7 +96,9 @@ Character* World::get_character(uint32_t id) {
     if (Player* p = get_player(id)) {
         return p;
     }
-    // TODO(Pau): buscar en mapa de NPCs cuando existan
+    if (NPC* n = get_npc(id)) {
+        return n;
+    }
     return nullptr;
 }
 
@@ -110,13 +126,8 @@ bool World::is_position_occupied(const Position& position) const {
     return occupied[position.y][position.x];
 }
 
-bool World::is_in_range_for_attack(const Player* attacker, const Character* target) const {
-    bool is_ranged = false;
-    Weapon* weapon = attacker->get_equipped_weapon();
-    if (weapon) {
-        is_ranged = weapon->is_ranged();
-    }
-
+bool World::is_in_range_for_attack(const Character* attacker, const Character* target) const {
+    bool is_ranged = attacker->is_ranged_attack();
     if (!is_ranged) {
         Position attacker_pos = attacker->get_position();
         Position target_pos = target->get_position();
@@ -252,7 +263,7 @@ void World::add_ground_item(const Position& pos, GroundItem item) {
     ground_items[free_pos] = std::move(item);
 }
 
-AttackStatus World::validate_attack_conditions(const Player* attacker, const Character* target,
+AttackStatus World::validate_attack_conditions(const Character* attacker, const Character* target,
                                                bool is_healing) const {
     if (attacker->is_dead() || target->is_dead()) {
         return AttackStatus::DEAD;
@@ -280,24 +291,7 @@ AttackStatus World::validate_attack_conditions(const Player* attacker, const Cha
     return AttackStatus::SUCCESS;
 }
 
-
-AttackStatus World::consume_weapon_mana(Player* attacker) {
-    Weapon* weapon = attacker->get_equipped_weapon();
-    if (weapon) {
-        int mana_cost = weapon->get_mana_cost();
-
-        if (mana_cost > 0) {
-            if (attacker->get_current_mana() < mana_cost) {
-                return AttackStatus::NO_MANA;
-            }
-            attacker->consume_mana(mana_cost);
-        }
-    }
-    return AttackStatus::SUCCESS;
-}
-
-
-void World::handle_target_death(Player* attacker, Character* target) {
+void World::handle_target_death(Character* attacker, Character* target) {
     int bonus_exp = GameFormulas::calculate_kill_experience_gain(*attacker, *target);
     attacker->add_experience(bonus_exp);
 
@@ -306,7 +300,7 @@ void World::handle_target_death(Player* attacker, Character* target) {
 }
 
 
-int World::handle_successful_attack(Player* attacker, Character* target, int damage) {
+int World::handle_successful_attack(Character* attacker, Character* target, int damage) {
     int defense = target->get_defense();
     int real_damage = std::max(0, damage - defense);
     target->receive_damage(real_damage);
@@ -317,16 +311,17 @@ int World::handle_successful_attack(Player* attacker, Character* target, int dam
     return real_damage;
 }
 
-// REFACTOR FUTURO.
-// TODO(Pau): que se use Character* para poder usarlo para NPCs cuando existan
-bool World::move_player(uint32_t player_id, Direction direction) {
-    auto it = players.find(player_id);
-    if (it == players.end()) {
+bool World::move_character(uint32_t character_id, Direction direction) {
+    Character* character = get_character(character_id);
+    if (!character) {
         return false;
     }
 
-    Player* player = it->second.get();
-    Position current = player->get_position();
+    if (pending_resurrections.count(character_id)) {
+        return false;  // el fantasma está inmovilizado esperando la resurrección
+    }
+
+    Position current = character->get_position();
     Position next = calculate_destination(current, direction);
 
     if (!map.is_valid_position(next)) {
@@ -343,7 +338,7 @@ bool World::move_player(uint32_t player_id, Direction direction) {
 
     // si llegamos acá, la posición destino es válida, entonces se puede mover
     occupied[current.y][current.x] = false;
-    player->set_position(next);
+    character->set_position(next);
     occupied[next.y][next.x] = true;
     return true;
 }
@@ -376,18 +371,86 @@ bool World::start_resurrection(uint32_t player_id) {
         return false;  // no hay ciudades
     }
 
-    // TODO(Pau): La operación no debería ser inmediata según el enunciado.
-    // El fantasma debería quedar inmovilizado un tiempo proporcional a la distancia
-    // entre él y el sanador antes de trasladarse y resucitar
-
-    Position priest_pos = closest_city->get_priest_position();
-
-    if (teleport_player(player_id, priest_pos)) {
-        // TODO(Pau): Acá se debería llamar a la lógica en Player para restaurar salud, etc.
-        return true;
+    if (pending_resurrections.count(player_id)) {
+        return false;  // ya está en proceso de resurrección
     }
 
-    return false;
+    Position priest_pos = closest_city->get_priest_position();
+    Position player_pos = player->get_position();
+
+    // calculo distancia entre el jugador y el sacerdote para determinar el tiempo de espera antes
+    // de la resurrección
+    int dx = priest_pos.x - player_pos.x;
+    int dy = priest_pos.y - player_pos.y;
+    float distance = std::sqrt(dx * dx + dy * dy);
+
+    // Tiempo base: 0.1 segundos por cada tile de distancia (configurable si lo pasás a toml luego)
+    float wait_time = distance * GameConfig::get_instance().get_resurrect_still_factor();
+
+    pending_resurrections[player_id] = {wait_time, priest_pos};
+    return true;
+}
+
+void World::add_npc(std::unique_ptr<NPC> npc) {
+    if (!npc)
+        return;
+    Position pos = npc->get_position();
+    if (!map.is_valid_position(pos) || map.is_position_blocked(pos) || is_position_occupied(pos))
+        return;
+    occupied[pos.y][pos.x] = true;
+    npcs[npc->get_id()] = std::move(npc);
+}
+
+NPC* World::get_npc(uint32_t npc_id) {
+    auto it = npcs.find(npc_id);
+    return (it != npcs.end()) ? it->second.get() : nullptr;
+}
+
+std::vector<NPC*> World::get_npcs() {
+    std::vector<NPC*> active_npcs;
+    active_npcs.reserve(npcs.size());
+    for (auto& [id, npc] : npcs) {
+        active_npcs.push_back(npc.get());
+    }
+    return active_npcs;
+}
+
+CityNPC* World::get_city_npc(uint32_t npc_id) {
+    return dynamic_cast<CityNPC*>(get_npc(npc_id));
+}
+
+Bank& World::get_bank() {
+    return bank;
+}
+
+std::vector<Player*> World::get_players_near(const Position& pos, float range) const {
+    std::vector<Player*> nearby;
+    for (auto& [id, player] : players) {
+        if (player->is_dead())
+            continue;
+        int dx = player->get_position().x - pos.x;
+        int dy = player->get_position().y - pos.y;
+        if ((dx * dx + dy * dy) <= static_cast<int>(range * range))
+            nearby.push_back(player.get());
+    }
+    return nearby;
+}
+
+InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
+                                        const std::string& arg, int amount) {
+    Player* player = get_player(player_id);
+    CityNPC* npc = get_city_npc(npc_id);
+
+    if (!player || !npc)
+        return InteractResult{InteractStatus::INVALID_TARGET};
+
+    // el jugador tiene que estar adyacente al NPC
+    const Position& pp = player->get_position();
+    const Position& np = npc->get_position();
+    if (std::abs(pp.x - np.x) > 1 || std::abs(pp.y - np.y) > 1)
+        return InteractResult{InteractStatus::OUT_OF_RANGE};
+
+    return npc->interact(type, arg, amount, *player, bank);
 }
 
 // SOLO PARA TESTS
@@ -396,13 +459,11 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 }
 
 
-// TODO(Pau): clanes y zonas seguras
-// esto hay que adaptarlo bien a NPCs, esta adaptado a la mitad
-// el target puede ser NPC, pero en este momento no puede usarse para que un NPC ataqie
+// TODO(Pau): clanes
 
 // otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
-    Player* attacker = get_player(attacker_id);
+    Character* attacker = get_character(attacker_id);
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
@@ -410,42 +471,36 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
                             false,       false,     0, AttackStatus::INVALID_TARGET};
     }
 
-    Weapon* weapon = attacker->get_equipped_weapon();
-    bool is_healing = weapon ? weapon->is_healing() : false;
+    bool is_healing = attacker->is_healing_attack();
 
     AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
     }
-    status = consume_weapon_mana(attacker);
+    status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
     }
 
-    WeaponEffect effect;
-    if (weapon) {
-        effect = weapon->apply_effect(*attacker);
-    } else {
-        effect.damage = GameFormulas::calculate_damage(*attacker);  // daño base sin arma
-    }
-
     if (is_healing) {
-        target->heal(effect.healing);
-        return AttackResult{attacker_id,          target_id, 0, false, false, true, effect.healing,
-                            AttackStatus::SUCCESS};
+        int healing = attacker->calculate_base_healing();
+        target->heal(healing);
+        return AttackResult{attacker_id, target_id, 0,       false,
+                            false,       true,      healing, AttackStatus::SUCCESS};
     }
 
+    int base_damage = attacker->calculate_base_damage();
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
-        effect.damage *= 2;  // extraer a config
+        base_damage *= GameConfig::get_instance().get_critical_multiplier();
     }
 
     bool evaded = !is_critical && GameFormulas::calculate_evasion(*target);
 
     int real_damage = 0;
     if (!evaded) {
-        real_damage = handle_successful_attack(attacker, target, effect.damage);
+        real_damage = handle_successful_attack(attacker, target, base_damage);
     }
 
     bool died = target->is_dead();
@@ -528,8 +583,115 @@ bool World::equip_item(uint32_t player_id, int slot_index) {
     return true;
 }
 
-// esto podría devolver un vector de structs (Stats o similar) o algo indicando
-// QUÉ cambió  y para QUE JUGADOR
+void World::npc_move_towards(NPC* npc, const Position& target_pos) {
+    Position curr = npc->get_position();
+    int dx = target_pos.x - curr.x;
+    int dy = target_pos.y - curr.y;
+
+    Direction dir;
+    if (std::abs(dx) >= std::abs(dy))
+        dir = (dx > 0) ? Direction::RIGHT : Direction::LEFT;
+    else
+        dir = (dy > 0) ? Direction::DOWN : Direction::UP;
+
+    move_character(npc->get_id(), dir);
+}
+
+void World::npc_attack(NPC* npc, Character* target) {
+    int base_damage = npc->calculate_base_damage();
+    bool evaded = GameFormulas::calculate_evasion(*target);
+
+    if (!evaded) {
+        int real_damage = handle_successful_attack(npc, target, base_damage);
+        pending_events.push_back({target->get_id(), npc->get_name() + " te causó " +
+                                                        std::to_string(real_damage) + " de daño"});
+    } else {
+        pending_events.push_back({target->get_id(), "Esquivaste el ataque de " + npc->get_name()});
+    }
+
+    if (target->is_dead()) {
+        handle_target_death(npc, target);
+        pending_events.push_back({target->get_id(), "¡" + npc->get_name() + " te mató!"});
+    }
+}
+
+std::optional<Position> World::find_random_spawn_position(
+    const std::vector<std::string>& allowed_zones) const {
+    static constexpr int MAX_ATTEMPTS =
+        50;  // para evitar loops infinitos si el mapa está muy lleno o no hay zonas válidas
+
+    for (int i = 0; i < MAX_ATTEMPTS; ++i) {
+        int x = GameFormulas::get_random_int(0, map.get_width() - 1);
+        int y = GameFormulas::get_random_int(0, map.get_height() - 1);
+        Position pos{x, y};
+
+        // descartar posiciones inválidas
+        if (map.is_position_blocked(pos) || is_position_occupied(pos) || map.is_safe(pos))
+            continue;
+
+        const Zone* zone = map.get_zone(pos);
+        bool is_dungeon = (dynamic_cast<const Dungeon*>(zone) != nullptr);
+
+        // all no incluye dungeons (ni zonas seguras obviamente)
+        // dungeon es solo mazmorras
+        for (const std::string& z : allowed_zones) {
+            if (z == "all" && !is_dungeon)
+                return pos;
+            if (z == "dungeon" && is_dungeon)
+                return pos;
+        }
+    }
+    return std::nullopt;
+}
+
+void World::try_spawn_npc() {
+    int current = static_cast<int>(std::count_if(npcs.begin(), npcs.end(), [](const auto& kv) {
+        return kv.second->is_hostile() && !kv.second->is_dead();
+    }));
+
+    int max_npcs = GameConfig::get_instance().get_npc_population_limit();
+    if (current >= max_npcs)
+        return;
+
+    auto templates = NPCRegistry::get_instance().get_all_templates();
+    if (templates.empty())
+        return;
+
+    int template_idx = GameFormulas::get_random_int(0, templates.size() - 1);
+    const NPCTemplate* tpl = templates[template_idx];
+
+    if (auto pos =
+            find_random_spawn_position(tpl->zones)) {  // busco con las ZONAS PERMITIDAS de ese NPC
+        auto npc = std::make_unique<HostileNPC>(
+            next_npc_id++, tpl->name, tpl->level, tpl->max_hp, tpl->defense, tpl->agility,
+            tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
+        pending_events.push_back({0, "¡Un " + npc->get_name() + " apareció en el mundo!"});
+        add_npc(std::move(npc));
+    }
+}
+
+
+void World::spawn_city_npcs() {
+    for (const City* city : map.get_cities()) {
+        auto priest = std::make_unique<Priest>(next_npc_id++, city->get_priest_position());
+        add_npc(std::move(priest));
+
+        auto merchant = std::make_unique<Merchant>(next_npc_id++, city->get_merchant_position());
+        add_npc(std::move(merchant));
+
+        auto banker = std::make_unique<Banker>(next_npc_id++, city->get_banker_position());
+        add_npc(std::move(banker));
+    }
+}
+
+void World::spawn_initial_hostile_npcs() {
+    int max_npcs = GameConfig::get_instance().get_npc_population_limit();
+    for (int i = 0; i < max_npcs; ++i) {
+        try_spawn_npc();
+    }
+    pending_events.clear();  // limpio los mensajes de aparición iniciales
+}
+
 void World::update(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())
@@ -547,6 +709,58 @@ void World::update(float tick_seconds) {
         player->restore_mana(mana_regen);
     }
 
-    // TODO(Pau): Update NPC states
-    // TODO(Pau): Process world events (respawns, item drops, etc)
+    // procesar resurrecciones pendientes
+    for (auto it = pending_resurrections.begin(); it != pending_resurrections.end();) {
+        it->second.timer -= tick_seconds;
+        if (it->second.timer <= 0.0f) {
+            uint32_t pid = it->first;
+            if (teleport_player(pid, it->second.destination)) {
+                if (Player* p = get_player(pid)) {
+                    p->resurrect();  // le restaura salud, mana y quita el estado fantasma
+                    pending_events.push_back(
+                        {pid, "¡Resucitaste en " +
+                                  map.get_closest_city(p->get_position())->get_name() + "!"});
+                }
+            }
+            it = pending_resurrections.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // acciones de NPCs hostiles
+    for (auto& [id, npc] : npcs) {
+        if (npc->is_dead() || !npc->is_hostile())
+            continue;
+
+        auto nearby = get_players_near(npc->get_position(), npc->get_attack_range());
+        NPCBehavior behavior = npc->update(tick_seconds, nearby);
+
+        switch (behavior.action) {
+            case NPCAction::CHASE:
+                npc_move_towards(npc.get(), behavior.target_position);
+                break;
+            case NPCAction::ATTACK: {
+                Character* target = get_character(behavior.target_id);
+                if (target)
+                    npc_attack(npc.get(), target);
+                break;
+            }
+            case NPCAction::STILL:
+                break;
+        }
+    }
+
+    // spawn de NPCs hostiles
+    npc_spawn_timer += tick_seconds;
+    if (npc_spawn_timer >= GameConfig::get_instance().get_npc_spawn_time_seconds()) {
+        npc_spawn_timer = 0.0f;
+        try_spawn_npc();
+    }
+}
+
+std::vector<WorldEvent> World::pop_events() {
+    std::vector<WorldEvent> events = std::move(pending_events);
+    pending_events.clear();
+    return events;
 }

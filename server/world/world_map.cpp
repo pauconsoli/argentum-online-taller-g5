@@ -79,6 +79,10 @@ City* WorldMap::get_closest_city(const Position& pos) const {
     return closest;
 }
 
+const std::vector<City*>& WorldMap::get_cities() const {
+    return cities;
+}
+
 const std::vector<Dungeon*>& WorldMap::get_dungeons() const {
     return dungeons;
 }

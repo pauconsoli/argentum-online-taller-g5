@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/attack_result.h"
 #include "server/game/character.h"
 #include "server/game/inventory.h"
 #include "server/game/player_class.h"
@@ -28,6 +29,14 @@ class Player: public Character {
     uint64_t gold;
     uint64_t experience;
 
+    int current_mana;
+    int max_mana;
+
+    int strength;
+    int agility;
+    int intelligence;
+    int constitution;
+
     bool meditating;
 
     std::unique_ptr<Inventory> inventory;
@@ -45,6 +54,8 @@ class Player: public Character {
 
     bool validate_attack_from(int attacker_level) const override;
 
+    int get_agility() const override;
+
     Loot drop_loot() override;
 
     void move(const Position& new_position);
@@ -55,13 +66,21 @@ class Player: public Character {
 
     void remove_experience(uint64_t amount);
 
-    void add_experience(uint64_t amount);
+    void add_experience(uint64_t amount) override;
+
+    bool is_healing_attack() const override;
+    bool is_ranged_attack() const override;
+    int calculate_base_damage() const override;
+    int calculate_base_healing() const override;
+    AttackStatus consume_attack_resources() override;
 
     void level_up();
 
     void start_meditating();
 
     void stop_meditating();
+
+    void resurrect();
 
     bool is_meditating() const;
 
@@ -74,6 +93,16 @@ class Player: public Character {
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
+
+    int get_current_mana() const;
+
+    int get_max_mana() const;
+
+    int get_strength() const;
+
+    int get_intelligence() const;
+
+    int get_constitution() const;
 
     Inventory& get_inventory();
 

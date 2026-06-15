@@ -88,6 +88,7 @@ class ConfigEnvironment: public ::testing::Environment {
 
         // World
         config.spawn_position = Position{11, 5};
+        config.resurrect_still_factor = 0.1f;
         config.initial_player_level = 1;
 
         // Inventory
@@ -98,6 +99,7 @@ class ConfigEnvironment: public ::testing::Environment {
         config.gold_max_safe_exp = 1.1f;
         config.gold_excess_factor = 0.5f;
         config.npc_gold_drop_factor = 0.2f;
+        config.npc_buy_item_factor = 2;
 
         // Experience
         config.level_limit_base = 1000.0f;
@@ -107,6 +109,8 @@ class ConfigEnvironment: public ::testing::Environment {
 
         // Combat
         config.critical_chance = 0.05f;
+        config.critical_multiplier = 2;
+
         config.evasion_threshold = 0.001f;
         config.newbie_max_level = 12;
         config.max_level_difference = 10;
@@ -122,6 +126,8 @@ class ConfigEnvironment: public ::testing::Environment {
         config.npc_drop_item_prob = 0.01f;
         config.npc_gold_drop_min_factor = 0.01f;
         config.npc_gold_drop_max_factor = 0.20f;
+        config.npc_population_limit = 15;
+        config.npc_spawn_time_seconds = 10;
 
         // Server
         config.server_game_loop_sleep_ms = 33;
@@ -233,6 +239,7 @@ TEST_F(GameConfigTest, RecoveryAndLimits) {
     EXPECT_FLOAT_EQ(config.get_gold_max_safe_exp(), 1.1f);
     EXPECT_FLOAT_EQ(config.get_gold_excess_factor(), 0.5f);
     EXPECT_FLOAT_EQ(config.get_npc_gold_drop_factor(), 0.2f);
+    EXPECT_EQ(config.get_npc_buy_item_factor(), 2);
     EXPECT_FLOAT_EQ(config.get_level_limit_base(), 1000.0f);
     EXPECT_FLOAT_EQ(config.get_level_limit_exp(), 1.8f);
     EXPECT_FLOAT_EQ(config.get_kill_bonus_factor(), 0.1f);
@@ -242,4 +249,54 @@ TEST_F(GameConfigTest, RecoveryAndLimits) {
 TEST_F(GameConfigTest, ClassMeditationFactor) {
     EXPECT_FLOAT_EQ(config.get_class_meditation_factor(PlayerClass::MAGE), 1.5f);
     EXPECT_FLOAT_EQ(config.get_class_meditation_factor(PlayerClass::WARRIOR), 0.0f);
+}
+
+TEST_F(GameConfigTest, RaceBaseStats) {
+    EXPECT_EQ(config.get_race_strength(PlayerRace::HUMAN), 10);
+    EXPECT_EQ(config.get_race_agility(PlayerRace::ELF), 14);
+    EXPECT_EQ(config.get_race_intelligence(PlayerRace::GNOME), 13);
+    EXPECT_EQ(config.get_race_constitution(PlayerRace::DWARF), 14);
+}
+
+TEST_F(GameConfigTest, ClassBonusStats) {
+    EXPECT_EQ(config.get_class_bonus_strength(PlayerClass::WARRIOR), 4);
+    EXPECT_EQ(config.get_class_bonus_agility(PlayerClass::WARRIOR), 1);
+    EXPECT_EQ(config.get_class_bonus_intelligence(PlayerClass::MAGE), 4);
+    EXPECT_EQ(config.get_class_bonus_constitution(PlayerClass::WARRIOR), 3);
+}
+
+TEST_F(GameConfigTest, WorldAndLevelConfig) {
+    Position spawn = config.get_spawn_position();
+    EXPECT_EQ(spawn.x, 11);
+    EXPECT_EQ(spawn.y, 5);
+    EXPECT_FLOAT_EQ(config.get_resurrect_still_factor(), 0.1f);
+    EXPECT_EQ(config.get_initial_player_level(), 1);
+}
+
+TEST_F(GameConfigTest, CombatConfig) {
+    EXPECT_FLOAT_EQ(config.get_critical_chance(), 0.05f);
+    EXPECT_EQ(config.get_critical_multiplier(), 2);
+    EXPECT_FLOAT_EQ(config.get_evasion_threshold(), 0.001f);
+    EXPECT_EQ(config.get_newbie_max_level(), 12);
+    EXPECT_EQ(config.get_max_level_difference(), 10);
+}
+
+TEST_F(GameConfigTest, ClanConfig) {
+    EXPECT_EQ(config.get_clan_max_members(), 16);
+    EXPECT_EQ(config.get_clan_min_level_to_found(), 6);
+}
+
+TEST_F(GameConfigTest, NPCConfig) {
+    EXPECT_FLOAT_EQ(config.get_npc_drop_nothing_prob(), 0.80f);
+    EXPECT_FLOAT_EQ(config.get_npc_drop_gold_prob(), 0.08f);
+    EXPECT_FLOAT_EQ(config.get_npc_drop_potion_prob(), 0.01f);
+    EXPECT_FLOAT_EQ(config.get_npc_drop_item_prob(), 0.01f);
+    EXPECT_FLOAT_EQ(config.get_npc_gold_drop_min_factor(), 0.01f);
+    EXPECT_FLOAT_EQ(config.get_npc_gold_drop_max_factor(), 0.20f);
+    EXPECT_EQ(config.get_npc_population_limit(), 15);
+    EXPECT_EQ(config.get_npc_spawn_time_seconds(), 10);
+}
+
+TEST_F(GameConfigTest, ServerConfig) {
+    EXPECT_EQ(config.get_server_game_loop_sleep_ms(), 33);
 }

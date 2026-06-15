@@ -12,12 +12,18 @@
 Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClass player_class,
                int level, int max_hp, int max_mana, int strength, int agility, int intelligence,
                int constitution, const Position& position):
-    Character(id, level, max_hp, max_mana, strength, agility, intelligence, constitution, position),
+    Character(id, level, max_hp, position),
     name(name),
     p_race(race),
     p_class(player_class),
     gold(0),
     experience(0),
+    current_mana(max_mana),
+    max_mana(max_mana),
+    strength(strength),
+    agility(agility),
+    intelligence(intelligence),
+    constitution(constitution),
     meditating(false),
     inventory(std::make_unique<Inventory>()) {}
 
@@ -31,6 +37,10 @@ int Player::get_defense() const {
 
 bool Player::validate_attack_from(int attacker_level) const {
     return GameFormulas::can_attack_by_level(attacker_level, this->get_level());
+}
+
+int Player::get_agility() const {
+    return agility;
 }
 
 Loot Player::drop_loot() {
@@ -89,6 +99,39 @@ void Player::add_experience(uint64_t amount) {
     }
 }
 
+bool Player::is_healing_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_healing() : false;
+}
+
+bool Player::is_ranged_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_ranged() : false;
+}
+
+int Player::calculate_base_damage() const {
+    Weapon* weapon = get_equipped_weapon();
+    if (weapon) {
+        return weapon->apply_effect(*this).damage;
+    }
+    return GameFormulas::calculate_damage(*this);
+}
+
+int Player::calculate_base_healing() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->apply_effect(*this).healing : 0;
+}
+
+AttackStatus Player::consume_attack_resources() {
+    Weapon* weapon = get_equipped_weapon();
+    if (weapon && weapon->get_mana_cost() > 0) {
+        if (current_mana < weapon->get_mana_cost())
+            return AttackStatus::NO_MANA;
+        consume_mana(weapon->get_mana_cost());
+    }
+    return AttackStatus::SUCCESS;
+}
+
 void Player::level_up() {
 
     int new_level = get_level() + 1;
@@ -113,6 +156,14 @@ void Player::stop_meditating() {
     meditating = false;
 }
 
+void Player::resurrect() {
+    if (dead) {
+        dead = false;
+        current_hp = max_hp;
+        current_mana = max_mana;
+    }
+}
+
 bool Player::is_meditating() const {
     return meditating;
 }
@@ -135,6 +186,26 @@ uint64_t Player::get_gold() const {
 
 uint64_t Player::get_experience() const {
     return experience;
+}
+
+int Player::get_current_mana() const {
+    return current_mana;
+}
+
+int Player::get_max_mana() const {
+    return max_mana;
+}
+
+int Player::get_strength() const {
+    return strength;
+}
+
+int Player::get_intelligence() const {
+    return intelligence;
+}
+
+int Player::get_constitution() const {
+    return constitution;
 }
 
 // SOBRECARGA: una por si quiero modificar el inventario, otra solo para lectura

@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/updates/chat_message_update.h"
 #include "common/updates/snapshot_update.h"
 #include "game/game_config.h"
 #include "game/match.h"
@@ -25,11 +26,21 @@ void GameLoopThread::run() {
 
         while (should_keep_running()) {
 
-            server.for_each_match([tick_seconds, tick_id](Match& match) {
+            server.for_each_match([this, tick_seconds, tick_id](Match& match) {
                 match.tick();
 
                 World& world = match.get_world();
                 world.update(tick_seconds);
+
+                auto events = world.pop_events();
+                for (const auto& ev : events) {
+                    auto msg_update = std::make_shared<ChatMessageUpdate>(ev.target_id, ev.message);
+                    if (ev.target_id == 0) {
+                        match.broadcast_update_to_all(msg_update);
+                    } else {
+                        server.send_update_to_player(ev.target_id, msg_update);
+                    }
+                }
 
                 std::vector<PlayerSnapshot> snapshots;
                 for (Player* p : world.get_players()) {
@@ -53,6 +64,22 @@ void GameLoopThread::run() {
                     snapshots.push_back(ps);
                 }
 
+                std::vector<NPCSnapshot> npc_snapshots;
+                for (NPC* n : world.get_npcs()) {
+                    if (n->is_dead())
+                        continue;
+
+                    NPCSnapshot ns;
+                    ns.npc_id = n->get_id();
+                    ns.name = n->get_name();
+                    ns.x = n->get_position().x;
+                    ns.y = n->get_position().y;
+                    ns.hp = n->get_current_hp();
+                    ns.max_hp = n->get_max_hp();
+                    ns.is_hostile = n->is_hostile();
+                    npc_snapshots.push_back(ns);
+                }
+
                 std::vector<GroundItemSnapshot> ground_snapshots;
                 for (const auto& [pos, ground_item] : world.get_ground_items()) {
                     GroundItemSnapshot world_ground_item;
@@ -73,7 +100,8 @@ void GameLoopThread::run() {
                 // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo
                 // de los que cambiaron por ej
                 auto snapshot_update = std::make_shared<SnapshotUpdate>(
-                    tick_id, std::move(snapshots), std::move(ground_snapshots));
+                    tick_id, std::move(snapshots), std::move(npc_snapshots),
+                    std::move(ground_snapshots));
                 match.broadcast_update_to_all(snapshot_update);
             });
 

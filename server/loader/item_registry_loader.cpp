@@ -51,6 +51,8 @@ void ItemRegistryLoader::load(const std::string& config_path) {
             tpl.mana_cost = (*item_table)["mana_cost"].value_or(0);
         }
 
+        tpl.price = (*item_table)["price"].value_or(0);
+
         registry.add_template(tpl.name, tpl);
     }
 }

@@ -173,6 +173,10 @@ int GameFormulas::calculate_damage(const Player& attacker, const Weapon* weapon)
     return attacker.get_strength() * weapon_damage;
 }
 
+int GameFormulas::calculate_npc_damage(int min_damage, int max_damage) {
+    return get_random_int(min_damage, max_damage);
+}
+
 // Esquivar si rand(0, 1) ^ Agilidad < 0.001
 bool GameFormulas::calculate_evasion(const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
@@ -211,14 +215,15 @@ int GameFormulas::calculate_healing(int min_heal, int max_heal) {
 }
 
 // Exp = Daño * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_attack_experience_gain(const Player& attacker, const Character& target,
-                                                   int damage) {
+int GameFormulas::calculate_attack_experience_gain(const Character& attacker,
+                                                   const Character& target, int damage) {
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
     return static_cast<int>(damage * level_multiplier);
 }
 
 // Exp = rand(0, 0.1) * VidaMaxDelOtro * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const Character& target) {
+int GameFormulas::calculate_kill_experience_gain(const Character& attacker,
+                                                 const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
     int target_max_hp = target.get_max_hp();
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
@@ -241,4 +246,12 @@ uint64_t GameFormulas::calculate_player_dropped_experience(const Player& player)
     const GameConfig& config = GameConfig::get_instance();
     return static_cast<uint64_t>(player.get_experience() *
                                  config.get_death_exp_loss_mult());  // exp * 0.4
+}
+
+uint64_t GameFormulas::calculate_npc_dropped_gold(const Character& npc) {
+    const GameConfig& config = GameConfig::get_instance();
+    float min_factor = config.get_npc_gold_drop_min_factor();
+    float max_factor = config.get_npc_gold_drop_max_factor();
+    float random_factor = get_random_float(min_factor, max_factor);
+    return static_cast<uint64_t>(random_factor * npc.get_max_hp());
 }

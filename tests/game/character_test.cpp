@@ -6,10 +6,8 @@
 
 class TestCharacter: public Character {
  public:
-    TestCharacter(uint32_t id, int level, int max_hp, int max_mana, int strength, int agility,
-                  int intelligence, int constitution, const Position& position):
-        Character(id, level, max_hp, max_mana, strength, agility, intelligence, constitution,
-                  position) {}
+    TestCharacter(uint32_t id, int level, int max_hp, const Position& position):
+        Character(id, level, max_hp, position) {}
 
     bool can_cast_magic() const override {
         return true;
@@ -23,6 +21,14 @@ class TestCharacter: public Character {
         return true;
     }
 
+    int get_agility() const override {
+        return 0;
+    }
+
+    int calculate_base_damage() const override {
+        return 0;
+    }
+
     Loot drop_loot() override {  // DUMMY
         return Loot{};
     }
@@ -31,7 +37,7 @@ class TestCharacter: public Character {
 class CharacterTest: public ::testing::Test {
  protected:
     Position position{10, 20};
-    TestCharacter character{1, 5, 100, 50, 10, 8, 12, 15, position};
+    TestCharacter character{1, 5, 100, position};
 };
 
 TEST_F(CharacterTest, ConstructorInitializesCorrectly) {
@@ -39,12 +45,6 @@ TEST_F(CharacterTest, ConstructorInitializesCorrectly) {
     EXPECT_EQ(character.get_level(), 5);
     EXPECT_EQ(character.get_current_hp(), 100);
     EXPECT_EQ(character.get_max_hp(), 100);
-    EXPECT_EQ(character.get_current_mana(), 50);
-    EXPECT_EQ(character.get_max_mana(), 50);
-    EXPECT_EQ(character.get_strength(), 10);
-    EXPECT_EQ(character.get_agility(), 8);
-    EXPECT_EQ(character.get_intelligence(), 12);
-    EXPECT_EQ(character.get_constitution(), 15);
     EXPECT_FALSE(character.is_dead());
 }
 

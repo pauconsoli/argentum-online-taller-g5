@@ -5,14 +5,18 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "common/attack_result.h"
 #include "common/direction.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
+#include "server/game/bank.h"
 #include "server/game/items/item.h"
 #include "server/game/loot.h"
+#include "server/game/npcs/city_npc.h"
+#include "server/game/npcs/npc.h"
 #include "server/game/player.h"
 #include "world_map.h"
 
@@ -20,6 +24,16 @@ struct GroundItem {  // por ahora así, no se si es lo mejor
     uint64_t gold = 0;
     std::unique_ptr<Item> item = nullptr;
     int quantity = 0;
+};
+
+struct PendingResurrection {
+    float timer;
+    Position destination;
+};
+
+struct WorldEvent {
+    uint32_t target_id;  // 0 indica un broadcast a todos, >0 es a un jugador especifico
+    std::string message;
 };
 
 class World {
@@ -30,22 +44,39 @@ class World {
     std::vector<std::vector<bool>>
         occupied;  // matriz booleana para saber si una posición está ocupada (true) o no (false)
 
+    std::map<uint32_t, std::unique_ptr<NPC>> npcs;  // npc_id -> NPC
+    Bank bank;
+
+    float npc_spawn_timer = 0.0f;
+    uint32_t next_npc_id = 1;
+
     std::map<Position, GroundItem> ground_items;
+
+    std::map<uint32_t, PendingResurrection> pending_resurrections;
+    std::vector<WorldEvent> pending_events;
 
     Position calculate_destination(const Position& current, Direction direction) const;
 
     bool is_position_occupied(const Position& position) const;
 
-    bool is_in_range_for_attack(const Player* attacker, const Character* target) const;
+    bool is_in_range_for_attack(const Character* attacker, const Character* target) const;
 
     std::optional<Position> find_closest_free_ground(const Position& start) const;
     std::optional<Position> find_closest_unoccupied_position(const Position& start) const;
 
-    AttackStatus validate_attack_conditions(const Player* attacker, const Character* target,
+    AttackStatus validate_attack_conditions(const Character* attacker, const Character* target,
                                             bool is_healing) const;
-    AttackStatus consume_weapon_mana(Player* attacker);
-    void handle_target_death(Player* attacker, Character* target);
-    int handle_successful_attack(Player* attacker, Character* target, int damage);
+    void handle_target_death(Character* attacker, Character* target);
+    int handle_successful_attack(Character* attacker, Character* target, int damage);
+
+    void npc_move_towards(NPC* npc, const Position& target_pos);
+    void npc_attack(NPC* npc, Character* target);
+    void try_spawn_npc();
+    std::optional<Position> find_random_spawn_position(
+        const std::vector<std::string>& allowed_zones) const;
+
+    void spawn_city_npcs();
+    void spawn_initial_hostile_npcs();
 
  public:
     World(int width, int height);
@@ -75,14 +106,26 @@ class World {
     bool drop_item(uint32_t player_id, int slot_index);
     bool equip_item(uint32_t player_id, int slot_index);
 
-    bool move_player(uint32_t player_id, Direction direction);
+    bool move_character(uint32_t character_id, Direction direction);
 
     bool teleport_player(uint32_t player_id, const Position& dest);
     bool start_resurrection(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
 
+    void add_npc(std::unique_ptr<NPC> npc);
+    NPC* get_npc(uint32_t npc_id);
+
+    std::vector<NPC*> get_npcs();
+
+    CityNPC* get_city_npc(uint32_t npc_id);
+    std::vector<Player*> get_players_near(const Position& pos, float range) const;
+    InteractResult interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
+                                     const std::string& arg, int amount);
+    Bank& get_bank();
+
     void update(float tick_seconds);
+    std::vector<WorldEvent> pop_events();
 
     // solo lo uso para poner celdas bloqueantes en el mapa en los tests
     void set_cell(const Position& pos, const Cell& cell);

@@ -23,6 +23,7 @@ target_sources(argentum_server
     loader/game_config_loader.cpp
     loader/item_registry_loader.cpp
     loader/world_item_loader.cpp
+    loader/npc_registry_loader.cpp
     PUBLIC
     # .h files
     server.h
@@ -39,4 +40,5 @@ target_sources(argentum_server
     loader/game_config_loader.h
     loader/item_registry_loader.h
     loader/world_item_loader.h
+    loader/npc_registry_loader.h
 )

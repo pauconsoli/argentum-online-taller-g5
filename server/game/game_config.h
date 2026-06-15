@@ -40,6 +40,7 @@ class GameConfig {
     int max_inventory_items;
 
     Position spawn_position;
+    float resurrect_still_factor;
 
     int initial_player_level;
 
@@ -47,6 +48,7 @@ class GameConfig {
     float gold_max_safe_exp;
     float gold_excess_factor;
     float npc_gold_drop_factor;
+    int npc_buy_item_factor;
 
     float level_limit_base;
     float level_limit_exp;
@@ -54,6 +56,7 @@ class GameConfig {
     float death_exp_loss_mult;
 
     float critical_chance;
+    int critical_multiplier;
     float evasion_threshold;
     int newbie_max_level;
     int max_level_difference;
@@ -67,6 +70,8 @@ class GameConfig {
     float npc_drop_item_prob;
     float npc_gold_drop_min_factor;
     float npc_gold_drop_max_factor;
+    int npc_population_limit;
+    int npc_spawn_time_seconds;
 
     int server_game_loop_sleep_ms;
 
@@ -94,6 +99,7 @@ class GameConfig {
     int get_max_inventory_items() const;
 
     Position get_spawn_position() const;
+    float get_resurrect_still_factor() const;
 
     int get_initial_player_level() const;
 
@@ -101,6 +107,7 @@ class GameConfig {
     float get_gold_max_safe_exp() const;
     float get_gold_excess_factor() const;
     float get_npc_gold_drop_factor() const;
+    int get_npc_buy_item_factor() const;
 
     float get_level_limit_base() const;
     float get_level_limit_exp() const;
@@ -108,6 +115,7 @@ class GameConfig {
     float get_death_exp_loss_mult() const;
 
     float get_critical_chance() const;
+    int get_critical_multiplier() const;
     float get_evasion_threshold() const;
     int get_newbie_max_level() const;
     int get_max_level_difference() const;
@@ -121,6 +129,9 @@ class GameConfig {
     float get_npc_drop_item_prob() const;
     float get_npc_gold_drop_min_factor() const;
     float get_npc_gold_drop_max_factor() const;
+
+    int get_npc_population_limit() const;
+    int get_npc_spawn_time_seconds() const;
 
     int get_server_game_loop_sleep_ms() const;
 };

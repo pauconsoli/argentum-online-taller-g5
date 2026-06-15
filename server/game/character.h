@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "common/attack_result.h"
 #include "common/position.h"
 #include "server/game/loot.h"
 
@@ -21,21 +22,12 @@ class Character {
     int current_hp;
     int max_hp;
 
-    int current_mana;
-    int max_mana;
-
-    int strength;
-    int agility;
-    int intelligence;
-    int constitution;
-
     Position position;
 
     bool dead;
 
  public:
-    Character(uint32_t id, int level, int max_hp, int max_mana, int strength, int agility,
-              int intelligence, int constitution, const Position& position);
+    Character(uint32_t id, int level, int max_hp, const Position& position);
 
     virtual ~Character() = default;
 
@@ -47,7 +39,25 @@ class Character {
 
     virtual bool validate_attack_from(int attacker_level) const = 0;
 
+    virtual int get_agility() const = 0;
+
     virtual Loot drop_loot() = 0;
+
+    virtual void add_experience(uint64_t /*amount*/) {}
+
+    virtual bool is_healing_attack() const {
+        return false;
+    }
+    virtual bool is_ranged_attack() const {
+        return false;
+    }
+    virtual int calculate_base_damage() const = 0;
+    virtual int calculate_base_healing() const {
+        return 0;
+    }
+    virtual AttackStatus consume_attack_resources() {
+        return AttackStatus::SUCCESS;
+    }
 
     void receive_damage(int damage);
 
@@ -61,14 +71,6 @@ class Character {
 
     int get_current_hp() const;
     int get_max_hp() const;
-
-    int get_current_mana() const;
-    int get_max_mana() const;
-
-    int get_strength() const;
-    int get_agility() const;
-    int get_intelligence() const;
-    int get_constitution() const;
 
     const Position& get_position() const;
 
