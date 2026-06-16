@@ -72,6 +72,7 @@ class World {
                                             bool is_healing) const;
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
+    void notify_clan_member_attacked(const Character* attacker, const Character* target);
 
     int get_nearby_clan_members_count(const Character* character, int range) const;
 

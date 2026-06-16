@@ -59,11 +59,33 @@ void World::add_player(std::unique_ptr<Player> player) {
 
     occupied[pos.y][pos.x] = true;    // marco la posición como ocupada
     players[id] = std::move(player);  // agrego el player al map de players
+
+    // notificar al clan que el jugador se conectó
+    uint32_t clan_id = players[id]->get_clan_id();
+    if (clan_id != 0) {
+        std::string msg = players[id]->get_name() + " se conectó";
+        for (auto& [other_id, other_player] : players) {
+            if (other_id != id && other_player->get_clan_id() == clan_id) {
+                pending_events.push_back({other_id, msg});
+            }
+        }
+    }
 }
 
 void World::remove_player(uint32_t player_id) {
     auto it = players.find(player_id);
     if (it != players.end()) {
+        // notificar al clan que el jugador se desconectó
+        uint32_t clan_id = it->second->get_clan_id();
+        if (clan_id != 0) {
+            std::string msg = it->second->get_name() + " se desconectó";
+            for (auto& [other_id, other_player] : players) {
+                if (other_id != player_id && other_player->get_clan_id() == clan_id) {
+                    pending_events.push_back({other_id, msg});
+                }
+            }
+        }
+
         Position pos = it->second->get_position();
         occupied[pos.y][pos.x] = false;          // marco la posición como libre
         players.erase(it);                       // elimino el jugador
@@ -336,7 +358,26 @@ int World::handle_successful_attack(Character* attacker, Character* target, int 
     int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target, real_damage);
     attacker->add_experience(exp);
 
+    // aviso al clan si un jugador recibe daño
+    if (real_damage > 0) {
+        notify_clan_member_attacked(attacker, target);
+    }
+
     return real_damage;
+}
+
+void World::notify_clan_member_attacked(const Character* attacker, const Character* target) {
+    uint32_t clan_id = target->get_clan_id();
+    if (clan_id == 0) {
+        return;
+    }
+
+    std::string msg = "¡" + target->get_name() + " fue atacado por " + attacker->get_name() + "!";
+    for (auto& [id, p] : players) {
+        if (p->get_clan_id() == clan_id && id != target->get_id()) {
+            pending_events.push_back({id, msg});
+        }
+    }
 }
 
 bool World::move_character(uint32_t character_id, Direction direction) {

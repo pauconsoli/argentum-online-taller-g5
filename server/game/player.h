@@ -86,7 +86,7 @@ class Player: public Character {
 
     bool is_meditating() const;
 
-    const std::string& get_name() const;
+    const std::string& get_name() const override;
 
     PlayerRace get_race() const;
 

@@ -45,7 +45,7 @@ class NPC: public Character {
         return 0;
     }
 
-    const std::string& get_name() const;
+    const std::string& get_name() const override;
 };
 
 #endif

@@ -59,6 +59,8 @@ class Character {
         return AttackStatus::SUCCESS;
     }
 
+    virtual const std::string& get_name() const = 0;
+
     void receive_damage(int damage);
 
     void heal(int amount);
