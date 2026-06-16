@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
 
+#include "common/npc_sprite_type.h"
 #include "common/world/terrain_type.h"
 
 class SpriteManager {
@@ -52,6 +53,10 @@ class SpriteManager {
 
     // Sprite de monedas de oro (item_gold.png, 32x32).
     SDL_Texture* get_gold();
+
+    // NPC sprites: 4 filas (sur/norte/oeste/este), N frames por fila.
+    // Carga lazy desde assets/npcs/npc_<tipo>.png.
+    SDL_Texture* get_npc(NPCSpriteType type);
 
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
     // Fallback: "item_2" (Espada) si el nombre no está en la tabla.
