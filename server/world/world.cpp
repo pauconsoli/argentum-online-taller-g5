@@ -459,7 +459,30 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 }
 
 
-// TODO(Pau): clanes
+Clan* World::create_clan(const std::string& name, uint32_t founder_id) {
+    if (get_clan_by_name(name) != nullptr) {
+        return nullptr;  // Ya existe un clan con ese nombre
+    }
+    uint32_t new_id = next_clan_id++;
+    auto clan = std::make_unique<Clan>(new_id, name, founder_id);
+    Clan* ptr = clan.get();
+    clans_by_id[new_id] = std::move(clan);
+    return ptr;
+}
+
+Clan* World::get_clan(uint32_t clan_id) {
+    auto it = clans_by_id.find(clan_id);
+    return (it != clans_by_id.end()) ? it->second.get() : nullptr;
+}
+
+Clan* World::get_clan_by_name(const std::string& name) {
+    for (const auto& [id, clan] : clans_by_id) {
+        if (clan->get_name() == name) {
+            return clan.get();
+        }
+    }
+    return nullptr;
+}
 
 // otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {

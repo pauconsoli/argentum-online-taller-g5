@@ -13,6 +13,7 @@
 #include "common/position.h"
 #include "common/updates/game_update.h"
 #include "server/game/bank.h"
+#include "server/game/clan.h"
 #include "server/game/items/item.h"
 #include "server/game/loot.h"
 #include "server/game/npcs/city_npc.h"
@@ -54,6 +55,9 @@ class World {
 
     std::map<uint32_t, PendingResurrection> pending_resurrections;
     std::vector<WorldEvent> pending_events;
+
+    std::map<uint32_t, std::unique_ptr<Clan>> clans_by_id;
+    uint32_t next_clan_id = 1;
 
     Position calculate_destination(const Position& current, Direction direction) const;
 
@@ -122,6 +126,10 @@ class World {
     std::vector<Player*> get_players_near(const Position& pos, float range) const;
     InteractResult interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
                                      const std::string& arg, int amount);
+
+    Clan* create_clan(const std::string& name, uint32_t founder_id);
+    Clan* get_clan(uint32_t clan_id);
+    Clan* get_clan_by_name(const std::string& name);
     Bank& get_bank();
 
     void update(float tick_seconds);

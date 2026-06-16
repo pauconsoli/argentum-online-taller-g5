@@ -37,6 +37,8 @@ class Player: public Character {
     int intelligence;
     int constitution;
 
+    uint32_t clan_id;
+
     bool meditating;
 
     std::unique_ptr<Inventory> inventory;
@@ -103,6 +105,10 @@ class Player: public Character {
     int get_intelligence() const;
 
     int get_constitution() const;
+
+    uint32_t get_clan_id() const;
+
+    void set_clan_id(uint32_t new_clan_id);
 
     Inventory& get_inventory();
 

@@ -24,6 +24,7 @@ Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClas
     agility(agility),
     intelligence(intelligence),
     constitution(constitution),
+    clan_id(0),
     meditating(false),
     inventory(std::make_unique<Inventory>()) {}
 
@@ -206,6 +207,14 @@ int Player::get_intelligence() const {
 
 int Player::get_constitution() const {
     return constitution;
+}
+
+uint32_t Player::get_clan_id() const {
+    return clan_id;
+}
+
+void Player::set_clan_id(uint32_t new_clan_id) {
+    clan_id = new_clan_id;
 }
 
 // SOBRECARGA: una por si quiero modificar el inventario, otra solo para lectura
