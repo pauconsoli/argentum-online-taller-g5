@@ -395,24 +395,6 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         players.push_back(std::move(p));
     }
 
-    uint16_t npc_count = recv_u16();
-    std::vector<NPCSnapshot> npcs;
-    npcs.reserve(npc_count);
-    for (uint16_t i = 0; i < npc_count; ++i) {
-        NPCSnapshot ns;
-        ns.npc_id = recv_u32();
-        ns.name = recv_string();
-        ns.x = recv_i32();
-        ns.y = recv_i32();
-        ns.hp = recv_i32();
-        ns.max_hp = recv_i32();
-        ns.is_hostile = (recv_u8() != 0);
-        ns.sprite_type = static_cast<NPCSpriteType>(recv_u8());
-        ns.direction = recv_u8();
-        ns.is_moving = (recv_u8() != 0);
-        npcs.push_back(std::move(ns));
-    }
-
     uint16_t items_count = recv_u16();
     std::vector<GroundItemSnapshot> ground_items;
     ground_items.reserve(items_count);
@@ -427,7 +409,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         ground_items.push_back(std::move(gi));
     }
 
-    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::move(npcs),
+    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::vector<NPCSnapshot>{},
                                             std::move(ground_items));
 }
 

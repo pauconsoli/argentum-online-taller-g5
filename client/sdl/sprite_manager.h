@@ -8,8 +8,8 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
 
-#include "common/npc_sprite_type.h"
 #include "common/world/terrain_type.h"
+#include "npc_visual_type.h"
 
 class SpriteManager {
  private:
@@ -56,7 +56,7 @@ class SpriteManager {
 
     // NPC sprites: 4 filas (sur/norte/oeste/este), N frames por fila.
     // Carga lazy desde assets/npcs/npc_<tipo>.png.
-    SDL_Texture* get_npc(NPCSpriteType type);
+    SDL_Texture* get_npc(NPCVisualType type);
 
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
     // Fallback: "item_2" (Espada) si el nombre no está en la tabla.

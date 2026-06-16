@@ -245,29 +245,29 @@ void GameClient::run() {
         int fh;
         int fpd[4];
     };
-    auto npc_info = [](NPCSpriteType t) -> NPCSpriteInfo {
+    auto npc_info = [](NPCVisualType t) -> NPCSpriteInfo {
         switch (t) {
-            case NPCSpriteType::BANKER:
+            case NPCVisualType::BANKER:
                 return {26, 46, {7, 7, 7, 7}};
-            case NPCSpriteType::PRIEST:
+            case NPCVisualType::PRIEST:
                 return {32, 46, {6, 6, 6, 4}};
-            case NPCSpriteType::MERCHANT:
+            case NPCVisualType::MERCHANT:
                 return {32, 46, {6, 6, 6, 4}};
-            case NPCSpriteType::GOBLIN:
+            case NPCVisualType::GOBLIN:
                 return {32, 32, {8, 8, 8, 8}};
-            case NPCSpriteType::SKELETON:
+            case NPCVisualType::SKELETON:
                 return {25, 52, {6, 6, 5, 5}};
-            case NPCSpriteType::ZOMBIE:
+            case NPCVisualType::ZOMBIE:
                 return {128, 128, {8, 8, 8, 8}};
-            case NPCSpriteType::SPIDER:
+            case NPCVisualType::SPIDER:
                 return {128, 128, {8, 8, 8, 8}};
-            case NPCSpriteType::ORC:
+            case NPCVisualType::ORC:
                 return {24, 52, {6, 6, 5, 5}};
-            case NPCSpriteType::GOLEM_ICE:
+            case NPCVisualType::GOLEM_ICE:
                 return {128, 128, {8, 8, 8, 8}};
-            case NPCSpriteType::GOLEM_STONE:
+            case NPCVisualType::GOLEM_STONE:
                 return {128, 128, {8, 8, 8, 8}};
-            case NPCSpriteType::GOLEM_INFERNAL:
+            case NPCVisualType::GOLEM_INFERNAL:
                 return {128, 128, {8, 8, 8, 8}};
             default:
                 return {32, 32, {1, 1, 1, 1}};
@@ -680,17 +680,17 @@ void GameClient::run() {
 
         // NPCs: capa de entidades, sobre terreno/overlays/items, antes del HUD
         for (auto& [nid, ns] : npcs_) {
-            SDL_Texture* npc_tex = sprite_manager->get_npc(ns.sprite_type);
+            auto& anim = npc_anim_states_[nid];
+            SDL_Texture* npc_tex = sprite_manager->get_npc(anim.sprite_type);
             if (!npc_tex)
                 continue;
-            NPCSpriteInfo info = npc_info(ns.sprite_type);
-            int dir = static_cast<int>(ns.direction);  // 0=south 1=north 2=west 3=east
-            if (dir < 0 || dir > 3)
+            NPCSpriteInfo info = npc_info(anim.sprite_type);
+            int dir = static_cast<int>(anim.direction);  // 0=south 1=north 2=west 3=east
+            if (dir > 3)
                 dir = 0;
             int max_frames = info.fpd[dir];
 
-            auto& anim = npc_anim_states_[nid];
-            if (ns.is_moving) {
+            if (anim.is_moving) {
                 Uint32 now = SDL_GetTicks();
                 if (now - anim.last_frame_time > npc_frame_delay) {
                     anim.current_frame = (anim.current_frame + 1) % max_frames;

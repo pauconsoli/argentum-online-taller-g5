@@ -55,6 +55,9 @@ class GameClient {
     struct NPCAnimState {
         int current_frame = 0;
         Uint32 last_frame_time = 0;
+        NPCVisualType sprite_type = NPCVisualType::UNKNOWN;
+        uint8_t direction = 0;
+        bool is_moving = false;
     };
     std::map<uint32_t, NPCAnimState> npc_anim_states_;
 

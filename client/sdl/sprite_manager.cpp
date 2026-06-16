@@ -213,40 +213,40 @@ SDL_Texture* SpriteManager::get_gold() {
     return load_lazy("item_gold", assets_dir + sep + "sprites/items/item_gold.png");
 }
 
-SDL_Texture* SpriteManager::get_npc(NPCSpriteType type) {
+SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
     const char* filename = nullptr;
     switch (type) {
-        case NPCSpriteType::BANKER:
+        case NPCVisualType::BANKER:
             filename = "npc_banker.png";
             break;
-        case NPCSpriteType::PRIEST:
+        case NPCVisualType::PRIEST:
             filename = "npc_priest.png";
             break;
-        case NPCSpriteType::MERCHANT:
+        case NPCVisualType::MERCHANT:
             filename = "npc_merchant.png";
             break;
-        case NPCSpriteType::GOBLIN:
+        case NPCVisualType::GOBLIN:
             filename = "npc_goblin.png";
             break;
-        case NPCSpriteType::SKELETON:
+        case NPCVisualType::SKELETON:
             filename = "npc_skeleton.png";
             break;
-        case NPCSpriteType::ZOMBIE:
+        case NPCVisualType::ZOMBIE:
             filename = "npc_zombie.png";
             break;
-        case NPCSpriteType::SPIDER:
+        case NPCVisualType::SPIDER:
             filename = "npc_spider.png";
             break;
-        case NPCSpriteType::ORC:
+        case NPCVisualType::ORC:
             filename = "npc_orc.png";
             break;
-        case NPCSpriteType::GOLEM_ICE:
+        case NPCVisualType::GOLEM_ICE:
             filename = "npc_golem_ice.png";
             break;
-        case NPCSpriteType::GOLEM_STONE:
+        case NPCVisualType::GOLEM_STONE:
             filename = "npc_golem_stone.png";
             break;
-        case NPCSpriteType::GOLEM_INFERNAL:
+        case NPCVisualType::GOLEM_INFERNAL:
             filename = "npc_golem_infernal.png";
             break;
         default:
