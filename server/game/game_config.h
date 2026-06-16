@@ -63,6 +63,8 @@ class GameConfig {
 
     int clan_max_members;
     int clan_min_level_to_found;
+    float bonus_factor;
+    int bonus_range;
 
     float npc_drop_nothing_prob;
     float npc_drop_gold_prob;
@@ -122,6 +124,8 @@ class GameConfig {
 
     int get_clan_max_members() const;
     int get_clan_min_level_to_found() const;
+    float get_bonus_factor() const;
+    int get_bonus_range() const;
 
     float get_npc_drop_nothing_prob() const;
     float get_npc_drop_gold_prob() const;

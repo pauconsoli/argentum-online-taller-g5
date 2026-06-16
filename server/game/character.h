@@ -72,6 +72,10 @@ class Character {
     int get_current_hp() const;
     int get_max_hp() const;
 
+    virtual uint32_t get_clan_id() const {
+        return 0;  // por defecto no tienen clan (npcs)
+    }
+
     const Position& get_position() const;
 
     void set_position(const Position& new_position);

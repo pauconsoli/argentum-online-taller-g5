@@ -73,6 +73,8 @@ class World {
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
 
+    int get_nearby_clan_members_count(const Character* character, int range) const;
+
     void npc_move_towards(NPC* npc, const Position& target_pos);
     void npc_attack(NPC* npc, Character* target);
     void try_spawn_npc();

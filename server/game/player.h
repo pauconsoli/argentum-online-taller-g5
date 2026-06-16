@@ -106,7 +106,7 @@ class Player: public Character {
 
     int get_constitution() const;
 
-    uint32_t get_clan_id() const;
+    uint32_t get_clan_id() const override;
 
     void set_clan_id(uint32_t new_clan_id);
 

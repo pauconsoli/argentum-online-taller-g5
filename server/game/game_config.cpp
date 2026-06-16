@@ -27,6 +27,8 @@ GameConfig::GameConfig():
     max_level_difference(0),
     clan_max_members(0),
     clan_min_level_to_found(0),
+    bonus_factor(0.0f),
+    bonus_range(0),
     npc_drop_nothing_prob(0.0f),
     npc_drop_gold_prob(0.0f),
     npc_drop_potion_prob(0.0f),
@@ -237,6 +239,15 @@ int GameConfig::get_clan_max_members() const {
 int GameConfig::get_clan_min_level_to_found() const {
     check_loaded(loaded);
     return clan_min_level_to_found;
+}
+
+float GameConfig::get_bonus_factor() const {
+    check_loaded(loaded);
+    return bonus_factor;
+}
+int GameConfig::get_bonus_range() const {
+    check_loaded(loaded);
+    return bonus_range;
 }
 
 float GameConfig::get_npc_drop_nothing_prob() const {

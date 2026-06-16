@@ -121,6 +121,8 @@ void GameConfigLoader::load(const std::string& config_path) {
         throw std::runtime_error("game_config.toml: falta la sección [clan]");
     gc.clan_max_members = require_int(*clan, "clan", "max_members");
     gc.clan_min_level_to_found = require_int(*clan, "clan", "min_level_to_found");
+    gc.bonus_factor = require_float(*clan, "clan", "bonus_factor");
+    gc.bonus_range = require_int(*clan, "clan", "bonus_range");
 
     const auto* npc = root["npc"].as_table();
     if (!npc)

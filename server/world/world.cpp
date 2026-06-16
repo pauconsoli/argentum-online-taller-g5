@@ -278,8 +278,15 @@ AttackStatus World::validate_attack_conditions(const Character* attacker, const 
             return AttackStatus::INVALID_TARGET;
         }
 
-        // En zonas seguras (ciudades y pueblos) no se puede atacar ni ser atacado
+        // zonas seguras
         if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
+            return AttackStatus::INVALID_TARGET;
+        }
+
+        // mismo clan
+        uint32_t attacker_clan = attacker->get_clan_id();
+        uint32_t target_clan = target->get_clan_id();
+        if (attacker_clan != 0 && attacker_clan == target_clan) {
             return AttackStatus::INVALID_TARGET;
         }
     }
@@ -299,9 +306,30 @@ void World::handle_target_death(Character* attacker, Character* target) {
     drop_loot_in_world(target->get_position(), std::move(loot));
 }
 
+int World::get_nearby_clan_members_count(const Character* character, int range) const {
+    uint32_t clan_id = character->get_clan_id();
+    if (clan_id == 0)
+        return 0;
+
+    auto nearby = get_players_near(character->get_position(), range);
+    return static_cast<int>(
+        std::count_if(nearby.begin(), nearby.end(), [character, clan_id](Player* other) {
+            return other->get_id() != character->get_id() && other->get_clan_id() == clan_id;
+        }));
+}
+
 
 int World::handle_successful_attack(Character* attacker, Character* target, int damage) {
     int defense = target->get_defense();
+
+    // bonus de clan
+    int clan_count =
+        get_nearby_clan_members_count(target, GameConfig::get_instance().get_bonus_range());
+    if (clan_count > 0) {
+        defense +=
+            static_cast<int>(defense * GameConfig::get_instance().get_bonus_factor() * clan_count);
+    }
+
     int real_damage = std::max(0, damage - defense);
     target->receive_damage(real_damage);
 
@@ -513,6 +541,13 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     }
 
     int base_damage = attacker->calculate_base_damage();
+
+    // Bonificación de ataque por compañeros de clan cercanos (ej. +10% por miembro, rango 5 tiles)
+    int clan_count = get_nearby_clan_members_count(attacker, 5.0f);
+    if (clan_count > 0) {
+        base_damage += static_cast<int>(base_damage * 0.1f * clan_count);
+    }
+
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
