@@ -77,6 +77,9 @@ class GameClient {
     GameClient& operator=(const GameClient&) = delete;
 
     void run();
+
+ private:
+    void load_audio_assets();
 };
 
 #endif

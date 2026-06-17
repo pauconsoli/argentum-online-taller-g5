@@ -116,6 +116,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = new AudioManager();
+    load_audio_assets();
     client->start();
 }
 
@@ -154,6 +155,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = new AudioManager();
+    load_audio_assets();
     // client->start() ya fue llamado por QtClientAdapter::start()
 }
 
@@ -170,6 +172,7 @@ GameClient::~GameClient() {
 }
 
 void GameClient::run() {
+    audio_manager->play_background_music("assets/audio/music/background.ogg", 40);
     bool running = true;
     SDL_Event event;
 
@@ -725,4 +728,28 @@ void GameClient::run() {
             SDL_Delay(frame_time_ms - elapsed);
         }
     }
+}
+
+void GameClient::load_audio_assets() {
+    const std::string audio_path = "assets/audio/";
+
+    audio_manager->load_sound("melee_hit", audio_path + "sfx/melee_hit.wav");
+
+    audio_manager->load_sound("damage_received", audio_path + "sfx/damage_received.wav");
+
+    audio_manager->load_sound("death", audio_path + "sfx/death.wav");
+
+    audio_manager->load_sound("gold", audio_path + "sfx/gold.wav");
+
+    audio_manager->load_sound("heal", audio_path + "sfx/heal.wav");
+
+    audio_manager->load_sound("resurrect", audio_path + "sfx/resurrect.wav");
+
+    audio_manager->load_sound("magic_arrow", audio_path + "sfx/magic_arrow.wav");
+
+    audio_manager->load_sound("level_up", audio_path + "sfx/level_up.wav");
+
+    audio_manager->load_sound("private_message", audio_path + "sfx/private_message.wav");
+
+    audio_manager->load_sound("rain", audio_path + "ambient/rain.wav");
 }
