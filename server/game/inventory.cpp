@@ -82,6 +82,12 @@ bool Inventory::equip(Item& item, Player& player) {
         return use_consumable(index, player);
     }
 
+    // Si el ítem YA estaba equipado, lo desequipamos (funcionamiento de "toggle")
+    if (i_slots[index].equipped_slot.has_value()) {
+        i_slots[index].equipped_slot = std::nullopt;
+        return true;
+    }
+
     // acá veo si hay otro item equipado en ese slot, para desmarcarlo (swap), distinto al item que
     // quiero equipar
     auto it = std::find_if(i_slots.begin(), i_slots.end(), [slot, &item](const auto& s) {
