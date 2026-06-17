@@ -595,6 +595,11 @@ void World::npc_move_towards(NPC* npc, const Position& target_pos) {
         dir = (dy > 0) ? Direction::DOWN : Direction::UP;
 
     move_character(npc->get_id(), dir);
+    npc->set_direction(dir);
+    bool moved = move_character(npc->get_id(), dir);
+    if (moved) {
+        npc->set_moving(true);
+    }
 }
 
 void World::npc_attack(NPC* npc, Character* target) {
@@ -663,8 +668,8 @@ void World::try_spawn_npc() {
     if (auto pos =
             find_random_spawn_position(tpl->zones)) {  // busco con las ZONAS PERMITIDAS de ese NPC
         auto npc = std::make_unique<HostileNPC>(
-            next_npc_id++, tpl->name, tpl->level, tpl->max_hp, tpl->defense, tpl->agility,
-            tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
+            next_npc_id++, tpl->name, tpl->npc_type, tpl->level, tpl->max_hp, tpl->defense,
+            tpl->agility, tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
         pending_events.push_back({0, "¡Un " + npc->get_name() + " apareció en el mundo!"});
         add_npc(std::move(npc));
     }
@@ -673,13 +678,16 @@ void World::try_spawn_npc() {
 
 void World::spawn_city_npcs() {
     for (const City* city : map.get_cities()) {
-        auto priest = std::make_unique<Priest>(next_npc_id++, city->get_priest_position());
+        auto priest =
+            std::make_unique<Priest>(next_npc_id++, NPCType::PRIEST, city->get_priest_position());
         add_npc(std::move(priest));
 
-        auto merchant = std::make_unique<Merchant>(next_npc_id++, city->get_merchant_position());
+        auto merchant = std::make_unique<Merchant>(next_npc_id++, NPCType::MERCHANT,
+                                                   city->get_merchant_position());
         add_npc(std::move(merchant));
 
-        auto banker = std::make_unique<Banker>(next_npc_id++, city->get_banker_position());
+        auto banker =
+            std::make_unique<Banker>(next_npc_id++, NPCType::BANKER, city->get_banker_position());
         add_npc(std::move(banker));
     }
 }
@@ -730,6 +738,8 @@ void World::update(float tick_seconds) {
 
     // acciones de NPCs hostiles
     for (auto& [id, npc] : npcs) {
+        npc->set_moving(false);
+
         if (npc->is_dead() || !npc->is_hostile())
             continue;
 

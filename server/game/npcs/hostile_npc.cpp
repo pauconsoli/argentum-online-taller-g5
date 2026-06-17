@@ -8,10 +8,11 @@
 #include "server/game/items/item_registry.h"
 #include "server/game/player.h"
 
-HostileNPC::HostileNPC(uint32_t id, const std::string& name, int level, int max_hp, int defense,
-                       int agility, int min_damage, int max_damage, int attack_range,
-                       const std::vector<std::string>& allowed_zones, const Position& pos):
-    NPC(id, name, level, max_hp, defense, pos),
+HostileNPC::HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, int level,
+                       int max_hp, int defense, int agility, int min_damage, int max_damage,
+                       int attack_range, const std::vector<std::string>& allowed_zones,
+                       const Position& pos):
+    NPC(id, name, npc_type, level, max_hp, defense, pos),
     agility(agility),
     min_damage(min_damage),
     max_damage(max_damage),
