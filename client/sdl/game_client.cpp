@@ -27,8 +27,10 @@
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
+// Categorías de items para saber dónde dibujarlos encima del personaje.
 enum class ItemType { WEAPON, STAFF, ARMOR, HELMET, SHIELD, OTHER };
 
+// Dado el nombre de un item, devuelve su categoría.
 static ItemType get_item_type(const std::string& name) {
     static const std::unordered_map<std::string, ItemType> table = {
         {"Espada", ItemType::WEAPON},
@@ -53,6 +55,7 @@ static ItemType get_item_type(const std::string& name) {
     return it != table.end() ? it->second : ItemType::OTHER;
 }
 
+// Devuelve el directorio raíz de assets (variable de entorno o "assets" por defecto).
 static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
         return std::string(env_dir);
@@ -74,6 +77,7 @@ static uint16_t head_index_for_race(uint8_t race) {
     }
 }
 
+// Dimensiones del frame y cantidad de frames por dirección para cada tipo de NPC.
 struct NPCSpriteInfo {
     int fw;
     int fh;
@@ -83,6 +87,7 @@ struct NPCSpriteInfo {
     int head_index = 0;
 };
 
+// Devuelve los datos de animación correspondientes a cada tipo de NPC.
 static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
     switch (t) {
         case NPCVisualType::BANKER:
@@ -112,6 +117,7 @@ static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
     }
 }
 
+// Inicializa el subsistema SDL (video + audio) y crea la ventana del juego.
 static void init_sdl_window(SDL_Window*& window, int width, int height) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
@@ -123,46 +129,8 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
     }
 }
 
-GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
-    window(nullptr),
-    renderer(nullptr),
-    hud(nullptr),
-    mini_chat(nullptr),
-    sprite_manager(nullptr),
-    terrain_renderer_(nullptr),
-    audio_manager(nullptr),
-    client(std::make_unique<Client>(host, port)),
-    camera(width, height),
-    my_player_id(0),
-    my_race(0),
-    my_klass(0),
-    player_x(400),
-    player_y(300),
-    width(width),
-    height(height),
-    from_handoff(false) {
-    init_sdl_window(window, width, height);
-    my_hp = 100;
-    my_max_hp = 100;
-    my_mp = 100;
-    my_max_mp = 100;
-    my_level = 1;
-    my_gold = 0;
-    my_xp = 0;
-    renderer = new Renderer(window);
-    std::string base_assets = get_base_asset_dir();
-    std::string font_path = base_assets + "/fonts/font.ttf";
-    sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load_body_textures(base_assets);
-    sprite_manager->load_terrain_textures(base_assets);
-    terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
-    hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
-    mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
-    audio_manager = std::make_unique<AudioManager>();
-    load_audio_assets();
-    client->start();
-}
 
+// Constructor handoff desde Qt: recibe el Client ya conectado y el jugador ya autenticado.
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
                        uint8_t klass, uint32_t player_id):
     window(nullptr),
@@ -201,7 +169,6 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = std::make_unique<AudioManager>();
     load_audio_assets();
-    // client->start() ya fue llamado por QtClientAdapter::start()
 }
 
 GameClient::~GameClient() {
@@ -221,6 +188,7 @@ void GameClient::run() {
     bool running = true;
     SDL_Event event;
 
+    // Dimensiones de cada frame de body y cabeza en el spritesheet.
     const int frame_w = 27;
     const int frame_h = 48;
     const int tile_w = 32;
@@ -229,73 +197,36 @@ void GameClient::run() {
     const int head_w = 27;
     const int head_h = 64;
 
-    if (!from_handoff) {
-        // Flujo standalone (argentum_client): hace login y lobby localmente.
-        client->do_login("player1");
-        auto& q = client->get_received_updates();
-        bool logged_in = false;
-        bool in_match = false;
-        uint32_t match_id = 0;
-
-        while (running && !in_match) {
-            while (SDL_PollEvent(&event)) {
-                running = input_handler.handle(event);
-            }
-            std::unique_ptr<GameUpdate> u;
-            while (q.try_pop(u)) {
-                switch (u->get_type()) {
-                    case UpdateType::LOGIN_OK:
-                        my_player_id = static_cast<LoginOkUpdate&>(*u).player_id;
-                        logged_in = true;
-                        client->do_create_match("sala1", 4);
-                        break;
-                    case UpdateType::MATCH_CREATED:
-                        match_id = static_cast<MatchCreatedUpdate&>(*u).match_id;
-                        client->do_join_match(match_id);
-                        break;
-                    case UpdateType::MATCH_JOINED:
-                        in_match = true;
-                        client->do_select_race_class(static_cast<uint8_t>(PlayerRace::HUMAN),
-                                                     static_cast<uint8_t>(PlayerClass::WARRIOR));
-                        break;
-                    default:
-                        break;
-                }
-                if (in_match)
-                    break;
-            }
-            (void) logged_in;
-            SDL_Delay(10);
-        }
-
-        if (!running)
-            return;
-    }
-
+    // Arranca la música de fondo al entrar al mundo.
     audio_manager->play_background_music(get_base_asset_dir() + "/audio/music/background.mp3",
                                          MIX_MAX_VOLUME / 2);
 
-    // TODO(chiaradelaurentis): ESTO LO TIENE QUE DECIDIR EL SERVIDOR!!!
-    player_x = static_cast<int>(1 + my_player_id) * tile_w;
-    player_y = tile_h;
+    player_x = -1;  // posición real llega con el primer SnapshotUpdate
+    player_y = -1;
 
     ClientMap client_map = build_sample_client_map();
 
+    // Estado de animación del jugador local (dirección y frame actual).
     int direction = 0;
     int current_frame = 0;
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
-    const Uint32 frame_delay = 100;
+    const Uint32 frame_delay = 100;  // el personaje cambie de imagen cada 100 ms mientras camina.
 
+    // Loop a ~60 FPS; el movimiento se limita a 5 tiles/segundo.
     const Uint32 frame_time_ms = 1000 / 60;
     const Uint32 move_interval_ms = 200;  // máx 5 tiles/seg
     Uint32 last_move_time = 0;
+
     while (running) {
         Uint32 frame_start = SDL_GetTicks();
 
+        // ---- Procesamiento de eventos SDL ----
         while (SDL_PollEvent(&event)) {
             if (!input_handler.handle(event))
                 running = false;
+
+            // Si el chat está activo, los eventos de teclado van al input de texto.
             if (chat_active_) {
                 if (event.type == SDL_TEXTINPUT) {
                     chat_input_ += event.text.text;
@@ -304,9 +235,11 @@ void GameClient::run() {
                         case SDLK_RETURN:
                         case SDLK_RETURN2:
                             if (!chat_input_.empty()) {
+                                // Comandos especiales: /tomar recoge items del suelo.
                                 if (chat_input_.rfind("/tomar", 0) == 0) {
                                     client->do_pick_up();
                                     mini_chat->add_message("/tomar");
+                                    // /tirar [slot] tira un item del inventario.
                                 } else if (chat_input_.rfind("/tirar", 0) == 0) {
                                     std::string rest = chat_input_.substr(6);
                                     size_t pos = rest.find_first_not_of(' ');
@@ -333,6 +266,7 @@ void GameClient::run() {
                                         mini_chat->add_message("Slot inválido o vacío");
                                     }
                                 } else {
+                                    // Mensaje de chat normal.
                                     mini_chat->add_message(chat_input_);
                                 }
                             }
@@ -353,9 +287,11 @@ void GameClient::run() {
                             break;
                     }
                 }
+                // Enter fuera del chat abre el input de texto.
             } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
                 chat_active_ = true;
                 SDL_StartTextInput();
+                // Click izquierdo: atacar jugador en esa casilla o equipar item del HUD.
             } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                        event.button.button == SDL_BUTTON_LEFT) {
                 if (!my_is_ghost) {
@@ -375,6 +311,7 @@ void GameClient::run() {
                         client->do_equip_item(static_cast<uint8_t>(slot));
                     }
                 }
+                // Click derecho sobre el inventario: selecciona el slot (para /tirar).
             } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                        event.button.button == SDL_BUTTON_RIGHT) {
                 int slot = hud->get_slot_at(event.button.x, event.button.y);
@@ -385,6 +322,7 @@ void GameClient::run() {
             }
         }
 
+        // ---- Movimiento con teclas de dirección ----
         const Uint8* keys = SDL_GetKeyboardState(nullptr);
         bool moving = false;
         if (!chat_active_) {
@@ -424,8 +362,10 @@ void GameClient::run() {
             }
         }
 
+        // ---- Actualización de estado desde el servidor ----
         process_server_updates(tile_w, tile_h, client_map);
 
+        // Avanza el frame de animación del jugador local sólo mientras se mueve.
         if (moving) {
             Uint32 now = SDL_GetTicks();
             if (now - last_frame_time > frame_delay) {
@@ -436,19 +376,23 @@ void GameClient::run() {
             current_frame = 0;
         }
 
-        // centra la camara en el jugador local
-        camera.center_on(player_x, player_y, client_map.get_width() * tile_w,
-                         client_map.get_height() * tile_h);
+        // centra la camara en el jugador local (solo cuando ya llegó la posición del servidor)
+        if (player_x >= 0 && player_y >= 0) {
+            camera.center_on(player_x, player_y, client_map.get_width() * tile_w,
+                             client_map.get_height() * tile_h);
+        }
 
+        // ---- Render ----
         renderer->clear();
 
+        // 1) Terreno: sólo los tiles visibles en pantalla.
         int start_col = camera.get_x() / tile_w;
         int end_col = start_col + width / tile_w + 1;
         int start_row = camera.get_y() / tile_h;
         int end_row = start_row + height / tile_h + 1;
         terrain_renderer_->draw(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
 
-        // Ground items: entre terreno y jugadores
+        // 2) Items en el suelo: encima del terreno pero debajo de personajes.
         for (const auto& gi : ground_items_) {
             SDL_Texture* item_tex = nullptr;
             if (gi.is_gold) {
@@ -466,18 +410,23 @@ void GameClient::run() {
             }
         }
 
+        // 3) Jugadores con cuerpo, cabeza e items equipados visibles.
         render_players(tile_w, tile_h, frame_w, frame_h, head_w, head_h, direction, current_frame);
 
+        // 4) NPCs animados.
         render_npcs(tile_w, tile_h);
 
+        // 5) HUD: barras de vida/mana, nivel, oro, experiencia e inventario.
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
         hud->draw_inventory(sprite_manager, inventory_slots_, selected_slot_);
 
+        // 6) Chat: mensajes recientes y, si está activo, el input actual.
         mini_chat->draw();
         if (chat_active_)
             mini_chat->draw_input(chat_input_, height - 30);
         renderer->present();
 
+        // Espera el tiempo restante del frame para mantener ~60 FPS.
         Uint32 elapsed = SDL_GetTicks() - frame_start;
         if (elapsed < frame_time_ms) {
             SDL_Delay(frame_time_ms - elapsed);
@@ -485,12 +434,14 @@ void GameClient::run() {
     }
 }
 
+// Vacía la cola de updates del servidor y actualiza el estado local según el tipo de mensaje.
 void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& client_map) {
     auto& update_queue = client->get_received_updates();
     std::unique_ptr<GameUpdate> update;
     while (update_queue.try_pop(update)) {
         switch (update->get_type()) {
             case UpdateType::ERROR: {
+                // Filtra errores de movimiento (silenciosos) y traduce el resto al chat.
                 const auto& eu = static_cast<const ErrorUpdate&>(*update);
                 const auto& d = eu.detail;
                 if (d.find("move_player") != std::string::npos ||
@@ -511,6 +462,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 break;
             }
             case UpdateType::SNAPSHOT: {
+                // Reemplaza el estado completo del mundo: jugadores, NPCs e items del suelo.
                 const auto& snap = static_cast<const SnapshotUpdate&>(*update);
                 players.clear();
                 for (const auto& ps : snap.players) {
@@ -557,6 +509,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     anim.is_moving = ns.is_moving;
                 }
 
+                // Limpia estados de animación de NPCs que ya no existen en el snapshot.
                 for (auto it = npc_anim_states_.begin(); it != npc_anim_states_.end();) {
                     if (npcs_.find(it->first) == npcs_.end())
                         it = npc_anim_states_.erase(it);
@@ -566,11 +519,13 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 break;
             }
             case UpdateType::PLAYER_LEFT: {
+                // Un jugador se desconectó: lo elimina del mapa local.
                 const auto& pu = static_cast<const PlayerLeftUpdate&>(*update);
                 players.erase(pu.player_id);
                 break;
             }
             case UpdateType::WORLD_MAP: {
+                // El servidor mandó el mapa completo; lo reemplaza en el cliente.
                 const auto& mu = static_cast<const WorldMapUpdate&>(*update);
                 std::vector<MapCell> map_cells;
                 map_cells.reserve(mu.cells.size());
@@ -583,12 +538,14 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 break;
             }
             case UpdateType::INVENTORY: {
+                // Actualiza el inventario y el oro del jugador local.
                 const auto& iu = static_cast<const InventoryUpdate&>(*update);
                 inventory_slots_ = iu.get_items();
                 my_gold = iu.get_gold();
                 break;
             }
             case UpdateType::ATTACKED: {
+                // Muestra el resultado del ataque en el chat y reproduce el sonido correcto.
                 const auto& au = static_cast<const AttackUpdate&>(*update);
                 const AttackResult& r = au.get_result();
                 if (r.evaded) {
@@ -631,6 +588,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 break;
             }
             case UpdateType::DEATH: {
+                // Muerte propia: avisa al jugador. Muerte ajena: sonido atenuado por distancia.
                 const auto& du = static_cast<const DeathUpdate&>(*update);
                 if (du.get_dead_id() == my_player_id) {
                     mini_chat->add_message("Moriste. Dirigete al sanador para resucitar.");
@@ -665,6 +623,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 break;
             }
             case UpdateType::CHAT_MSG: {
+                // Mensaje de chat recibido del servidor: lo muestra en el mini_chat.
                 const auto& message = static_cast<const ChatMessageUpdate&>(*update);
                 mini_chat->add_message(message.get_message());
                 break;
@@ -676,6 +635,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
 }
 
 
+// Dibuja todos los jugadores: cuerpo animado + cabeza + items equipados visibles + nickname.
 void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w,
                                 int head_h, int direction, int current_frame) {
     static const int head_offset_x[] = {0, 0, 0, 0};
@@ -687,6 +647,7 @@ void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h
         int px = camera.get_screen_x(ps.x * tile_w);
         int py = camera.get_screen_y(ps.y * tile_h);
 
+        // Otros jugadores se muestran en frame 0 sin animación local.
         int p_dir = (pid == my_player_id) ? direction : 0;
         int p_frame = (pid == my_player_id) ? current_frame : 0;
         int p_total = (p_dir < 2) ? 6 : 5;
@@ -694,6 +655,7 @@ void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h
 
         SDL_Texture* body_tex = sprite_manager->get_body(ps.race, ps.klass);
         SDL_Texture* head_tex = sprite_manager->get_head(head_index_for_race(ps.race));
+        // Los fantasmas (muertos) se dibujan semi-transparentes.
         uint8_t alpha = ps.is_ghost ? 128 : 255;
         SDL_SetTextureAlphaMod(body_tex, alpha);
         SDL_SetTextureAlphaMod(head_tex, alpha);
@@ -708,6 +670,7 @@ void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h
         SDL_SetTextureAlphaMod(body_tex, 255);
         SDL_SetTextureAlphaMod(head_tex, 255);
 
+        // Para el jugador local dibuja encima los items equipados (arma, escudo, casco).
         if (pid == my_player_id) {
             constexpr int ISIZE = 32;
             constexpr int HSIZE = 24;
@@ -733,6 +696,7 @@ void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h
             }
         }
 
+        // Nickname con sombra debajo del sprite.
         int nick_center_x = px + frame_w / 2;
         int nick_y = py + frame_h + 3;
         SDL_Color shadow = {0, 0, 0, 200};
@@ -742,6 +706,7 @@ void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h
     }
 }
 
+// Dibuja todos los NPCs con su animación correspondiente; los humanoides también tienen cabeza.
 void GameClient::render_npcs(int tile_w, int tile_h) {
     const Uint32 npc_frame_delay = 150;
     for (auto& [nid, ns] : npcs_) {
@@ -755,6 +720,7 @@ void GameClient::render_npcs(int tile_w, int tile_h) {
             dir = 0;
         int max_frames = info.fpd[dir];
 
+        // Avanza la animación sólo si el NPC está en movimiento.
         if (anim.is_moving) {
             Uint32 now = SDL_GetTicks();
             if (now - anim.last_frame_time > npc_frame_delay) {
@@ -775,9 +741,10 @@ void GameClient::render_npcs(int tile_w, int tile_h) {
         renderer->draw_frame_scaled(npc_tex, frame * info.fw, dir * info.fh, info.fw, info.fh,
                                     body_x, body_y, dw, dh);
 
+        // NPCs humanoides (banquero, sacerdote, mercader) tienen cabeza separada.
         if (info.head_index > 0) {
-            static const int body_row_to_head_row[] = {0, 2, 3, 1};
-            static const int head_y_offset[] = {-8, -15, -15, -15};
+            static const int body_row_to_head_row[] = {2, 0, 3, 1};
+            static const int head_y_offset[] = {-13, -19, -18, -17};
             constexpr int head_w = 27;
             constexpr int head_h = 64;
             SDL_Texture* head_tex = sprite_manager->get_head(info.head_index);
@@ -789,6 +756,7 @@ void GameClient::render_npcs(int tile_w, int tile_h) {
     }
 }
 
+// Carga todos los efectos de sonido del juego en el AudioManager.
 void GameClient::load_audio_assets() {
     const std::string audio_path = get_base_asset_dir() + "/audio/sfx/";
 

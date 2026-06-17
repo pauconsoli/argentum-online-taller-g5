@@ -54,9 +54,13 @@ void TerrainRenderer::draw_overlays_for_tile(int col, int row, int tile_w, int t
     int ty = camera_.get_screen_y(row * tile_h);
     TerrainType terrain = client_map.at(col, row).terrain;
 
-    // Overlays de tipo (entradas de mazmorras, muros de ciudad).
-    // Pueden ser más altos que un tile: se centran horizontal y se anclan al fondo.
-    SDL_Texture* type_overlay = sprite_manager_->get_terrain_overlay(terrain);
+    // Overlays de tipo (muros de ciudad). Las entradas de mazmorra se omiten visualmente
+    // — la lógica de teletransporte sigue funcionando porque está en el servidor.
+    // TODO(chiaradelaurentis): quitar esta guarda cuando se quiera mostrar las entradas nuevamente.
+    bool is_dungeon_entrance =
+        (terrain == TerrainType::DUNGEON_ENTRANCE_1 || terrain == TerrainType::DUNGEON_ENTRANCE_2);
+    SDL_Texture* type_overlay =
+        is_dungeon_entrance ? nullptr : sprite_manager_->get_terrain_overlay(terrain);
     if (type_overlay) {
         int ow, oh;
         SDL_QueryTexture(type_overlay, nullptr, nullptr, &ow, &oh);
