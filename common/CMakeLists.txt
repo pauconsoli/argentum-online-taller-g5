@@ -29,6 +29,7 @@ target_sources(taller_common
     commands/resurrect_command.h
     commands/interact_npc_command.h
     # items
+    commands/chat_command.h
     # world
     world/terrain_type.h
     # updates
@@ -45,4 +46,5 @@ target_sources(taller_common
     updates/spawned_update.h
     updates/attack_update.h
     updates/death_update.h
+    updates/chat_msg_update.h
     )

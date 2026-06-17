@@ -45,6 +45,7 @@ class ServerProtocol {
     void send_attacked(const GameUpdate& update);
     void send_death(const GameUpdate& update);
     void send_inventory(const GameUpdate& update);
+    void send_chat_msg(const GameUpdate& update);
     void send_error(const GameUpdate& update);
     void send_catalog(const GameUpdate& update);
 
@@ -72,6 +73,7 @@ class ServerProtocol {
     std::unique_ptr<ClientCommand> recv_drop_item_payload(uint32_t player_id);
     std::unique_ptr<ClientCommand> recv_equip_item_payload(uint32_t player_id);
     std::unique_ptr<ClientCommand> recv_interact_payload(uint32_t player_id);
+    std::unique_ptr<ClientCommand> recv_chat_payload(uint32_t player_id, const std::string& nick);
 
     void send_update(const GameUpdate& update);
 

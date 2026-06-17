@@ -20,6 +20,7 @@ target_sources(argentum_server
     commands/equip_item_command.cpp
     commands/resurrect_command.cpp
     commands/interact_npc_command.cpp
+    commands/chat_command.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp

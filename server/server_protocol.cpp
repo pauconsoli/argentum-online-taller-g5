@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 
 #include "common/commands/attack_command.h"
+#include "common/commands/chat_command.h"
 #include "common/commands/drop_item_command.h"
 #include "common/commands/equip_item_command.h"
 #include "common/commands/interact_npc_command.h"
@@ -20,6 +21,7 @@
 #include "common/updates/attack_update.h"
 #include "common/updates/catalog_update.h"
 #include "common/updates/chat_message_update.h"
+#include "common/updates/chat_msg_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
@@ -225,6 +227,11 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_interact_payload(uint32_t pl
     int32_t amount = recv_i32();
     return std::make_unique<InteractNPCCommand>(player_id, npc_id, type, arg, amount);
 }
+std::unique_ptr<ClientCommand> ServerProtocol::recv_chat_payload(uint32_t player_id,
+                                                                 const std::string& nick) {
+    std::string text = recv_string();
+    return std::make_unique<ChatCommand>(player_id, nick, std::move(text));
+}
 
 void ServerProtocol::send_update(const GameUpdate& update) {
     switch (update.get_type()) {
@@ -269,6 +276,8 @@ void ServerProtocol::send_update(const GameUpdate& update) {
             break;
         case UpdateType::CATALOG:
             send_catalog(update);
+        case UpdateType::CHAT_MSG:
+            send_chat_msg(update);
             break;
         case UpdateType::ERROR:
             send_error(update);
@@ -536,6 +545,18 @@ void ServerProtocol::send_moved(const GameUpdate& update) {
     put_i32(buf, u.get_pos().y);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_moved: client closed connection");
+    }
+}
+
+void ServerProtocol::send_chat_msg(const GameUpdate& update) {
+    const auto& u = static_cast<const ChatMsgUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::CHAT_MSG);
+    put_u32(buf, u.sender_id);
+    put_string(buf, u.sender_nick);
+    put_string(buf, u.text);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_chat_msg: client closed connection");
     }
 }
 
