@@ -332,6 +332,10 @@ bool World::move_character(uint32_t character_id, Direction direction) {
         return false;
     }
 
+    if (dynamic_cast<NPC*>(character) && map.is_safe(next)) {
+        return false;  // Los NPCs no pueden entrar a zonas seguras
+    }
+
     if (is_position_occupied(next)) {
         return false;
     }
@@ -605,7 +609,6 @@ void World::npc_move_towards(NPC* npc, const Position& target_pos) {
     else
         dir = (dy > 0) ? Direction::DOWN : Direction::UP;
 
-    move_character(npc->get_id(), dir);
     npc->set_direction(dir);
     bool moved = move_character(npc->get_id(), dir);
     if (moved) {
@@ -748,11 +751,22 @@ void World::update(float tick_seconds) {
     }
 
     // acciones de NPCs hostiles
-    for (auto& [id, npc] : npcs) {
+    for (auto it = npcs.begin(); it != npcs.end();) {
+        auto& npc = it->second;
+
+        if (npc->is_dead()) {
+            Position pos = npc->get_position();
+            occupied[pos.y][pos.x] = false;
+            it = npcs.erase(it);  // remuevo NPC del mundo
+            continue;
+        }
+
         npc->set_moving(false);
 
-        if (npc->is_dead() || !npc->is_hostile())
+        if (!npc->is_hostile()) {
+            ++it;
             continue;
+        }
 
         auto nearby = get_players_near(npc->get_position(), npc->get_attack_range());
         NPCBehavior behavior = npc->update(tick_seconds, nearby);
@@ -770,6 +784,7 @@ void World::update(float tick_seconds) {
             case NPCAction::STILL:
                 break;
         }
+        ++it;
     }
 
     // spawn de NPCs hostiles

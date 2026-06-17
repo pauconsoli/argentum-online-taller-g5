@@ -50,5 +50,40 @@ ClientMap build_sample_client_map() {
     // Franja de tierra (dirt) diagonal simulada: fila 60, cols 10–70.
     set_rect(10, 60, 60, 2, TerrainType::DIRT, false);
 
+    // === Área de prueba de transiciones agua-arena (filas 14-32, cols 2-22) ===
+    //
+    // Caso A: lago 5×4 con borde de arena de 1 tile.
+    //   Agua: cols 6-10, filas 17-20.
+    //   Arena: cols 5-11, filas 16-21 (borde completo).
+    //   Cubre: bordes N/S/E/W y las cuatro esquinas exteriores (agua en 2 lados adyacentes).
+    set_rect(5, 16, 7, 6, TerrainType::SAND, false);  // anillo de arena
+    set_rect(6, 17, 5, 4, TerrainType::WATER, true);  // lago interior
+    //
+    // Caso B: esquinas interiores aisladas (agua solo en diagonal).
+    //   Cuatro WATER solitarios en diagonal de cuatro SAND solitarios.
+    //   Ninguna celda WATER comparte lado con la SAND correspondiente.
+    //
+    //   NW: agua(14,14) → arena(15,15) → corner_nw=0°
+    set_rect(14, 14, 1, 1, TerrainType::WATER, true);
+    set_rect(15, 15, 1, 1, TerrainType::SAND, false);
+    //   NE: agua(18,14) → arena(17,15) → corner_ne=90°
+    set_rect(18, 14, 1, 1, TerrainType::WATER, true);
+    set_rect(17, 15, 1, 1, TerrainType::SAND, false);
+    //   SE: agua(18,24) → arena(17,23) → corner_se=180°
+    set_rect(18, 24, 1, 1, TerrainType::WATER, true);
+    set_rect(17, 23, 1, 1, TerrainType::SAND, false);
+    //   SW: agua(14,24) → arena(15,23) → corner_sw=270°
+    set_rect(14, 24, 1, 1, TerrainType::WATER, true);
+    set_rect(15, 23, 1, 1, TerrainType::SAND, false);
+    //
+    // Caso C: tile completamente rodeado de agua (4 bordes).
+    set_rect(20, 18, 3, 3, TerrainType::WATER, true);  // 3×3 agua
+    set_rect(21, 19, 1, 1, TerrainType::SAND, false);  // arena central → N+S+E+W edges
+    //
+    // Caso D: arena en límite del mapa (fila 0, sin vecino norte).
+    //   has_terrain(col,row-1,WATER) con row-1<0 debe retornar false sin crash.
+    set_rect(20, 0, 1, 1, TerrainType::SAND, false);
+    set_rect(20, 1, 1, 1, TerrainType::WATER, true);  // agua al sur → solo south edge
+
     return ClientMap(W, H, std::move(cells));
 }

@@ -45,20 +45,23 @@ const char* SpriteManager::terrain_key(TerrainType t) {
         case TerrainType::SAND:
             return "terrain_sand";
         case TerrainType::WOOD:
-            return "terrain_dirt";
+            return "terrain_wood";
         case TerrainType::DUNGEON_FLOOR_1:
-        case TerrainType::DUNGEON_FLOOR_2:
         case TerrainType::DUNGEON_ENTRANCE_1:
-        case TerrainType::DUNGEON_ENTRANCE_2:
             return "terrain_dungeon_floor";
+        case TerrainType::DUNGEON_FLOOR_2:
+        case TerrainType::DUNGEON_ENTRANCE_2:
+            return "terrain_dungeon_floor_2";
         case TerrainType::DUNGEON_WALL_1:
-        case TerrainType::DUNGEON_WALL_2:
             return "terrain_dungeon_wall";
+        case TerrainType::DUNGEON_WALL_2:
+            return "terrain_dungeon_wall_2";
         case TerrainType::CITY_FLOOR_1:
-        case TerrainType::CITY_FLOOR_2:
         case TerrainType::CITY_WALL_1:
+            return "terrain_city_floor_1";
+        case TerrainType::CITY_FLOOR_2:
         case TerrainType::CITY_WALL_2:
-            return "terrain_stone";
+            return "terrain_city_floor_2";
     }
     return "terrain_grass";
 }
@@ -74,13 +77,18 @@ void SpriteManager::load_terrain_textures(const std::string& dir) {
     load("terrain_sand", terrain_dir + "sand.png");
     load("terrain_dungeon_floor", terrain_dir + "dungeon_floor.png");
     load("terrain_dungeon_wall", terrain_dir + "dungeon_wall.png");
+    load("terrain_dungeon_floor_2", terrain_dir + "dungeon_floor_2.png");
+    load("terrain_dungeon_wall_2", terrain_dir + "dungeon_wall_2.png");
+    load("terrain_wood", terrain_dir + "wood.png");
+    load("terrain_city_floor_1", terrain_dir + "city_floor_1.png");
+    load("terrain_city_floor_2", terrain_dir + "city_floor_2.png");
     load("tree", terrain_dir + "tree.png");
     // Pociones, flauta y oro cargadas eagerly: tienen clave de nombre en lugar de numérica.
     const std::string items_dir = assets_dir + sep + "sprites/items/";
     load_lazy("item_pocion_vida", items_dir + "item_pocion_vida.png");
     load_lazy("item_pocion_mana", items_dir + "item_pocion_mana.png");
     load_lazy("item_flauta_elfica", items_dir + "item_flauta_elfica.png");
-    load_lazy("item_gold", items_dir + "item_gold.png");
+    load_lazy("item_oro", items_dir + "item_oro.png");
 }
 
 SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
@@ -89,8 +97,6 @@ SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
 
 const char* SpriteManager::terrain_overlay_key(TerrainType t) {
     switch (t) {
-        // TODO(chiaradelaurentis): agregar el PNG en assets/sprites/terrain/<key>.png cuando esté
-        // disponible
         case TerrainType::DUNGEON_ENTRANCE_1:
             return "terrain_overlay_dungeon_entrance_1";
         case TerrainType::DUNGEON_ENTRANCE_2:
@@ -163,6 +169,18 @@ SDL_Texture* SpriteManager::load_lazy(const std::string& key, const std::string&
     return texture;
 }
 
+SDL_Texture* SpriteManager::load_optional_lazy(const std::string& key, const std::string& path) {
+    auto it = textures.find(key);
+    if (it != textures.end()) {
+        return it->second;  // puede ser nullptr si se intentó y el PNG no existía
+    }
+    SDL_Texture* tex = load_lazy(key, path);
+    if (!tex) {
+        textures[key] = nullptr;  // cachear la ausencia; los overlays opcionales no se reintentarán
+    }
+    return tex;
+}
+
 SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
     if (head_index == 0)
         head_index = 1;
@@ -178,28 +196,28 @@ SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
 
 std::string SpriteManager::item_key_for_name(const std::string& name) {
     static const std::unordered_map<std::string, std::string> table = {
-        {"Espada", "item_2"},
-        {"Hacha", "item_3"},
-        {"Martillo", "item_15"},
-        {"Vara de fresno", "item_159"},
-        {"Báculo nudoso", "item_401"},
-        {"Báculo engarzado", "item_479"},
-        {"Arco simple", "item_574"},
-        {"Arco compuesto", "item_656"},
-        {"Armadura de cuero", "item_30"},
-        {"Armadura de placas", "item_1800"},
-        {"Túnica azul", "item_1797"},
-        {"Capucha", "item_132"},
-        {"Casco de hierro", "item_243"},
-        {"Escudo de tortuga", "item_1700"},
-        {"Escudo de hierro", "item_1715"},
-        {"Sombrero mágico", "item_996"},
+        {"Espada", "item_espada"},
+        {"Hacha", "item_hacha"},
+        {"Martillo", "item_martillo"},
+        {"Vara de fresno", "item_vara_fresno"},
+        {"Báculo nudoso", "item_baculo_nudoso"},
+        {"Báculo engarzado", "item_baculo_engarzado"},
+        {"Arco simple", "item_arco_simple"},
+        {"Arco compuesto", "item_arco_compuesto"},
+        {"Armadura de cuero", "item_armadura_cuero"},
+        {"Armadura de placas", "item_armadura_placas"},
+        {"Túnica azul", "item_tunica_azul"},
+        {"Capucha", "item_capucha"},
+        {"Casco de hierro", "item_casco_hierro"},
+        {"Escudo de tortuga", "item_escudo_tortuga"},
+        {"Escudo de hierro", "item_escudo_hierro"},
+        {"Sombrero mágico", "item_sombrero_magico"},
         {"Flauta élfica", "item_flauta_elfica"},
         {"Pocion de vida", "item_pocion_vida"},
         {"Pocion de mana", "item_pocion_mana"},
     };
     auto it = table.find(name);
-    return it != table.end() ? it->second : "item_2";
+    return it != table.end() ? it->second : "item_espada";
 }
 
 SDL_Texture* SpriteManager::get_item(const std::string& key) {
@@ -210,7 +228,13 @@ SDL_Texture* SpriteManager::get_item(const std::string& key) {
 
 SDL_Texture* SpriteManager::get_gold() {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    return load_lazy("item_gold", assets_dir + sep + "sprites/items/item_gold.png");
+    return load_lazy("item_oro", assets_dir + sep + "sprites/items/item_oro.png");
+}
+
+SDL_Texture* SpriteManager::get_transition_overlay(const char* key) {
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    std::string path = assets_dir + sep + "sprites/terrain/" + key + ".png";
+    return load_optional_lazy(key, path);
 }
 
 SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
@@ -254,6 +278,6 @@ SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
     }
     std::string key = std::string("npc_") + filename;
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "npcs/" + filename;
+    std::string path = assets_dir + sep + "sprites/npcs/" + filename;
     return load_lazy(key, path);
 }

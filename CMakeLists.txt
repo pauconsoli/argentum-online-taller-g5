@@ -239,6 +239,7 @@ if(ARGENTUM_CLIENT_QT)
             client/sdl/sprite_manager.cpp
             client/sdl/client_map.cpp
             client/sdl/audio_manager.cpp
+            client/sdl/terrain_renderer.cpp
         )
 
         add_dependencies(argentum_client_qt taller_common SDL2pp::SDL2pp)

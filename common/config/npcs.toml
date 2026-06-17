@@ -5,110 +5,110 @@
 
 [goblin]
 name = "Goblin"
-level = 12
-max_hp = 40
-defense = 2
+level = 4
+max_hp = 10
+defense = 1
 agility = 0
-min_damage = 3
-max_damage = 8
+min_damage = 1
+max_damage = 2
 attack_range = 5
 zones = ["all"]
 
 [goblin_executioner]
 name = "Goblin Verdugo"
-level = 16
-max_hp = 85
-defense = 5
-agility = 12
-min_damage = 6
-max_damage = 15
+level = 8
+max_hp = 15
+defense = 2
+agility = 5
+min_damage = 2
+max_damage = 3
 attack_range = 5
-zones = ["all"]
+zones = ["dungeon"]  #para que no te mate al toque
 
 [spider]
 name = "Araña"
-level = 2
-max_hp = 25
-defense = 1
+level = 1
+max_hp = 8
+defense = 0
 agility = 0
-min_damage = 2
-max_damage = 5
+min_damage = 1
+max_damage = 3
 attack_range = 4
 zones = ["dungeon"]
 
 [spider_giant]
 name = "Araña Gigante"
-level = 5
-max_hp = 55
-defense = 3
-agility = 5
-min_damage = 4
-max_damage = 9
+level = 3
+max_hp = 15
+defense = 1
+agility = 2
+min_damage = 2
+max_damage = 4
 attack_range = 5
 zones = ["dungeon"]
 
 [skeleton]
 name = "Esqueleto"
-level = 5
-max_hp = 60
-defense = 5
+level = 3
+max_hp = 20
+defense = 2
 agility = 0
-min_damage = 5
-max_damage = 12
+min_damage = 2
+max_damage = 4
 attack_range = 6
 zones = ["dungeon"]
 
 [skeleton_warrior]
 name = "Esqueleto Guerrero"
-level = 8
-max_hp = 110
-defense = 8
-agility = 6
-min_damage = 9
-max_damage = 20
+level = 5
+max_hp = 35
+defense = 4
+agility = 3
+min_damage = 2
+max_damage = 5
 attack_range = 6
 zones = ["dungeon"]
 
 [zombie]
 name = "Zombie"
-level = 4
-max_hp = 50
-defense = 3
+level = 2
+max_hp = 2
+defense = 1
 agility = 0
-min_damage = 4
-max_damage = 10
+min_damage = 2
+max_damage = 5
 attack_range = 5
 zones = ["all"]
 
 [orc]
 name = "Orco"
-level = 6
-max_hp = 80
-defense = 6
+level = 4
+max_hp = 10
+defense = 3
 agility = 0
-min_damage = 8
-max_damage = 15
+min_damage = 3
+max_damage = 5
 attack_range = 5
 zones = ["all"]
 
 [golem]
 name = "Golem de Piedra"
-level = 10
-max_hp = 200
-defense = 15
+level = 6
+max_hp = 20
+defense = 8
 agility = 0
-min_damage = 15
-max_damage = 30
+min_damage = 2
+max_damage = 5
 attack_range = 5
 zones = ["all"]
 
 [golem_iron]
 name = "Golem de Hierro"
-level = 15
-max_hp = 400
-defense = 25
-agility = 5
-min_damage = 25
-max_damage = 50
+level = 10
+max_hp = 125
+defense = 12
+agility = 2
+min_damage = 10
+max_damage = 25
 attack_range = 5
 zones = ["dungeon"]

@@ -24,6 +24,9 @@ class SpriteManager {
     static std::string head_key(uint16_t head_index);
 
     SDL_Texture* load_lazy(const std::string& key, const std::string& path);
+    // Igual que load_lazy pero cachea nullptr al primer intento fallido.
+    // Usar solo para assets opcionales (overlays de transición).
+    SDL_Texture* load_optional_lazy(const std::string& key, const std::string& path);
 
  public:
     explicit SpriteManager(SDL_Renderer* renderer);
@@ -39,6 +42,10 @@ class SpriteManager {
     SDL_Texture* get_terrain(TerrainType t) const;
     // Retorna nullptr si el terreno no tiene overlay o el PNG todavía no existe.
     SDL_Texture* get_terrain_overlay(TerrainType t);
+    // Retorna nullptr si el PNG todavía no existe. La clave es el nombre del archivo sin extensión,
+    // e.g. "terrain_overlay_water_sand_north". Resultado cacheado: el intento fallido no
+    // reintenta IMG_Load en frames siguientes.
+    SDL_Texture* get_transition_overlay(const char* key);
     SDL_Texture* get_tree() const;
 
     void load_body_textures(const std::string& assets_dir);
@@ -48,18 +55,18 @@ class SpriteManager {
     // dir 0=south, 1=north, 2=west, 3=east -> src_rect.y = dir * 64
     SDL_Texture* get_head(uint16_t head_index);
 
-    // Item icons: 32x32 RGBA. key es la clave de textura (e.g. "item_2", "item_pocion_vida").
+    // Item icons: 32x32 RGBA. key es la clave de textura (e.g. "item_espada", "item_pocion_vida").
     SDL_Texture* get_item(const std::string& key);
 
-    // Sprite de monedas de oro (item_gold.png, 32x32).
+    // Sprite de monedas de oro (item_oro.png, 32x32).
     SDL_Texture* get_gold();
 
     // NPC sprites: 4 filas (sur/norte/oeste/este), N frames por fila.
-    // Carga lazy desde assets/npcs/npc_<tipo>.png.
+    // Carga lazy desde assets/sprites/npcs/npc_<tipo>.png.
     SDL_Texture* get_npc(NPCVisualType type);
 
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
-    // Fallback: "item_2" (Espada) si el nombre no está en la tabla.
+    // Fallback: "item_espada" si el nombre no está en la tabla.
     static std::string item_key_for_name(const std::string& name);
 };
 

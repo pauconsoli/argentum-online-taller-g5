@@ -12,6 +12,7 @@ class HostileNPC: public NPC {
     int min_damage;
     int max_damage;
     int attack_range;
+    float action_timer = 0.0f;
     std::vector<std::string> allowed_zones;
 
  public:

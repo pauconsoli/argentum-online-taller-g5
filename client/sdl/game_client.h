@@ -1,6 +1,8 @@
 #ifndef GAME_CLIENT_H
 #define GAME_CLIENT_H
 
+class ClientMap;
+
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -19,6 +21,7 @@
 #include "mini_chat.h"
 #include "renderer.h"
 #include "sprite_manager.h"
+#include "terrain_renderer.h"
 
 class GameClient {
  private:
@@ -27,7 +30,8 @@ class GameClient {
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
-    AudioManager* audio_manager;
+    TerrainRenderer* terrain_renderer_;
+    std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
     Camera camera;
@@ -77,6 +81,13 @@ class GameClient {
     GameClient& operator=(const GameClient&) = delete;
 
     void run();
+
+ private:
+    void load_audio_assets();
+    void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
+    void render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w, int head_h,
+                        int direction, int current_frame);
+    void render_npcs(int tile_w, int tile_h);
 };
 
 #endif

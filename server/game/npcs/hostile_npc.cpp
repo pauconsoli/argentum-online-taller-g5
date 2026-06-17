@@ -27,9 +27,14 @@ int HostileNPC::calculate_base_damage() const {
     return GameFormulas::calculate_npc_damage(min_damage, max_damage);
 }
 
-NPCBehavior HostileNPC::update(float /*time*/, const std::vector<Player*>& nearby_targets) {
+NPCBehavior HostileNPC::update(float time, const std::vector<Player*>& nearby_targets) {
     NPCBehavior behavior;
     behavior.action = NPCAction::STILL;
+
+    action_timer += time;
+    if (action_timer < 0.5f) {  // cooldown de 0.5s para no ser inmatables. extraer al config
+        return behavior;
+    }
 
     if (nearby_targets.empty()) {
         return behavior;
@@ -61,9 +66,11 @@ NPCBehavior HostileNPC::update(float /*time*/, const std::vector<Player*>& nearb
     if (std::abs(dx) <= 1 && std::abs(dy) <= 1) {  // adyacente-->ataque
         behavior.action = NPCAction::ATTACK;
         behavior.target_id = closest->get_id();
+        action_timer = 0.0f;
     } else {  // no adyacente pero dentro del rango-->perseguir
         behavior.action = NPCAction::CHASE;
         behavior.target_position = closest->get_position();
+        action_timer = 0.0f;
     }
 
     return behavior;

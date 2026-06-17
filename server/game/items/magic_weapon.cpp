@@ -25,7 +25,8 @@ WeaponEffect MagicWeapon::apply_effect(const Player& attacker) const {
         int heal = GameFormulas::calculate_healing(spell->get_min_heal(), spell->get_max_heal());
         return {0, heal};
     }
-    int dmg = GameFormulas::calculate_damage(attacker, this);
+    int dmg = GameFormulas::calculate_magic_damage(attacker, spell->get_min_damage(),
+                                                   spell->get_max_damage());
     return {dmg, 0};
 }
 
