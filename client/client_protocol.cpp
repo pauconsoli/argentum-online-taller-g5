@@ -10,6 +10,7 @@
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/chat_msg_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
@@ -209,6 +210,15 @@ void ClientProtocol::send_equip_item(uint8_t slot_index) {
     }
 }
 
+void ClientProtocol::send_chat(const std::string& text) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::CHAT);
+    put_string(buf, text);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_chat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
@@ -252,6 +262,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_snapshot();
         case ServerOpcode::MOVED:
             return recv_moved();
+        case ServerOpcode::CHAT_MSG:
+            return recv_chat_msg();
         case ServerOpcode::ERROR:
             return recv_error();
         default:
@@ -418,6 +430,13 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
     int32_t x = recv_i32();
     int32_t y = recv_i32();
     return std::make_unique<MovedUpdate>(pid, Position{x, y});
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_chat_msg() {
+    uint32_t sender_id = recv_u32();
+    std::string sender_nick = recv_string();
+    std::string text = recv_string();
+    return std::make_unique<ChatMsgUpdate>(sender_id, std::move(sender_nick), std::move(text));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {

@@ -83,6 +83,9 @@ void ReceiverThread::run() {
                         case ClientOpcode::EQUIP_ITEM:
                             handle_equip_item();
                             break;
+                        case ClientOpcode::CHAT:
+                            handle_chat();
+                            break;
                         default:
                             send_error(ProtocolError::COMMAND_NOT_ALLOWED,
                                        "comando no implementado en este estado");
@@ -233,6 +236,19 @@ void ReceiverThread::handle_drop_item() {
         return;
     }
     auto cmd = protocol.recv_drop_item_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_chat() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        // El cliente mandó el opcode CHAT pero todavía hay payload en el socket.
+        // Lo consumimos para no desincronizar el stream y devolvemos error.
+        protocol.recv_chat_payload(player_conn.get_player_id(), player_conn.get_nick());
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_chat_payload(player_conn.get_player_id(), player_conn.get_nick());
     server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 

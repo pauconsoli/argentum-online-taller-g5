@@ -18,6 +18,7 @@ target_sources(argentum_server
     commands/drop_item_command.cpp
     commands/pick_up_item_command.cpp
     commands/equip_item_command.cpp
+    commands/chat_command.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp
