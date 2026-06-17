@@ -4,9 +4,12 @@
 #include <string>
 #include <vector>
 
+#include "server/game/npcs/npc_type.h"
+
 struct NPCTemplate {
     std::string id;
     std::string name;
+    NPCType npc_type;
     int level;
     int max_hp;
     int defense;

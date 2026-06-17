@@ -51,6 +51,12 @@ class Character {
     virtual bool is_ranged_attack() const {
         return false;
     }
+    virtual bool is_magic_attack() const {
+        return false;
+    }
+    virtual std::string get_attack_name() const {
+        return "";
+    }
     virtual int calculate_base_damage() const = 0;
     virtual int calculate_base_healing() const {
         return 0;

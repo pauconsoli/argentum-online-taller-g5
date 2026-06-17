@@ -7,6 +7,31 @@
 #include <toml++/toml.hpp>
 
 #include "server/game/npcs/npc_registry.h"
+#include "server/game/npcs/npc_type.h"
+
+static NPCType parse_npc_type(const std::string& id) {
+    if (id == "goblin")
+        return NPCType::GOBLIN;
+    if (id == "goblin_executioner")
+        return NPCType::GOBLIN_EXECUTIONER;
+    if (id == "spider")
+        return NPCType::SPIDER;
+    if (id == "spider_giant")
+        return NPCType::SPIDER_GIANT;
+    if (id == "skeleton")
+        return NPCType::SKELETON;
+    if (id == "skeleton_warrior")
+        return NPCType::SKELETON_WARRIOR;
+    if (id == "zombie")
+        return NPCType::ZOMBIE;
+    if (id == "orc")
+        return NPCType::ORC;
+    if (id == "golem")
+        return NPCType::GOLEM;
+    if (id == "golem_iron")
+        return NPCType::GOLEM_IRON;
+    return NPCType::UNKNOWN;
+}
 
 void NPCRegistryLoader::load(const std::string& config_path) {
     auto root = toml::parse_file(config_path);
@@ -20,6 +45,7 @@ void NPCRegistryLoader::load(const std::string& config_path) {
         NPCTemplate tpl;
         tpl.id = std::string(key.str());
         tpl.name = (*npc_table)["name"].value_or("");
+        tpl.npc_type = parse_npc_type(tpl.id);
         tpl.level = (*npc_table)["level"].value_or(0);
         tpl.max_hp = (*npc_table)["max_hp"].value_or(0);
         tpl.defense = (*npc_table)["defense"].value_or(0);
