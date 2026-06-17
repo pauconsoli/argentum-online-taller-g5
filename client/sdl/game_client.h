@@ -1,6 +1,8 @@
 #ifndef GAME_CLIENT_H
 #define GAME_CLIENT_H
 
+class ClientMap;
+
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -80,6 +82,12 @@ class GameClient {
 
  private:
     void load_audio_assets();
+    void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
+    void render_terrain_layer(int start_col, int end_col, int start_row, int end_row, int tile_w,
+                              int tile_h, const ClientMap& client_map);
+    void render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w, int head_h,
+                        int direction, int current_frame);
+    void render_npcs(int tile_w, int tile_h);
 };
 
 #endif

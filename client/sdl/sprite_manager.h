@@ -48,10 +48,10 @@ class SpriteManager {
     // dir 0=south, 1=north, 2=west, 3=east -> src_rect.y = dir * 64
     SDL_Texture* get_head(uint16_t head_index);
 
-    // Item icons: 32x32 RGBA. key es la clave de textura (e.g. "item_2", "item_pocion_vida").
+    // Item icons: 32x32 RGBA. key es la clave de textura (e.g. "item_espada", "item_pocion_vida").
     SDL_Texture* get_item(const std::string& key);
 
-    // Sprite de monedas de oro (item_gold.png, 32x32).
+    // Sprite de monedas de oro (item_oro.png, 32x32).
     SDL_Texture* get_gold();
 
     // NPC sprites: 4 filas (sur/norte/oeste/este), N frames por fila.
@@ -59,7 +59,7 @@ class SpriteManager {
     SDL_Texture* get_npc(NPCVisualType type);
 
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
-    // Fallback: "item_2" (Espada) si el nombre no está en la tabla.
+    // Fallback: "item_espada" si el nombre no está en la tabla.
     static std::string item_key_for_name(const std::string& name);
 };
 
