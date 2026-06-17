@@ -8,7 +8,8 @@
 #include "server/game/items/item_registry.h"
 #include "server/game/player.h"
 
-Merchant::Merchant(uint32_t id, const Position& pos): CityNPC(id, "Comerciante", pos) {}
+Merchant::Merchant(uint32_t id, NPCType npc_type, const Position& pos):
+    CityNPC(id, "Comerciante", npc_type, pos) {}
 
 InteractResult Merchant::on_buy(const std::string& item_name, Player& player) {
     const ItemRegistry& registry = ItemRegistry::get_instance();

@@ -7,8 +7,8 @@ static constexpr int CITY_NPC_DEFENSE = 9999;
 static constexpr int CITY_NPC_LEVEL = 100;
 
 
-CityNPC::CityNPC(uint32_t id, const std::string& name, const Position& pos):
-    NPC(id, name, CITY_NPC_LEVEL, CITY_NPC_HP, CITY_NPC_DEFENSE, pos) {}
+CityNPC::CityNPC(uint32_t id, const std::string& name, NPCType npc_type, const Position& pos):
+    NPC(id, name, npc_type, CITY_NPC_LEVEL, CITY_NPC_HP, CITY_NPC_DEFENSE, pos) {}
 
 NPCBehavior CityNPC::update(float /*time*/, const std::vector<Player*>& /*nearby_targets*/) {
     return NPCBehavior{};  // STILL por defecto

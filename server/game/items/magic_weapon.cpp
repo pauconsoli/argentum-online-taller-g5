@@ -32,3 +32,11 @@ WeaponEffect MagicWeapon::apply_effect(const Player& attacker) const {
 bool MagicWeapon::is_healing() const {
     return spell->does_heal();
 }
+
+bool MagicWeapon::is_magic() const {
+    return true;
+}
+
+std::string MagicWeapon::get_attack_name() const {
+    return spell->get_name();
+}

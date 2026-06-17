@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 
+#include "common/direction.h"
 #include "common/position.h"
 #include "server/game/character.h"
+#include "server/game/npcs/npc_type.h"
 
 class Player;
 
@@ -20,10 +22,13 @@ struct NPCBehavior {
 class NPC: public Character {
  protected:
     std::string name;
+    NPCType npc_type;
     int defense;
+    Direction direction;
+    bool moving;
 
  public:
-    NPC(uint32_t id, const std::string& name, int level, int max_hp, int defense,
+    NPC(uint32_t id, const std::string& name, NPCType npc_type, int level, int max_hp, int defense,
         const Position& pos);
 
     ~NPC() override = default;
@@ -46,6 +51,24 @@ class NPC: public Character {
     }
 
     const std::string& get_name() const;
+
+    NPCType get_type() const {
+        return npc_type;
+    }
+
+    Direction get_direction() const {
+        return direction;
+    }
+    void set_direction(Direction dir) {
+        direction = dir;
+    }
+
+    bool is_moving() const {
+        return moving;
+    }
+    void set_moving(bool is_moving) {
+        moving = is_moving;
+    }
 };
 
 #endif

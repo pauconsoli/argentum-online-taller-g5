@@ -25,6 +25,10 @@ class MagicWeapon: public Weapon {
     WeaponEffect apply_effect(const Player& attacker) const override;
 
     bool is_healing() const override;
+
+    bool is_magic() const override;
+
+    std::string get_attack_name() const override;
 };
 
 #endif

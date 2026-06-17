@@ -2,8 +2,11 @@
 #define ATTACK_RESULT_H
 
 #include <cstdint>
+#include <string>
 
 enum class AttackStatus { SUCCESS, NO_MANA, OUT_OF_RANGE, INVALID_TARGET, DEAD };
+
+enum class AttackType { NORMAL, RANGED, MAGIC };
 
 struct AttackResult {
     uint32_t attacker_id;
@@ -14,6 +17,8 @@ struct AttackResult {
     bool is_healing = false;
     int heal_amount = 0;
     AttackStatus status = AttackStatus::SUCCESS;
+    AttackType type = AttackType::NORMAL;
+    std::string weapon_or_spell_name = "";
 };
 
 #endif

@@ -31,6 +31,7 @@ class ReceiverThread: public Thread {
     void handle_pick_up();
     void handle_drop_item();
     void handle_equip_item();
+    void handle_interact();
     void handle_leave_match();
 
     void send_error(uint8_t code, const std::string& detail);
