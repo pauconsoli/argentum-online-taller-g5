@@ -6,8 +6,8 @@
 
 #include <toml++/toml.hpp>
 
+#include "common/npc_type.h"
 #include "server/game/npcs/npc_registry.h"
-#include "server/game/npcs/npc_type.h"
 
 static NPCType parse_npc_type(const std::string& id) {
     if (id == "goblin")

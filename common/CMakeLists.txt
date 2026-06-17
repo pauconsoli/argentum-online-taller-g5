@@ -10,6 +10,8 @@ target_sources(taller_common
     direction.h
     attack_result.h
     liberror.h
+    npc_interaction.h
+    npc_type.h
     position.h
     protocol_constants.h
     queue.h

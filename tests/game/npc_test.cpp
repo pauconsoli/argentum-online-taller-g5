@@ -1,6 +1,7 @@
 #include <memory>
 #include <vector>
 
+#include "common/npc_type.h"
 #include "common/position.h"
 #include "gtest/gtest.h"
 #include "server/game/bank.h"
@@ -9,7 +10,6 @@
 #include "server/game/npcs/city_npc.h"
 #include "server/game/npcs/hostile_npc.h"
 #include "server/game/npcs/merchant.h"
-#include "server/game/npcs/npc_type.h"
 #include "server/game/npcs/priest.h"
 #include "server/game/player.h"
 
