@@ -169,6 +169,18 @@ SDL_Texture* SpriteManager::load_lazy(const std::string& key, const std::string&
     return texture;
 }
 
+SDL_Texture* SpriteManager::load_optional_lazy(const std::string& key, const std::string& path) {
+    auto it = textures.find(key);
+    if (it != textures.end()) {
+        return it->second;  // puede ser nullptr si se intentó y el PNG no existía
+    }
+    SDL_Texture* tex = load_lazy(key, path);
+    if (!tex) {
+        textures[key] = nullptr;  // cachear la ausencia; los overlays opcionales no se reintentarán
+    }
+    return tex;
+}
+
 SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
     if (head_index == 0)
         head_index = 1;
@@ -217,6 +229,12 @@ SDL_Texture* SpriteManager::get_item(const std::string& key) {
 SDL_Texture* SpriteManager::get_gold() {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
     return load_lazy("item_oro", assets_dir + sep + "sprites/items/item_oro.png");
+}
+
+SDL_Texture* SpriteManager::get_transition_overlay(const char* key) {
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    std::string path = assets_dir + sep + "sprites/terrain/" + key + ".png";
+    return load_optional_lazy(key, path);
 }
 
 SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {

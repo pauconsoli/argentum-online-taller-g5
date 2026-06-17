@@ -1,6 +1,7 @@
 #include "game_client.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -77,6 +78,9 @@ struct NPCSpriteInfo {
     int fw;
     int fh;
     int fpd[4];
+    int draw_w = 0;
+    int draw_h = 0;
+    int head_index = 0;
 };
 
 static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
@@ -84,25 +88,25 @@ static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
         case NPCVisualType::BANKER:
             return {26, 46, {7, 7, 7, 7}};
         case NPCVisualType::PRIEST:
-            return {32, 46, {6, 6, 6, 4}};
+            return {27, 47, {6, 6, 5, 5}, 0, 0, 3};
         case NPCVisualType::MERCHANT:
-            return {32, 46, {6, 6, 6, 4}};
+            return {27, 47, {6, 6, 5, 5}, 0, 0, 30};
         case NPCVisualType::GOBLIN:
             return {32, 32, {8, 8, 8, 8}};
         case NPCVisualType::SKELETON:
             return {25, 52, {6, 6, 5, 5}};
         case NPCVisualType::ZOMBIE:
-            return {128, 128, {8, 8, 8, 8}};
+            return {128, 128, {6, 6, 6, 6}};
         case NPCVisualType::SPIDER:
             return {128, 128, {8, 8, 8, 8}};
         case NPCVisualType::ORC:
             return {24, 52, {6, 6, 5, 5}};
         case NPCVisualType::GOLEM_ICE:
-            return {128, 128, {8, 8, 8, 8}};
+            return {128, 128, {6, 6, 6, 6}, 64, 64};
         case NPCVisualType::GOLEM_STONE:
-            return {128, 128, {8, 8, 8, 8}};
+            return {128, 128, {6, 6, 6, 6}, 64, 64};
         case NPCVisualType::GOLEM_INFERNAL:
-            return {128, 128, {8, 8, 8, 8}};
+            return {128, 128, {8, 8, 8, 8}, 64, 64};
         default:
             return {32, 32, {1, 1, 1, 1}};
     }
@@ -125,6 +129,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     hud(nullptr),
     mini_chat(nullptr),
     sprite_manager(nullptr),
+    terrain_renderer_(nullptr),
     audio_manager(nullptr),
     client(std::make_unique<Client>(host, port)),
     camera(width, height),
@@ -150,6 +155,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
+    terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = std::make_unique<AudioManager>();
@@ -164,6 +170,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     hud(nullptr),
     mini_chat(nullptr),
     sprite_manager(nullptr),
+    terrain_renderer_(nullptr),
     audio_manager(nullptr),
     client(std::move(c)),
     camera(width, height),
@@ -189,6 +196,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
+    terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = std::make_unique<AudioManager>();
@@ -201,6 +209,7 @@ GameClient::~GameClient() {
     client->join();
     delete hud;
     delete mini_chat;
+    delete terrain_renderer_;
     delete sprite_manager;
     audio_manager.reset();
     delete renderer;
@@ -437,7 +446,7 @@ void GameClient::run() {
         int end_col = start_col + width / tile_w + 1;
         int start_row = camera.get_y() / tile_h;
         int end_row = start_row + height / tile_h + 1;
-        render_terrain_layer(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
+        terrain_renderer_->draw(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
 
         // Ground items: entre terreno y jugadores
         for (const auto& gi : ground_items_) {
@@ -524,6 +533,30 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 ground_items_ = snap.ground_items;
                 npcs_.clear();
                 for (const auto& ns : snap.npcs) npcs_[ns.npc_id] = ns;
+
+                // Actualizar estado de animación desde los datos de red.
+                // La conversión de dirección es obligatoria: el servidor manda
+                // UP=0,DOWN=1,LEFT=2,RIGHT=3 pero el spritesheet tiene filas en orden
+                // south=0,north=1,west=2,east=3.
+                static const uint8_t kDirToRow[] = {1, 0, 2, 3};
+                for (const auto& ns : snap.npcs) {
+                    auto& anim = npc_anim_states_[ns.npc_id];
+                    NPCVisualType new_type = npc_visual_type_from_network(ns.npc_type);
+                    if (anim.sprite_type != new_type) {
+                        if (new_type == NPCVisualType::UNKNOWN)
+                            std::cerr << "[NPC] id=" << ns.npc_id
+                                      << " tipo desconocido=" << ns.npc_type << "\n";
+                        else
+                            std::cerr << "[NPC] id=" << ns.npc_id << " tipo=" << ns.npc_type
+                                      << " dir=" << static_cast<int>(ns.direction)
+                                      << " moving=" << ns.is_moving << "\n";
+                        anim.sprite_type = new_type;
+                        anim.current_frame = 0;
+                    }
+                    anim.direction = (ns.direction < 4) ? kDirToRow[ns.direction] : 0;
+                    anim.is_moving = ns.is_moving;
+                }
+
                 for (auto it = npc_anim_states_.begin(); it != npc_anim_states_.end();) {
                     if (npcs_.find(it->first) == npcs_.end())
                         it = npc_anim_states_.erase(it);
@@ -572,6 +605,29 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                         mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
                                                " de daño");
                 }
+
+                switch (r.type) {
+                    case AttackType::NORMAL:
+                        if (!r.evaded && r.damage > 0)
+                            audio_manager->play_sound("melee_hit");
+                        break;
+                    case AttackType::RANGED:
+                        audio_manager->play_sound("ranged_attack");
+                        break;
+                    case AttackType::MAGIC:
+                        if (r.is_healing) {
+                            // heal.wav no existe en assets; curación sin audio por ahora
+                        } else {
+                            std::string lname = r.weapon_or_spell_name;
+                            std::transform(
+                                lname.begin(), lname.end(), lname.begin(),
+                                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                            if (lname.find("explos") != std::string::npos)
+                                audio_manager->play_sound("explosion");
+                            // magic_attack.wav no existe; otros hechizos sin audio por ahora
+                        }
+                        break;
+                }
                 break;
             }
             case UpdateType::DEATH: {
@@ -619,43 +675,6 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
     }
 }
 
-void GameClient::render_terrain_layer(int start_col, int end_col, int start_row, int end_row,
-                                      int tile_w, int tile_h, const ClientMap& client_map) {
-    for (int row = start_row; row <= end_row; row++) {
-        for (int col = start_col; col <= end_col; col++) {
-            int tx = camera.get_screen_x(col * tile_w);
-            int ty = camera.get_screen_y(row * tile_h);
-            bool in_bounds = (col >= 0 && col < client_map.get_width() && row >= 0 &&
-                              row < client_map.get_height());
-            TerrainType terrain = in_bounds ? client_map.at(col, row).terrain : TerrainType::GRASS;
-            bool blocking = in_bounds && client_map.at(col, row).blocking;
-            SDL_Texture* tile_tex = sprite_manager->get_terrain(terrain);
-            renderer->draw_frame(tile_tex, 0, 0, tile_w, tile_h, tx, ty);
-            if (blocking && terrain == TerrainType::GRASS) {
-                renderer->draw_frame(sprite_manager->get_tree(), 0, 0, tile_w, tile_h, tx, ty);
-            }
-        }
-    }
-    for (int row = start_row; row <= end_row; row++) {
-        for (int col = start_col; col <= end_col; col++) {
-            bool in_bounds = (col >= 0 && col < client_map.get_width() && row >= 0 &&
-                              row < client_map.get_height());
-            if (!in_bounds)
-                continue;
-            TerrainType terrain = client_map.at(col, row).terrain;
-            SDL_Texture* overlay = sprite_manager->get_terrain_overlay(terrain);
-            if (!overlay)
-                continue;
-            int ow, oh;
-            SDL_QueryTexture(overlay, nullptr, nullptr, &ow, &oh);
-            int tx = camera.get_screen_x(col * tile_w);
-            int ty = camera.get_screen_y(row * tile_h);
-            int ox = tx + (tile_w - ow) / 2;
-            int oy = ty + (tile_h - oh);
-            renderer->draw_frame(overlay, 0, 0, ow, oh, ox, oy);
-        }
-    }
-}
 
 void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w,
                                 int head_h, int direction, int current_frame) {
@@ -749,8 +768,24 @@ void GameClient::render_npcs(int tile_w, int tile_h) {
         int frame = anim.current_frame % max_frames;
         int px = camera.get_screen_x(ns.x * tile_w);
         int py = camera.get_screen_y(ns.y * tile_h);
-        renderer->draw_frame(npc_tex, frame * info.fw, dir * info.fh, info.fw, info.fh,
-                             px + (tile_w - info.fw) / 2, py + tile_h - info.fh);
+        int dw = (info.draw_w > 0) ? info.draw_w : info.fw;
+        int dh = (info.draw_h > 0) ? info.draw_h : info.fh;
+        int body_x = px + (tile_w - dw) / 2;
+        int body_y = py + tile_h - dh;
+        renderer->draw_frame_scaled(npc_tex, frame * info.fw, dir * info.fh, info.fw, info.fh,
+                                    body_x, body_y, dw, dh);
+
+        if (info.head_index > 0) {
+            static const int body_row_to_head_row[] = {0, 2, 3, 1};
+            static const int head_y_offset[] = {-8, -15, -15, -15};
+            constexpr int head_w = 27;
+            constexpr int head_h = 64;
+            SDL_Texture* head_tex = sprite_manager->get_head(info.head_index);
+            if (head_tex) {
+                renderer->draw_frame(head_tex, 0, body_row_to_head_row[dir] * head_h, head_w,
+                                     head_h, body_x, body_y + head_y_offset[dir]);
+            }
+        }
     }
 }
 

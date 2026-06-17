@@ -24,6 +24,9 @@ class SpriteManager {
     static std::string head_key(uint16_t head_index);
 
     SDL_Texture* load_lazy(const std::string& key, const std::string& path);
+    // Igual que load_lazy pero cachea nullptr al primer intento fallido.
+    // Usar solo para assets opcionales (overlays de transición).
+    SDL_Texture* load_optional_lazy(const std::string& key, const std::string& path);
 
  public:
     explicit SpriteManager(SDL_Renderer* renderer);
@@ -39,6 +42,10 @@ class SpriteManager {
     SDL_Texture* get_terrain(TerrainType t) const;
     // Retorna nullptr si el terreno no tiene overlay o el PNG todavía no existe.
     SDL_Texture* get_terrain_overlay(TerrainType t);
+    // Retorna nullptr si el PNG todavía no existe. La clave es el nombre del archivo sin extensión,
+    // e.g. "terrain_overlay_water_sand_north". Resultado cacheado: el intento fallido no
+    // reintenta IMG_Load en frames siguientes.
+    SDL_Texture* get_transition_overlay(const char* key);
     SDL_Texture* get_tree() const;
 
     void load_body_textures(const std::string& assets_dir);

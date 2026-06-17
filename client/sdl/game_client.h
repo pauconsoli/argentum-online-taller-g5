@@ -21,6 +21,7 @@ class ClientMap;
 #include "mini_chat.h"
 #include "renderer.h"
 #include "sprite_manager.h"
+#include "terrain_renderer.h"
 
 class GameClient {
  private:
@@ -29,6 +30,7 @@ class GameClient {
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
+    TerrainRenderer* terrain_renderer_;
     std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
@@ -83,8 +85,6 @@ class GameClient {
  private:
     void load_audio_assets();
     void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
-    void render_terrain_layer(int start_col, int end_col, int start_row, int end_row, int tile_w,
-                              int tile_h, const ClientMap& client_map);
     void render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w, int head_h,
                         int direction, int current_frame);
     void render_npcs(int tile_w, int tile_h);

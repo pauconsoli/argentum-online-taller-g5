@@ -12,6 +12,7 @@ target_sources(argentum_client
     sdl/sprite_manager.cpp
     sdl/client_map.cpp
     sdl/audio_manager.cpp
+    sdl/terrain_renderer.cpp
     PUBLIC
     client.h
     client_protocol.h
@@ -24,4 +25,5 @@ target_sources(argentum_client
     sdl/sprite_manager.h
     sdl/client_map.h
     sdl/audio_manager.h
+    sdl/terrain_renderer.h
     )
