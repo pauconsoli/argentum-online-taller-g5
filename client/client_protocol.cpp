@@ -320,6 +320,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.target_died = (recv_u8() != 0);
     r.is_healing = (recv_u8() != 0);
     r.heal_amount = recv_i32();
+    r.type = static_cast<AttackType>(recv_u8());
+    r.weapon_or_spell_name = recv_string();
     return std::make_unique<AttackUpdate>(r);
 }
 
