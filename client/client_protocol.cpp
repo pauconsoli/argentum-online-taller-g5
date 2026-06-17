@@ -221,6 +221,19 @@ void ClientProtocol::send_chat(const std::string& text) {
     }
 }
 
+void ClientProtocol::send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
+                                   int32_t amount) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::INTERACT);
+    put_u32(buf, npc_id);
+    put_u8(buf, static_cast<uint8_t>(type));
+    put_string(buf, arg);
+    put_i32(buf, amount);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_interact: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
@@ -323,9 +336,6 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     return std::make_unique<PlayerLeftUpdate>(pid);
 }
 
-
-// Cuando Chiari conecte SDL, estos métodos deben construir los GameUpdate
-// concretos (AttackUpdate, DeathUpdate, InventoryUpdate).
 std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     AttackResult r;
     r.attacker_id = recv_u32();
@@ -363,9 +373,6 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_spawned() {
-    // TODO(Chiari): cuando integres SDL, quizá quieras un SpawnedUpdate
-    // verdadero del lado cliente con info adicional. Por ahora basta con
-    // que el server pueda mandar el opcode sin que el cliente se queje.
     uint32_t pid = recv_u32();
     std::string nick = recv_string();
     uint8_t race = recv_u8();
