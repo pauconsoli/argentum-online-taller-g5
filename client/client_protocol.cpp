@@ -409,7 +409,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         ground_items.push_back(std::move(gi));
     }
 
-    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::move(ground_items));
+    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::vector<NPCSnapshot>{},
+                                            std::move(ground_items));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {

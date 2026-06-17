@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 
 #include "../client.h"
+#include "audio_manager.h"
 #include "camera.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
@@ -26,6 +27,7 @@ class GameClient {
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
+    AudioManager* audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
     Camera camera;
@@ -48,6 +50,17 @@ class GameClient {
     std::map<uint32_t, PlayerSnapshot> players;
     std::vector<GroundItemSnapshot> ground_items_;
     std::vector<InventorySlotData> inventory_slots_;
+    std::map<uint32_t, NPCSnapshot> npcs_;
+
+    struct NPCAnimState {
+        int current_frame = 0;
+        Uint32 last_frame_time = 0;
+        NPCVisualType sprite_type = NPCVisualType::UNKNOWN;
+        uint8_t direction = 0;
+        bool is_moving = false;
+    };
+    std::map<uint32_t, NPCAnimState> npc_anim_states_;
+
     bool chat_active_ = false;
     std::string chat_input_;
     int selected_slot_ = -1;

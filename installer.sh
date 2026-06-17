@@ -221,13 +221,13 @@ fi
 # =======================================================
 print_step "Copiando assets a $DATA_DIR..."
 
-# El enunciado menciona ./Recursos y assets dentro de client/
-for ASSETS_SRC in "$BUILD_DIR/Recursos" "$BUILD_DIR/client/assets"; do
-    if [[ -d "$ASSETS_SRC" ]]; then
-        cp -rn "$ASSETS_SRC"/. "$DATA_DIR/" 2>/dev/null || true
-        print_ok "Assets copiados desde $ASSETS_SRC"
-    fi
-done
+ASSETS_SRC="$BUILD_DIR/assets"
+if [[ -d "$ASSETS_SRC" ]]; then
+    cp -r "$ASSETS_SRC"/. "$DATA_DIR/"
+    print_ok "Assets copiados desde $ASSETS_SRC"
+else
+    print_warn "No se encontró $ASSETS_SRC — saltando copia de assets"
+fi
 
 # ================================================
 #    Crear server.sh y client.sh en el Desktop

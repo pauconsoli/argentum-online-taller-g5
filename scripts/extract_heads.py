@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract head sprites from Recursos/Graficos into client/assets/heads/.
+"""Extract head sprites from Recursos/Graficos into assets/sprites/characters/heads/.
 
 Each head is saved as a 27x256 RGBA PNG with 4 direction strips (top to bottom):
   y=0:   South (Head1)
@@ -17,7 +17,7 @@ RECURSOS = Path(__file__).parent.parent / "Recursos"
 GRAFICOS_INI = RECURSOS / "init" / "graficos.ini"
 CABEZAS_INI = RECURSOS / "init" / "cabezas.ini"
 GRAFICOS_DIR = RECURSOS / "Graficos"
-OUTPUT_DIR = Path(__file__).parent.parent / "client" / "assets" / "heads"
+OUTPUT_DIR = Path(__file__).parent.parent / "assets" / "sprites" / "characters" / "heads"
 
 FRAME_W = 27
 FRAME_H = 64

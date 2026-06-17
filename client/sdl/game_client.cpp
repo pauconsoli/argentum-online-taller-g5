@@ -54,7 +54,7 @@ static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
         return std::string(env_dir);
     }
-    return "client/assets";
+    return "assets";
 }
 
 // Primera cabeza del rango de cada raza (HeadAndBodyData.json, male range start).
@@ -72,7 +72,7 @@ static uint16_t head_index_for_race(uint8_t race) {
 }
 
 static void init_sdl_window(SDL_Window*& window, int width, int height) {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
     window = SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
@@ -88,6 +88,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     hud(nullptr),
     mini_chat(nullptr),
     sprite_manager(nullptr),
+    audio_manager(nullptr),
     client(std::make_unique<Client>(host, port)),
     camera(width, height),
     my_player_id(0),
@@ -108,12 +109,13 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     my_xp = 0;
     renderer = new Renderer(window);
     std::string base_assets = get_base_asset_dir();
-    std::string font_path = base_assets + "/font.ttf";
+    std::string font_path = base_assets + "/fonts/font.ttf";
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
+    audio_manager = new AudioManager();
     client->start();
 }
 
@@ -124,6 +126,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     hud(nullptr),
     mini_chat(nullptr),
     sprite_manager(nullptr),
+    audio_manager(nullptr),
     client(std::move(c)),
     camera(width, height),
     my_player_id(player_id),
@@ -144,12 +147,13 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     my_xp = 0;
     renderer = new Renderer(window);
     std::string base_assets = get_base_asset_dir();
-    std::string font_path = base_assets + "/font.ttf";
+    std::string font_path = base_assets + "/fonts/font.ttf";
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
+    audio_manager = new AudioManager();
     // client->start() ya fue llamado por QtClientAdapter::start()
 }
 
@@ -159,6 +163,7 @@ GameClient::~GameClient() {
     delete hud;
     delete mini_chat;
     delete sprite_manager;
+    delete audio_manager;
     delete renderer;
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -219,6 +224,9 @@ void GameClient::run() {
             return;
     }
 
+    audio_manager->play_background_music(get_base_asset_dir() + "/SoundsOgg/3.ogg",
+                                         MIX_MAX_VOLUME / 2);
+
     // TODO(chiaradelaurentis): ESTO LO TIENE QUE DECIDIR EL SERVIDOR!!!
     player_x = static_cast<int>(1 + my_player_id) * tile_w;
     player_y = tile_h;
@@ -230,6 +238,42 @@ void GameClient::run() {
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
     const Uint32 frame_delay = 100;
+
+    // NPC sprite metadata: frame size and frames-per-direction (south/north/west/east)
+    struct NPCSpriteInfo {
+        int fw;
+        int fh;
+        int fpd[4];
+    };
+    auto npc_info = [](NPCVisualType t) -> NPCSpriteInfo {
+        switch (t) {
+            case NPCVisualType::BANKER:
+                return {26, 46, {7, 7, 7, 7}};
+            case NPCVisualType::PRIEST:
+                return {32, 46, {6, 6, 6, 4}};
+            case NPCVisualType::MERCHANT:
+                return {32, 46, {6, 6, 6, 4}};
+            case NPCVisualType::GOBLIN:
+                return {32, 32, {8, 8, 8, 8}};
+            case NPCVisualType::SKELETON:
+                return {25, 52, {6, 6, 5, 5}};
+            case NPCVisualType::ZOMBIE:
+                return {128, 128, {8, 8, 8, 8}};
+            case NPCVisualType::SPIDER:
+                return {128, 128, {8, 8, 8, 8}};
+            case NPCVisualType::ORC:
+                return {24, 52, {6, 6, 5, 5}};
+            case NPCVisualType::GOLEM_ICE:
+                return {128, 128, {8, 8, 8, 8}};
+            case NPCVisualType::GOLEM_STONE:
+                return {128, 128, {8, 8, 8, 8}};
+            case NPCVisualType::GOLEM_INFERNAL:
+                return {128, 128, {8, 8, 8, 8}};
+            default:
+                return {32, 32, {1, 1, 1, 1}};
+        }
+    };
+    const Uint32 npc_frame_delay = 150;
 
     const Uint32 frame_time_ms = 1000 / 60;
     const Uint32 move_interval_ms = 200;  // máx 5 tiles/seg
@@ -414,6 +458,14 @@ void GameClient::run() {
                         }
                     }
                     ground_items_ = snap.ground_items;
+                    npcs_.clear();
+                    for (const auto& ns : snap.npcs) npcs_[ns.npc_id] = ns;
+                    for (auto it = npc_anim_states_.begin(); it != npc_anim_states_.end();) {
+                        if (npcs_.find(it->first) == npcs_.end())
+                            it = npc_anim_states_.erase(it);
+                        else
+                            ++it;
+                    }
                     break;
                 }
                 case UpdateType::PLAYER_LEFT: {
@@ -495,6 +547,7 @@ void GameClient::run() {
         int end_col = start_col + width / tile_w + 1;
         int start_row = camera.get_y() / tile_h;
         int end_row = start_row + height / tile_h + 1;
+        // Paso 1: tiles base (32×32) + árbol
         for (int row = start_row; row <= end_row; row++) {
             for (int col = start_col; col <= end_col; col++) {
                 int tx = camera.get_screen_x(col * tile_w);
@@ -506,11 +559,31 @@ void GameClient::run() {
                 bool blocking = in_bounds && client_map.at(col, row).blocking;
                 SDL_Texture* tile_tex = sprite_manager->get_terrain(terrain);
                 renderer->draw_frame(tile_tex, 0, 0, tile_w, tile_h, tx, ty);
-                // Árbol (GRASS + blocking): sprite extraído de Recursos/Graficos/657.png
-                // (grh=653)
+                // Árbol (GRASS + blocking): sprite extraído de Recursos/Graficos/657.png (grh=653)
                 if (blocking && terrain == TerrainType::GRASS) {
                     renderer->draw_frame(sprite_manager->get_tree(), 0, 0, tile_w, tile_h, tx, ty);
                 }
+            }
+        }
+        // Paso 2: overlays de terreno — dibujados sobre toda la capa base.
+        // Anclaje: centrado horizontal, apoyado desde el borde inferior del tile base.
+        for (int row = start_row; row <= end_row; row++) {
+            for (int col = start_col; col <= end_col; col++) {
+                bool in_bounds = (col >= 0 && col < client_map.get_width() && row >= 0 &&
+                                  row < client_map.get_height());
+                if (!in_bounds)
+                    continue;
+                TerrainType terrain = client_map.at(col, row).terrain;
+                SDL_Texture* overlay = sprite_manager->get_terrain_overlay(terrain);
+                if (!overlay)
+                    continue;
+                int ow, oh;
+                SDL_QueryTexture(overlay, nullptr, nullptr, &ow, &oh);
+                int tx = camera.get_screen_x(col * tile_w);
+                int ty = camera.get_screen_y(row * tile_h);
+                int ox = tx + (tile_w - ow) / 2;
+                int oy = ty + (tile_h - oh);
+                renderer->draw_frame(overlay, 0, 0, ow, oh, ox, oy);
             }
         }
 
@@ -603,6 +676,40 @@ void GameClient::run() {
             SDL_Color white = {255, 255, 255, 255};
             mini_chat->draw_label(ps.nick, nick_center_x + 1, nick_y + 1, shadow);
             mini_chat->draw_label(ps.nick, nick_center_x, nick_y, white);
+        }
+
+        // NPCs: capa de entidades, sobre terreno/overlays/items, antes del HUD
+        for (auto& [nid, ns] : npcs_) {
+            auto& anim = npc_anim_states_[nid];
+            SDL_Texture* npc_tex = sprite_manager->get_npc(anim.sprite_type);
+            if (!npc_tex)
+                continue;
+            NPCSpriteInfo info = npc_info(anim.sprite_type);
+            int dir = static_cast<int>(anim.direction);  // 0=south 1=north 2=west 3=east
+            if (dir > 3)
+                dir = 0;
+            int max_frames = info.fpd[dir];
+
+            if (anim.is_moving) {
+                Uint32 now = SDL_GetTicks();
+                if (now - anim.last_frame_time > npc_frame_delay) {
+                    anim.current_frame = (anim.current_frame + 1) % max_frames;
+                    anim.last_frame_time = now;
+                }
+            } else {
+                anim.current_frame = 0;
+            }
+
+            int frame = anim.current_frame % max_frames;
+            int src_x = frame * info.fw;
+            int src_y = dir * info.fh;
+
+            int px = camera.get_screen_x(ns.x * tile_w);
+            int py = camera.get_screen_y(ns.y * tile_h);
+            int draw_x = px + (tile_w - info.fw) / 2;
+            int draw_y = py + tile_h - info.fh;
+
+            renderer->draw_frame(npc_tex, src_x, src_y, info.fw, info.fh, draw_x, draw_y);
         }
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);

@@ -9,6 +9,7 @@
 #include <SDL_image.h>
 
 #include "common/world/terrain_type.h"
+#include "npc_visual_type.h"
 
 class SpriteManager {
  private:
@@ -17,6 +18,8 @@ class SpriteManager {
     std::string assets_dir;
 
     static const char* terrain_key(TerrainType t);
+    // Devuelve nullptr si el terreno no tiene overlay.
+    static const char* terrain_overlay_key(TerrainType t);
     static std::string body_key(uint8_t race, uint8_t klass);
     static std::string head_key(uint16_t head_index);
 
@@ -34,6 +37,8 @@ class SpriteManager {
 
     void load_terrain_textures(const std::string& assets_dir);
     SDL_Texture* get_terrain(TerrainType t) const;
+    // Retorna nullptr si el terreno no tiene overlay o el PNG todavía no existe.
+    SDL_Texture* get_terrain_overlay(TerrainType t);
     SDL_Texture* get_tree() const;
 
     void load_body_textures(const std::string& assets_dir);
@@ -48,6 +53,10 @@ class SpriteManager {
 
     // Sprite de monedas de oro (item_gold.png, 32x32).
     SDL_Texture* get_gold();
+
+    // NPC sprites: 4 filas (sur/norte/oeste/este), N frames por fila.
+    // Carga lazy desde assets/npcs/npc_<tipo>.png.
+    SDL_Texture* get_npc(NPCVisualType type);
 
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
     // Fallback: "item_2" (Espada) si el nombre no está en la tabla.
