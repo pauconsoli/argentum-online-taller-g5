@@ -61,6 +61,12 @@ void GameLoopThread::run() {
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
 
+                    for (const auto& [slot, item] : p->get_equipment()) {
+                        if (item) {
+                            ps.equipment.push_back(item->get_name());
+                        }
+                    }
+
                     snapshots.push_back(ps);
                 }
 
