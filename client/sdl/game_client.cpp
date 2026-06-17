@@ -14,7 +14,7 @@
 
 #include "client_map.h"
 #include "common/updates/attack_update.h"
-#include "common/updates/chat_message_update.h"
+#include "common/updates/chat_msg_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
@@ -27,10 +27,9 @@
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
-// Categorías de items para saber dónde dibujarlos encima del personaje.
 enum class ItemType { WEAPON, STAFF, ARMOR, HELMET, SHIELD, OTHER };
 
-// Dado el nombre de un item, devuelve su categoría.
+// nombre - categoria item
 static ItemType get_item_type(const std::string& name) {
     static const std::unordered_map<std::string, ItemType> table = {
         {"Espada", ItemType::WEAPON},
@@ -55,7 +54,7 @@ static ItemType get_item_type(const std::string& name) {
     return it != table.end() ? it->second : ItemType::OTHER;
 }
 
-// Devuelve el directorio raíz de assets (variable de entorno o "assets" por defecto).
+// directorio assets
 static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
         return std::string(env_dir);
@@ -77,7 +76,7 @@ static uint16_t head_index_for_race(uint8_t race) {
     }
 }
 
-// Dimensiones del frame y cantidad de frames por dirección para cada tipo de NPC.
+// dimensiones del frame
 struct NPCSpriteInfo {
     int fw;
     int fh;
@@ -87,7 +86,7 @@ struct NPCSpriteInfo {
     int head_index = 0;
 };
 
-// Devuelve los datos de animación correspondientes a cada tipo de NPC.
+// datos de animacion x png
 static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
     switch (t) {
         case NPCVisualType::BANKER:
@@ -97,19 +96,19 @@ static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
         case NPCVisualType::MERCHANT:
             return {27, 47, {6, 6, 5, 5}, 0, 0, 30};
         case NPCVisualType::GOBLIN:
-            return {32, 32, {8, 8, 8, 8}};
+            return {32, 32, {6, 6, 6, 6}};
         case NPCVisualType::SKELETON:
             return {25, 52, {6, 6, 5, 5}};
         case NPCVisualType::ZOMBIE:
-            return {128, 128, {6, 6, 6, 6}};
+            return {128, 128, {6, 6, 6, 4}};
         case NPCVisualType::SPIDER:
             return {128, 128, {8, 8, 8, 8}};
         case NPCVisualType::ORC:
             return {24, 52, {6, 6, 5, 5}};
         case NPCVisualType::GOLEM_ICE:
-            return {128, 128, {6, 6, 6, 6}, 64, 64};
+            return {128, 128, {8, 8, 8, 8}, 64, 64};
         case NPCVisualType::GOLEM_STONE:
-            return {128, 128, {6, 6, 6, 6}, 64, 64};
+            return {128, 128, {8, 8, 8, 8}, 64, 64};
         case NPCVisualType::GOLEM_INFERNAL:
             return {128, 128, {8, 8, 8, 8}, 64, 64};
         default:
@@ -117,7 +116,7 @@ static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
     }
 }
 
-// Inicializa el subsistema SDL (video + audio) y crea la ventana del juego.
+// inicializa video + audio
 static void init_sdl_window(SDL_Window*& window, int width, int height) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
@@ -130,7 +129,7 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
 }
 
 
-// Constructor handoff desde Qt: recibe el Client ya conectado y el jugador ya autenticado.
+//  handoff desde qt
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
                        uint8_t klass, uint32_t player_id):
     window(nullptr),
@@ -188,16 +187,15 @@ void GameClient::run() {
     bool running = true;
     SDL_Event event;
 
-    // Dimensiones de cada frame de body y cabeza en el spritesheet.
+    // frame de body y cabeza en el spritesheet.
     const int frame_w = 27;
     const int frame_h = 48;
     const int tile_w = 32;
     const int tile_h = 32;
-    // cabezas: 27x256, 4 tiras de dirección de 64px (sin animación de frames)
     const int head_w = 27;
     const int head_h = 64;
 
-    // Arranca la música de fondo al entrar al mundo.
+    //  musica de fondo al entrar al mundo.
     audio_manager->play_background_music(get_base_asset_dir() + "/audio/music/background.mp3",
                                          MIX_MAX_VOLUME / 2);
 
@@ -206,14 +204,15 @@ void GameClient::run() {
 
     ClientMap client_map = build_sample_client_map();
 
-    // Estado de animación del jugador local (dirección y frame actual).
+    // Estado de ANIMACION.
     int direction = 0;
     int current_frame = 0;
     int total_frames = 6;
     Uint32 last_frame_time = SDL_GetTicks();
-    const Uint32 frame_delay = 100;  // el personaje cambie de imagen cada 100 ms mientras camina.
+    const Uint32 frame_delay =
+        100;  // el personaje cambie de imagen cada 100 ms mientras camina -> 10 x segundo
 
-    // Loop a ~60 FPS; el movimiento se limita a 5 tiles/segundo.
+    // movimiento se limita a 5 tiles/segundo
     const Uint32 frame_time_ms = 1000 / 60;
     const Uint32 move_interval_ms = 200;  // máx 5 tiles/seg
     Uint32 last_move_time = 0;
@@ -226,7 +225,7 @@ void GameClient::run() {
             if (!input_handler.handle(event))
                 running = false;
 
-            // Si el chat está activo, los eventos de teclado van al input de texto.
+            //  chat esta activo -> los eventos de teclado van al input de texto
             if (chat_active_) {
                 if (event.type == SDL_TEXTINPUT) {
                     chat_input_ += event.text.text;
@@ -235,11 +234,11 @@ void GameClient::run() {
                         case SDLK_RETURN:
                         case SDLK_RETURN2:
                             if (!chat_input_.empty()) {
-                                // Comandos especiales: /tomar recoge items del suelo.
+                                // comandos
                                 if (chat_input_.rfind("/tomar", 0) == 0) {
                                     client->do_pick_up();
                                     mini_chat->add_message("/tomar");
-                                    // /tirar [slot] tira un item del inventario.
+                                    // /tirar tira un item del inventario
                                 } else if (chat_input_.rfind("/tirar", 0) == 0) {
                                     std::string rest = chat_input_.substr(6);
                                     size_t pos = rest.find_first_not_of(' ');
@@ -266,7 +265,8 @@ void GameClient::run() {
                                         mini_chat->add_message("Slot inválido o vacío");
                                     }
                                 } else {
-                                    // Mensaje de chat normal.
+                                    // manejo normal del chat
+                                    client->do_chat(chat_input_);
                                     mini_chat->add_message(chat_input_);
                                 }
                             }
@@ -302,6 +302,13 @@ void GameClient::run() {
                     for (const auto& [pid, ps] : players) {
                         if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
                             client->do_attack(pid);
+                            break;
+                        }
+                    }
+                    // agrego ataquen a npcs
+                    for (const auto& [nid, ns] : npcs_) {
+                        if (ns.x == tile_x && ns.y == tile_y) {
+                            client->do_attack(nid);
                             break;
                         }
                     }
@@ -552,7 +559,8 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     mini_chat->add_message("Ataque esquivado");
                 } else if (r.attacker_id == my_player_id) {
                     if (r.target_died)
-                        mini_chat->add_message("Mataste al jugador");
+                        mini_chat->add_message(npcs_.count(r.target_id) ? "Mataste al NPC" :
+                                                                          "Mataste al jugador");
                     else
                         mini_chat->add_message("Causaste " + std::to_string(r.damage) + " de daño");
                 } else if (r.target_id == my_player_id) {
@@ -594,7 +602,6 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     mini_chat->add_message("Moriste. Dirigete al sanador para resucitar.");
                     audio_manager->play_sound("death");
                 } else {
-                    mini_chat->add_message("Un jugador murio en combate.");
                     int vol = MIX_MAX_VOLUME;
                     uint32_t dead_id = du.get_dead_id();
                     int dead_tx = -1, dead_ty = -1;
@@ -602,6 +609,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     if (pit != players.end()) {
                         dead_tx = pit->second.x;
                         dead_ty = pit->second.y;
+                        mini_chat->add_message("Un jugador murio en combate.");
                     } else {
                         auto nit = npcs_.find(dead_id);
                         if (nit != npcs_.end()) {
@@ -624,8 +632,9 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
             }
             case UpdateType::CHAT_MSG: {
                 // Mensaje de chat recibido del servidor: lo muestra en el mini_chat.
-                const auto& message = static_cast<const ChatMessageUpdate&>(*update);
-                mini_chat->add_message(message.get_message());
+                // El update es ChatMsgUpdate (sender_nick + text), no ChatMessageUpdate.
+                const auto& message = static_cast<const ChatMsgUpdate&>(*update);
+                mini_chat->add_message(message.sender_nick + ": " + message.text);
                 break;
             }
             default:
@@ -708,14 +717,21 @@ void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h
 
 // Dibuja todos los NPCs con su animación correspondiente; los humanoides también tienen cabeza.
 void GameClient::render_npcs(int tile_w, int tile_h) {
+    // cambia cada 150
     const Uint32 npc_frame_delay = 150;
     for (auto& [nid, ns] : npcs_) {
+        // nid es el id del npc, ns es su estado (posicion, tipo, direccion, etc)
+
+        // y anim es el estado de animacion local (frame actual, ultima vez que cambio de frame, etc)
         auto& anim = npc_anim_states_[nid];
+
+        // si no existe, lo crea
         SDL_Texture* npc_tex = sprite_manager->get_npc(anim.sprite_type);
         if (!npc_tex)
             continue;
         NPCSpriteInfo info = npc_sprite_info(anim.sprite_type);
         int dir = static_cast<int>(anim.direction);
+
         if (dir > 3)
             dir = 0;
         int max_frames = info.fpd[dir];
