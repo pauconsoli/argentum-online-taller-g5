@@ -44,7 +44,8 @@ constexpr uint8_t ATTACKED = 0x94;
 constexpr uint8_t INVENTORY = 0xA0;
 constexpr uint8_t CATALOG = 0xA1;
 
-constexpr uint8_t CHAT_MSG = 0xB0;
+constexpr uint8_t CHAT_MSG = 0xB0;    // chat de jugador a jugadores (broadcast)
+constexpr uint8_t SYSTEM_MSG = 0xB1;  // mensaje del sistema (NPCs, errores) a 1 jugador
 
 constexpr uint8_t ERROR = 0xEE;
 }  // namespace ServerOpcode

@@ -144,6 +144,11 @@ void Client::do_equip_item(uint8_t slot_index) {
     protocol.send_equip_item(slot_index);
 }
 
+void Client::do_chat(const std::string& text) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_chat(text);
+}
+
 void Client::do_leave_match() {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_leave_match();

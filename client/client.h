@@ -42,6 +42,7 @@ class Client {
     void do_pick_up();
     void do_drop_item(uint8_t slot_index);
     void do_equip_item(uint8_t slot_index);
+    void do_chat(const std::string& text);
     void do_leave_match();
     void do_disconnect();
 
