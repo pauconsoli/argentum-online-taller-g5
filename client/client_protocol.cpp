@@ -397,6 +397,12 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         p.level = recv_u16();
         p.is_ghost = (recv_u8() != 0);
         p.is_meditating = (recv_u8() != 0);
+
+        uint8_t eq_count = recv_u8();
+        p.equipment.reserve(eq_count);
+        for (uint8_t j = 0; j < eq_count; ++j) {
+            p.equipment.push_back(recv_string());
+        }
         players.push_back(std::move(p));
     }
 

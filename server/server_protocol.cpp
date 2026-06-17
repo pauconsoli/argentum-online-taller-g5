@@ -486,6 +486,11 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         put_u16(buf, p.level);
         put_u8(buf, p.is_ghost ? 1 : 0);
         put_u8(buf, p.is_meditating ? 1 : 0);
+
+        put_u8(buf, static_cast<uint8_t>(p.equipment.size()));
+        for (const auto& eq_name : p.equipment) {
+            put_string(buf, eq_name);
+        }
     }
 
     if (u.npcs.size() > UINT16_MAX) {

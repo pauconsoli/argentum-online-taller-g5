@@ -24,6 +24,7 @@ struct PlayerSnapshot {
     uint16_t level;
     bool is_ghost;
     bool is_meditating;
+    std::vector<std::string> equipment;
 };
 
 struct GroundItemSnapshot {
