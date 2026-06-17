@@ -24,6 +24,11 @@ target_sources(taller_common
     commands/meditate_command.h
     commands/attack_command.h
     commands/equip_item_command.h
+    commands/drop_item_command.h
+    commands/pick_up_item_command.h
+    commands/resurrect_command.h
+    commands/interact_npc_command.h
+    # items
     # world
     world/terrain_type.h
     # updates

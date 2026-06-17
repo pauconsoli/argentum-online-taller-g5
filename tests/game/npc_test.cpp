@@ -9,6 +9,7 @@
 #include "server/game/npcs/city_npc.h"
 #include "server/game/npcs/hostile_npc.h"
 #include "server/game/npcs/merchant.h"
+#include "server/game/npcs/npc_type.h"
 #include "server/game/npcs/priest.h"
 #include "server/game/player.h"
 
@@ -17,7 +18,7 @@ class NPCTest: public ::testing::Test {
     Position pos{10, 10};
     std::vector<std::string> zones{"all"};
 
-    HostileNPC goblin{1, "Goblin", 3, 40, 2, 10, 3, 8, 5, zones, pos};
+    HostileNPC goblin{1, "Goblin", NPCType::GOBLIN, 3, 40, 2, 10, 3, 8, 5, zones, pos};
 
     // ADYACENTE
     std::unique_ptr<Player> p1 =
@@ -92,9 +93,9 @@ struct DummyBank {
 class CityNPCTest: public ::testing::Test {
  protected:
     Position pos{10, 10};
-    Priest priest{2, pos};
-    Merchant merchant{3, pos};
-    Banker banker{4, pos};
+    Priest priest{2, NPCType::PRIEST, pos};
+    Merchant merchant{3, NPCType::MERCHANT, pos};
+    Banker banker{4, NPCType::BANKER, pos};
     Bank bank;
 
     Player player{100, "P1", PlayerRace::HUMAN, PlayerClass::MAGE, 5, 100, 150, 10, 10,
