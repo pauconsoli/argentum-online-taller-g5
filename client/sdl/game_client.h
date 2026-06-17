@@ -27,7 +27,7 @@ class GameClient {
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
-    AudioManager* audio_manager;
+    std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
     Camera camera;

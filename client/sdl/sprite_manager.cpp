@@ -254,6 +254,6 @@ SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
     }
     std::string key = std::string("npc_") + filename;
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "npcs/" + filename;
+    std::string path = assets_dir + sep + "sprites/npcs/" + filename;
     return load_lazy(key, path);
 }

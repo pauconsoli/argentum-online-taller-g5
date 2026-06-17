@@ -55,7 +55,7 @@ class SpriteManager {
     SDL_Texture* get_gold();
 
     // NPC sprites: 4 filas (sur/norte/oeste/este), N frames por fila.
-    // Carga lazy desde assets/npcs/npc_<tipo>.png.
+    // Carga lazy desde assets/sprites/npcs/npc_<tipo>.png.
     SDL_Texture* get_npc(NPCVisualType type);
 
     // Mapea el nombre de item del protocolo a la clave de textura correspondiente.
