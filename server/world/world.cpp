@@ -473,20 +473,31 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     bool is_healing = attacker->is_healing_attack();
 
+    AttackType attack_type = AttackType::NORMAL;
+    if (attacker->is_magic_attack()) {
+        attack_type = AttackType::MAGIC;
+    } else if (attacker->is_ranged_attack()) {
+        attack_type = AttackType::RANGED;
+    }
+    std::string attack_name = attacker->get_attack_name();
+
     AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,
+                            false,       0,         status, attack_type, attack_name};
     }
     status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,
+                            false,       0,         status, attack_type, attack_name};
     }
 
     if (is_healing) {
         int healing = attacker->calculate_base_healing();
         target->heal(healing);
-        return AttackResult{attacker_id, target_id, 0,       false,
-                            false,       true,      healing, AttackStatus::SUCCESS};
+        return AttackResult{attacker_id, target_id,  0,       false,
+                            false,       true,       healing, AttackStatus::SUCCESS,
+                            attack_type, attack_name};
     }
 
     int base_damage = attacker->calculate_base_damage();
@@ -508,8 +519,8 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id, target_id, real_damage, evaded,
-                        died,        false,     0,           AttackStatus::SUCCESS};
+    return AttackResult{attacker_id, target_id, real_damage,           evaded,      died,
+                        false,       0,         AttackStatus::SUCCESS, attack_type, attack_name};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
