@@ -109,6 +109,16 @@ bool Player::is_ranged_attack() const {
     return weapon ? weapon->is_ranged() : false;
 }
 
+bool Player::is_magic_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_magic() : false;
+}
+
+std::string Player::get_attack_name() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->get_attack_name() : "";
+}
+
 int Player::calculate_base_damage() const {
     Weapon* weapon = get_equipped_weapon();
     if (weapon) {

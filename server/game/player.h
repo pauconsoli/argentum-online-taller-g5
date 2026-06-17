@@ -70,6 +70,8 @@ class Player: public Character {
 
     bool is_healing_attack() const override;
     bool is_ranged_attack() const override;
+    bool is_magic_attack() const override;
+    std::string get_attack_name() const override;
     int calculate_base_damage() const override;
     int calculate_base_healing() const override;
     AttackStatus consume_attack_resources() override;

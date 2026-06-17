@@ -13,7 +13,7 @@ class Priest: public CityNPC {
     InteractResult on_list(Player& player, Bank& bank) override;
 
  public:
-    Priest(uint32_t id, const Position& pos);
+    Priest(uint32_t id, NPCType npc_type, const Position& pos);
 
     ~Priest() override = default;
 };

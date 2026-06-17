@@ -10,6 +10,9 @@
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/catalog_update.h"
+#include "common/updates/chat_message_update.h"
+#include "common/updates/chat_msg_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
@@ -209,6 +212,15 @@ void ClientProtocol::send_equip_item(uint8_t slot_index) {
     }
 }
 
+void ClientProtocol::send_chat(const std::string& text) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::CHAT);
+    put_string(buf, text);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_chat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
@@ -252,8 +264,14 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_snapshot();
         case ServerOpcode::MOVED:
             return recv_moved();
+        case ServerOpcode::CHAT_MSG:
+            return recv_chat_msg();
+        case ServerOpcode::SYSTEM_MSG:
+            return recv_system_msg();
         case ServerOpcode::ERROR:
             return recv_error();
+        case ServerOpcode::CATALOG:
+            return recv_catalog();
         default:
             throw LibError(0, "ClientProtocol::receive_update: opcode desconocido 0x%02x",
                            static_cast<int>(op));
@@ -317,6 +335,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.target_died = (recv_u8() != 0);
     r.is_healing = (recv_u8() != 0);
     r.heal_amount = recv_i32();
+    r.type = static_cast<AttackType>(recv_u8());
+    r.weapon_or_spell_name = recv_string();
     return std::make_unique<AttackUpdate>(r);
 }
 
@@ -392,7 +412,31 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         p.level = recv_u16();
         p.is_ghost = (recv_u8() != 0);
         p.is_meditating = (recv_u8() != 0);
+
+        uint8_t eq_count = recv_u8();
+        p.equipment.reserve(eq_count);
+        for (uint8_t j = 0; j < eq_count; ++j) {
+            p.equipment.push_back(recv_string());
+        }
         players.push_back(std::move(p));
+    }
+
+    uint16_t npcs_count = recv_u16();
+    std::vector<NPCSnapshot> npcs;
+    npcs.reserve(npcs_count);
+    for (uint16_t i = 0; i < npcs_count; ++i) {
+        NPCSnapshot npc_snapshot;
+        npc_snapshot.npc_id = recv_u32();
+        npc_snapshot.name = recv_string();
+        npc_snapshot.x = recv_i32();
+        npc_snapshot.y = recv_i32();
+        npc_snapshot.hp = recv_i32();
+        npc_snapshot.max_hp = recv_i32();
+        npc_snapshot.is_hostile = (recv_u8() != 0);
+        npc_snapshot.npc_type = recv_u32();
+        npc_snapshot.direction = recv_u8();
+        npc_snapshot.is_moving = (recv_u8() != 0);
+        npcs.push_back(std::move(npc_snapshot));
     }
 
     uint16_t items_count = recv_u16();
@@ -409,7 +453,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         ground_items.push_back(std::move(gi));
     }
 
-    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::vector<NPCSnapshot>{},
+    return std::make_unique<SnapshotUpdate>(tick, std::move(players), std::move(npcs),
                                             std::move(ground_items));
 }
 
@@ -420,8 +464,32 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_moved() {
     return std::make_unique<MovedUpdate>(pid, Position{x, y});
 }
 
+std::unique_ptr<GameUpdate> ClientProtocol::recv_chat_msg() {
+    uint32_t sender_id = recv_u32();
+    std::string sender_nick = recv_string();
+    std::string text = recv_string();
+    return std::make_unique<ChatMsgUpdate>(sender_id, std::move(sender_nick), std::move(text));
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_system_msg() {
+    uint32_t target_player_id = recv_u32();
+    std::string text = recv_string();
+    return std::make_unique<ChatMessageUpdate>(target_player_id, std::move(text));
+}
+
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {
     uint8_t code = recv_u8();
     std::string detail = recv_string();
     return std::make_unique<ErrorUpdate>(0, code, std::move(detail));
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_catalog() {
+    uint16_t n = recv_u16();
+    std::vector<std::string> catalog;
+    catalog.reserve(n);
+    for (uint16_t i = 0; i < n; ++i) {
+        catalog.push_back(recv_string());
+    }
+    uint64_t gold = recv_u64();
+    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold);
 }

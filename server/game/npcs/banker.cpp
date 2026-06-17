@@ -6,7 +6,8 @@
 #include "server/game/bank.h"
 #include "server/game/player.h"
 
-Banker::Banker(uint32_t id, const Position& pos): CityNPC(id, "Banquero", pos) {}
+Banker::Banker(uint32_t id, NPCType npc_type, const Position& pos):
+    CityNPC(id, "Banquero", npc_type, pos) {}
 
 InteractResult Banker::on_deposit_gold(int amount, Player& player, Bank& bank) {
     if (player.is_dead()) {
