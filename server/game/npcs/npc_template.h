@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "server/game/npcs/npc_type.h"
+#include "common/npc_type.h"
 
 struct NPCTemplate {
     std::string id;

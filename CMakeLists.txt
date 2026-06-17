@@ -209,8 +209,6 @@ if(ARGENTUM_CLIENT_CLI)
     target_link_libraries(argentum_client_cli taller_common spdlog::spdlog)
 endif()
 
-# Binario del cliente con menú Qt (pre-juego). El handoff a SDL para el
-# in-game lo integra Chiari después.
 if(ARGENTUM_CLIENT_QT)
     find_package(Qt5 COMPONENTS Core Widgets QUIET)
     if(Qt5_FOUND)
