@@ -10,6 +10,7 @@
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/catalog_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
@@ -254,6 +255,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_moved();
         case ServerOpcode::ERROR:
             return recv_error();
+        case ServerOpcode::CATALOG:
+            return recv_catalog();
         default:
             throw LibError(0, "ClientProtocol::receive_update: opcode desconocido 0x%02x",
                            static_cast<int>(op));
@@ -424,4 +427,15 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {
     uint8_t code = recv_u8();
     std::string detail = recv_string();
     return std::make_unique<ErrorUpdate>(0, code, std::move(detail));
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_catalog() {
+    uint16_t n = recv_u16();
+    std::vector<std::string> catalog;
+    catalog.reserve(n);
+    for (uint16_t i = 0; i < n; ++i) {
+        catalog.push_back(recv_string());
+    }
+    uint64_t gold = recv_u64();
+    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold);
 }

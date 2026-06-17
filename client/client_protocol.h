@@ -42,6 +42,7 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_death();
     std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_error();
+    std::unique_ptr<GameUpdate> recv_catalog();
 
  public:
     explicit ClientProtocol(Socket& socket);
