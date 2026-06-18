@@ -25,6 +25,8 @@ Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClas
     intelligence(intelligence),
     constitution(constitution),
     meditating(false),
+    partial_hp_regen(0.0f),
+    partial_mana_regen(0.0f),
     inventory(std::make_unique<Inventory>()) {}
 
 bool Player::can_cast_magic() const {
@@ -176,6 +178,30 @@ void Player::resurrect() {
 
 bool Player::is_meditating() const {
     return meditating;
+}
+
+void Player::add_partial_hp(float hp) {
+    partial_hp_regen += hp;
+}
+
+float Player::get_partial_hp() const {
+    return partial_hp_regen;
+}
+
+void Player::decrease_partial_hp(float hp) {
+    partial_hp_regen -= hp;
+}
+
+void Player::add_partial_mana(float mana) {
+    partial_mana_regen += mana;
+}
+
+float Player::get_partial_mana() const {
+    return partial_mana_regen;
+}
+
+void Player::decrease_partial_mana(float mana) {
+    partial_mana_regen -= mana;
 }
 
 const std::string& Player::get_name() const {

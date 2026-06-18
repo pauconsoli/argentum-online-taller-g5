@@ -34,9 +34,9 @@ class GameFormulas {
 
     // CÁLCULOS DE RECUPERACIÓN
 
-    static int calculate_health_recovery(const Player& player, float seconds);
-    static int calculate_time_mana_recovery(const Player& player, float seconds);
-    static int calculate_meditation_mana_recovery(const Player& player, float seconds);
+    static float calculate_health_recovery(const Player& player, float seconds);
+    static float calculate_time_mana_recovery(const Player& player, float seconds);
+    static float calculate_meditation_mana_recovery(const Player& player, float seconds);
 
     // SPAWN
 

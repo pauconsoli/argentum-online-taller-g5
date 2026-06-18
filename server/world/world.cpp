@@ -720,15 +720,25 @@ void World::update(float tick_seconds) {
             continue;
 
         // HP
-        int hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
-        player->heal(hp_regen);
+        float hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
+        player->add_partial_hp(hp_regen);
+        if (player->get_partial_hp() >= 1.0f) {
+            int heal_amount = static_cast<int>(player->get_partial_hp());
+            player->heal(heal_amount);
+            player->decrease_partial_hp(heal_amount);
+        }
 
         // Mana (meditando o por tiempo)
-        int mana_regen =
+        float mana_regen =
             player->is_meditating() ?
                 GameFormulas::calculate_meditation_mana_recovery(*player, tick_seconds) :
                 GameFormulas::calculate_time_mana_recovery(*player, tick_seconds);
-        player->restore_mana(mana_regen);
+        player->add_partial_mana(mana_regen);
+        if (player->get_partial_mana() >= 1.0f) {
+            int restore_amount = static_cast<int>(player->get_partial_mana());
+            player->restore_mana(restore_amount);
+            player->decrease_partial_mana(restore_amount);
+        }
     }
 
     // procesar resurrecciones pendientes

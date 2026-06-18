@@ -128,6 +128,46 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
     }
 }
 
+// Constructor standalone
+GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
+    window(nullptr),
+    renderer(nullptr),
+    hud(nullptr),
+    mini_chat(nullptr),
+    sprite_manager(nullptr),
+    terrain_renderer_(nullptr),
+    audio_manager(nullptr),
+    client(std::make_unique<Client>(host, port)),
+    camera(width, height),
+    my_player_id(1),  // ID provisorio/dummy para standalone
+    my_race(1),
+    my_klass(1),
+    player_x(400),
+    player_y(300),
+    width(width),
+    height(height),
+    from_handoff(false) {
+    init_sdl_window(window, width, height);
+    my_hp = 100;
+    my_max_hp = 100;
+    my_mp = 100;
+    my_max_mp = 100;
+    my_level = 1;
+    my_gold = 0;
+    my_xp = 0;
+    renderer = new Renderer(window);
+    std::string base_assets = get_base_asset_dir();
+    std::string font_path = base_assets + "/fonts/font.ttf";
+    sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
+    sprite_manager->load_body_textures(base_assets);
+    sprite_manager->load_terrain_textures(base_assets);
+    terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
+    hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
+    mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
+    audio_manager = std::make_unique<AudioManager>();
+    load_audio_assets();
+}
+
 
 //  handoff desde qt
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
