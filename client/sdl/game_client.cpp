@@ -672,7 +672,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
             }
             case UpdateType::CHAT_MSG: {
                 // Mensaje de chat recibido del servidor: lo muestra en el mini_chat.
-                // El update es ChatMsgUpdate (sender_nick + text), no ChatMessageUpdate.
+                // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
                 const auto& message = static_cast<const ChatMsgUpdate&>(*update);
                 mini_chat->add_message(message.sender_nick + ": " + message.text);
                 break;

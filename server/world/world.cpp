@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <queue>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "common/updates/attack_update.h"
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
@@ -616,22 +619,27 @@ void World::npc_move_towards(NPC* npc, const Position& target_pos) {
     }
 }
 
-void World::npc_attack(NPC* npc, Character* target) {
+AttackResult World::npc_attack(NPC* npc, Character* target) {
+    uint32_t attacker_id = npc->get_id();
+    uint32_t target_id = target->get_id();
+    std::string attack_name = npc->get_attack_name();
+
     int base_damage = npc->calculate_base_damage();
     bool evaded = GameFormulas::calculate_evasion(*target);
 
+    int real_damage = 0;
     if (!evaded) {
-        int real_damage = handle_successful_attack(npc, target, base_damage);
-        pending_events.push_back({target->get_id(), npc->get_name() + " te causó " +
-                                                        std::to_string(real_damage) + " de daño"});
-    } else {
-        pending_events.push_back({target->get_id(), "Esquivaste el ataque de " + npc->get_name()});
+        real_damage = handle_successful_attack(npc, target, base_damage);
     }
 
-    if (target->is_dead()) {
+    bool died = target->is_dead();
+    if (died) {
         handle_target_death(npc, target);
-        pending_events.push_back({target->get_id(), "¡" + npc->get_name() + " te mató!"});
     }
+
+    return AttackResult{
+        attacker_id,           target_id,          real_damage, evaded, died, false, 0,
+        AttackStatus::SUCCESS, AttackType::NORMAL, attack_name};
 }
 
 std::optional<Position> World::find_random_spawn_position(
@@ -684,7 +692,6 @@ void World::try_spawn_npc() {
         auto npc = std::make_unique<HostileNPC>(
             next_npc_id++, tpl->name, tpl->npc_type, tpl->level, tpl->max_hp, tpl->defense,
             tpl->agility, tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
-        pending_events.push_back({0, "¡Un " + npc->get_name() + " apareció en el mundo!"});
         add_npc(std::move(npc));
     }
 }
@@ -711,10 +718,11 @@ void World::spawn_initial_hostile_npcs() {
     for (int i = 0; i < max_npcs; ++i) {
         try_spawn_npc();
     }
-    pending_events.clear();  // limpio los mensajes de aparición iniciales
 }
 
-void World::update(float tick_seconds) {
+std::vector<AttackResult> World::update(float tick_seconds) {
+    std::vector<AttackResult> attack_results;
+
     for (auto& [id, player] : players) {
         if (player->is_dead())
             continue;
@@ -749,9 +757,6 @@ void World::update(float tick_seconds) {
             if (teleport_player(pid, it->second.destination)) {
                 if (Player* p = get_player(pid)) {
                     p->resurrect();  // le restaura salud, mana y quita el estado fantasma
-                    pending_events.push_back(
-                        {pid, "¡Resucitaste en " +
-                                  map.get_closest_city(p->get_position())->get_name() + "!"});
                 }
             }
             it = pending_resurrections.erase(it);
@@ -788,7 +793,7 @@ void World::update(float tick_seconds) {
             case NPCAction::ATTACK: {
                 Character* target = get_character(behavior.target_id);
                 if (target)
-                    npc_attack(npc.get(), target);
+                    attack_results.push_back(npc_attack(npc.get(), target));
                 break;
             }
             case NPCAction::STILL:
@@ -803,10 +808,5 @@ void World::update(float tick_seconds) {
         npc_spawn_timer = 0.0f;
         try_spawn_npc();
     }
-}
-
-std::vector<WorldEvent> World::pop_events() {
-    std::vector<WorldEvent> events = std::move(pending_events);
-    pending_events.clear();
-    return events;
+    return attack_results;
 }

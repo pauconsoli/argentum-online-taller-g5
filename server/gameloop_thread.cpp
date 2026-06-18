@@ -6,7 +6,9 @@
 #include <utility>
 #include <vector>
 
-#include "common/updates/chat_message_update.h"
+#include "common/attack_result.h"
+#include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
 #include "common/updates/snapshot_update.h"
 #include "game/game_config.h"
 #include "game/match.h"
@@ -30,15 +32,15 @@ void GameLoopThread::run() {
                 match.tick();
 
                 World& world = match.get_world();
-                world.update(tick_seconds);
+                auto attack_results = world.update(tick_seconds);
 
-                auto events = world.pop_events();
-                for (const auto& ev : events) {
-                    auto msg_update = std::make_shared<ChatMessageUpdate>(ev.target_id, ev.message);
-                    if (ev.target_id == 0) {
-                        match.broadcast_update_to_all(msg_update);
-                    } else {
-                        server.send_update_to_player(ev.target_id, msg_update);
+                for (const auto& result : attack_results) {
+                    auto attack_update = std::make_shared<AttackUpdate>(result);
+                    match.broadcast_update_to_all(attack_update);
+                    if (result.target_died) {
+                        auto death_update =
+                            std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);
+                        match.broadcast_update_to_all(death_update);
                     }
                 }
 

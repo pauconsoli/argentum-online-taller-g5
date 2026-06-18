@@ -6,9 +6,9 @@
 #include "common/npc_interact_result.h"
 #include "common/protocol_constants.h"
 #include "common/updates/catalog_update.h"
-#include "common/updates/chat_message_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
+#include "common/updates/system_msg_update.h"
 #include "server/game/player.h"
 #include "server/world/world.h"
 
@@ -44,7 +44,7 @@ std::vector<std::unique_ptr<GameUpdate>> InteractNPCCommand::execute(World& worl
                     msg = "Has sido resucitado";
                 }
 
-                updates.push_back(std::make_unique<ChatMessageUpdate>(player_id, msg));
+                updates.push_back(std::make_unique<SystemMsgUpdate>(player_id, msg));
 
                 // actualizo el inventario en caso de que haya cambiado por la
                 // compra/venta/deposito/retiro
@@ -66,37 +66,41 @@ std::vector<std::unique_ptr<GameUpdate>> InteractNPCCommand::execute(World& worl
             break;
         }
         case InteractStatus::INSUFFICIENT_GOLD:
-            updates.push_back(
-                std::make_unique<ChatMessageUpdate>(player_id, "No tenés oro suficiente"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "No tenés oro suficiente"));
             break;
         case InteractStatus::INVENTORY_FULL:
-            updates.push_back(std::make_unique<ChatMessageUpdate>(
-                player_id, "No tenés espacio en el inventario"));
+            updates.push_back(std::make_unique<ErrorUpdate>(player_id,
+                                                            ProtocolError::COMMAND_NOT_ALLOWED,
+                                                            "No tenés espacio en el inventario"));
             break;
         case InteractStatus::ITEM_NOT_FOUND:
-            updates.push_back(std::make_unique<ChatMessageUpdate>(player_id, "Ítem no encontrado"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "Ítem no encontrado"));
             break;
         case InteractStatus::NOT_ALLOWED:
-            updates.push_back(
-                std::make_unique<ChatMessageUpdate>(player_id, "El NPC no puede hacer eso"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "El NPC no puede hacer eso"));
             break;
         case InteractStatus::PLAYER_DEAD:
-            updates.push_back(std::make_unique<ChatMessageUpdate>(player_id, "¡Estás muerto!"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "¡Estás muerto!"));
             break;
         case InteractStatus::PLAYER_NOT_DEAD:
-            updates.push_back(std::make_unique<ChatMessageUpdate>(player_id, "No estás muerto"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "No estás muerto"));
             break;
         case InteractStatus::ALREADY_FULL:
-            updates.push_back(
-                std::make_unique<ChatMessageUpdate>(player_id, "Ya tenés salud/maná al máximo"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "Ya tenés salud/maná al máximo"));
             break;
         case InteractStatus::INVALID_AMOUNT:
-            updates.push_back(
-                std::make_unique<ChatMessageUpdate>(player_id, "Cantidad de oro inválida"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "Cantidad de oro inválida"));
             break;
         case InteractStatus::OUT_OF_RANGE:
-            updates.push_back(
-                std::make_unique<ChatMessageUpdate>(player_id, "Estás demasiado lejos del NPC"));
+            updates.push_back(std::make_unique<ErrorUpdate>(
+                player_id, ProtocolError::COMMAND_NOT_ALLOWED, "Estás demasiado lejos del NPC"));
             break;
         case InteractStatus::INVALID_TARGET:
             updates.push_back(std::make_unique<ErrorUpdate>(

@@ -11,7 +11,6 @@
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/catalog_update.h"
-#include "common/updates/chat_message_update.h"
 #include "common/updates/chat_msg_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
@@ -25,6 +24,7 @@
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
+#include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
 
 ClientProtocol::ClientProtocol(Socket& socket): skt(socket) {}
@@ -481,7 +481,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_chat_msg() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_system_msg() {
     uint32_t target_player_id = recv_u32();
     std::string text = recv_string();
-    return std::make_unique<ChatMessageUpdate>(target_player_id, std::move(text));
+    return std::make_unique<SystemMsgUpdate>(target_player_id, std::move(text));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {

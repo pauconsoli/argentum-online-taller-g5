@@ -3,8 +3,8 @@
 #include <vector>
 
 #include "common/protocol_constants.h"
-#include "common/updates/chat_message_update.h"
 #include "common/updates/error_update.h"
+#include "common/updates/system_msg_update.h"
 #include "server/game/player.h"
 #include "server/world/world.h"
 
@@ -14,7 +14,7 @@ std::vector<std::unique_ptr<GameUpdate>> ResurrectCommand::execute(World& world)
     bool success = world.start_resurrection(player_id);
 
     if (success) {
-        updates.push_back(std::make_unique<ChatMessageUpdate>(
+        updates.push_back(std::make_unique<SystemMsgUpdate>(
             player_id, "Comenzando el viaje hacia el sanador. Por favor espera..."));
     } else {
         updates.push_back(std::make_unique<ErrorUpdate>(
