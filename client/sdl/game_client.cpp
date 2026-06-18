@@ -604,9 +604,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     else
                         mini_chat->add_message("Causaste " + std::to_string(r.damage) + " de daño");
                 } else if (r.target_id == my_player_id) {
-                    if (r.target_died)
-                        mini_chat->add_message("Moriste");
-                    else
+                    if (!r.target_died)
                         mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
                                                " de daño");
                 }

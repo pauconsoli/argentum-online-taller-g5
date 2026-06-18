@@ -15,7 +15,7 @@ std::vector<std::unique_ptr<GameUpdate>> ResurrectCommand::execute(World& world)
 
     if (success) {
         updates.push_back(std::make_unique<SystemMsgUpdate>(
-            player_id, "Comenzando el viaje hacia el sanador. Por favor espera..."));
+            player_id, "Comenzando la resurrección. Estarás inmovilizado durante el proceso..."));
     } else {
         updates.push_back(std::make_unique<ErrorUpdate>(
             player_id, ProtocolError::COMMAND_NOT_ALLOWED, "No se pudo resucitar"));

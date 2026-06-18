@@ -391,7 +391,6 @@ bool World::start_resurrection(uint32_t player_id) {
     int dy = priest_pos.y - player_pos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
 
-    // Tiempo base: 0.1 segundos por cada tile de distancia (configurable si lo pasás a toml luego)
     float wait_time = distance * GameConfig::get_instance().get_resurrect_still_factor();
 
     pending_resurrections[player_id] = {wait_time, priest_pos};
