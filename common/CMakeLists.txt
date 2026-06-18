@@ -10,6 +10,8 @@ target_sources(taller_common
     direction.h
     attack_result.h
     liberror.h
+    npc_interaction.h
+    npc_type.h
     position.h
     protocol_constants.h
     queue.h
@@ -24,6 +26,11 @@ target_sources(taller_common
     commands/meditate_command.h
     commands/attack_command.h
     commands/equip_item_command.h
+    commands/drop_item_command.h
+    commands/pick_up_item_command.h
+    commands/resurrect_command.h
+    commands/interact_npc_command.h
+    commands/chat_command.h
     # world
     world/terrain_type.h
     # updates
@@ -40,4 +47,8 @@ target_sources(taller_common
     updates/spawned_update.h
     updates/attack_update.h
     updates/death_update.h
+    updates/inventory_update.h
+    updates/catalog_update.h
+    updates/chat_msg_update.h
+    updates/chat_message_update.h
     )

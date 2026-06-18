@@ -48,6 +48,7 @@ class GameFormulas {
 
     static bool can_attack_by_level(int attacker_level, int target_level);
     static int calculate_damage(const Player& attacker, const Weapon* weapon = nullptr);
+    static int calculate_magic_damage(const Player& attacker, int min_damage, int max_damage);
     static int calculate_npc_damage(int min_damage, int max_damage);
     static bool calculate_critical_attack();
     static bool calculate_evasion(const Character& target);

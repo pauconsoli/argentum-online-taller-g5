@@ -38,3 +38,11 @@ WeaponEffect Weapon::apply_effect(const Player& attacker) const {
 bool Weapon::is_healing() const {
     return false;
 }
+
+bool Weapon::is_magic() const {
+    return false;
+}
+
+std::string Weapon::get_attack_name() const {
+    return get_name();
+}

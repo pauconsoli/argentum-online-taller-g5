@@ -1,6 +1,8 @@
 #ifndef GAME_CLIENT_H
 #define GAME_CLIENT_H
 
+class ClientMap;
+
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -10,6 +12,7 @@
 #include <SDL2/SDL.h>
 
 #include "../client.h"
+#include "audio_manager.h"
 #include "camera.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
@@ -18,6 +21,7 @@
 #include "mini_chat.h"
 #include "renderer.h"
 #include "sprite_manager.h"
+#include "terrain_renderer.h"
 
 class GameClient {
  private:
@@ -26,6 +30,8 @@ class GameClient {
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
+    TerrainRenderer* terrain_renderer_;
+    std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
     Camera camera;
@@ -48,6 +54,17 @@ class GameClient {
     std::map<uint32_t, PlayerSnapshot> players;
     std::vector<GroundItemSnapshot> ground_items_;
     std::vector<InventorySlotData> inventory_slots_;
+    std::map<uint32_t, NPCSnapshot> npcs_;
+
+    struct NPCAnimState {
+        int current_frame = 0;
+        Uint32 last_frame_time = 0;
+        NPCVisualType sprite_type = NPCVisualType::UNKNOWN;
+        uint8_t direction = 0;
+        bool is_moving = false;
+    };
+    std::map<uint32_t, NPCAnimState> npc_anim_states_;
+
     bool chat_active_ = false;
     std::string chat_input_;
     int selected_slot_ = -1;
@@ -64,6 +81,13 @@ class GameClient {
     GameClient& operator=(const GameClient&) = delete;
 
     void run();
+
+ private:
+    void load_audio_assets();
+    void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
+    void render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w, int head_h,
+                        int direction, int current_frame);
+    void render_npcs(int tile_w, int tile_h);
 };
 
 #endif

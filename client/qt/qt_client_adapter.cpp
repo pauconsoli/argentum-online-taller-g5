@@ -2,6 +2,7 @@
 
 #include "common/queue.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/chat_msg_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
@@ -81,6 +82,12 @@ void QtClientAdapter::poll_updates() {
             case UpdateType::WORLD_MAP: {
                 const auto* x = static_cast<const WorldMapUpdate*>(u.get());
                 emit worldMapReceived(x->width, x->height, x->cells);
+                break;
+            }
+            case UpdateType::CHAT_MSG: {
+                const auto* x = static_cast<const ChatMsgUpdate*>(u.get());
+                emit chatMessageReceived(x->sender_id, QString::fromStdString(x->sender_nick),
+                                         QString::fromStdString(x->text));
                 break;
             }
             default:

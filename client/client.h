@@ -8,6 +8,7 @@
 
 #include "client_protocol.h"
 #include "common/direction.h"
+#include "common/npc_interaction.h"
 #include "common/queue.h"
 #include "common/socket.h"
 #include "common/thread.h"
@@ -30,7 +31,6 @@ class Client {
     void stop();
     void join();
 
-    // Acciones cliente → servidor. Thread-safe (toman send_mutex).
     void do_login(const std::string& nick);
     void do_list_matches();
     void do_create_match(const std::string& name, uint8_t max_players);
@@ -42,6 +42,8 @@ class Client {
     void do_pick_up();
     void do_drop_item(uint8_t slot_index);
     void do_equip_item(uint8_t slot_index);
+    void do_chat(const std::string& text);
+    void do_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg, int32_t amount);
     void do_leave_match();
     void do_disconnect();
 

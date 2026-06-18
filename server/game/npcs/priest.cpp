@@ -6,7 +6,8 @@
 #include "server/game/items/item_registry.h"
 #include "server/game/player.h"
 
-Priest::Priest(uint32_t id, const Position& pos): CityNPC(id, "Sacerdote", pos) {}
+Priest::Priest(uint32_t id, NPCType npc_type, const Position& pos):
+    CityNPC(id, "Sacerdote", npc_type, pos) {}
 
 InteractResult Priest::on_heal(Player& player) {
 

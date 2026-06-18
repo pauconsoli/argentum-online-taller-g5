@@ -332,6 +332,10 @@ bool World::move_character(uint32_t character_id, Direction direction) {
         return false;
     }
 
+    if (dynamic_cast<NPC*>(character) && map.is_safe(next)) {
+        return false;  // Los NPCs no pueden entrar a zonas seguras
+    }
+
     if (is_position_occupied(next)) {
         return false;
     }
@@ -473,20 +477,31 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     bool is_healing = attacker->is_healing_attack();
 
+    AttackType attack_type = AttackType::NORMAL;
+    if (attacker->is_magic_attack()) {
+        attack_type = AttackType::MAGIC;
+    } else if (attacker->is_ranged_attack()) {
+        attack_type = AttackType::RANGED;
+    }
+    std::string attack_name = attacker->get_attack_name();
+
     AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,
+                            false,       0,         status, attack_type, attack_name};
     }
     status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0, false, false, false, 0, status};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,
+                            false,       0,         status, attack_type, attack_name};
     }
 
     if (is_healing) {
         int healing = attacker->calculate_base_healing();
         target->heal(healing);
-        return AttackResult{attacker_id, target_id, 0,       false,
-                            false,       true,      healing, AttackStatus::SUCCESS};
+        return AttackResult{attacker_id, target_id,  0,       false,
+                            false,       true,       healing, AttackStatus::SUCCESS,
+                            attack_type, attack_name};
     }
 
     int base_damage = attacker->calculate_base_damage();
@@ -508,8 +523,8 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id, target_id, real_damage, evaded,
-                        died,        false,     0,           AttackStatus::SUCCESS};
+    return AttackResult{attacker_id, target_id, real_damage,           evaded,      died,
+                        false,       0,         AttackStatus::SUCCESS, attack_type, attack_name};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
@@ -594,7 +609,11 @@ void World::npc_move_towards(NPC* npc, const Position& target_pos) {
     else
         dir = (dy > 0) ? Direction::DOWN : Direction::UP;
 
-    move_character(npc->get_id(), dir);
+    npc->set_direction(dir);
+    bool moved = move_character(npc->get_id(), dir);
+    if (moved) {
+        npc->set_moving(true);
+    }
 }
 
 void World::npc_attack(NPC* npc, Character* target) {
@@ -663,8 +682,8 @@ void World::try_spawn_npc() {
     if (auto pos =
             find_random_spawn_position(tpl->zones)) {  // busco con las ZONAS PERMITIDAS de ese NPC
         auto npc = std::make_unique<HostileNPC>(
-            next_npc_id++, tpl->name, tpl->level, tpl->max_hp, tpl->defense, tpl->agility,
-            tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
+            next_npc_id++, tpl->name, tpl->npc_type, tpl->level, tpl->max_hp, tpl->defense,
+            tpl->agility, tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
         pending_events.push_back({0, "¡Un " + npc->get_name() + " apareció en el mundo!"});
         add_npc(std::move(npc));
     }
@@ -673,13 +692,16 @@ void World::try_spawn_npc() {
 
 void World::spawn_city_npcs() {
     for (const City* city : map.get_cities()) {
-        auto priest = std::make_unique<Priest>(next_npc_id++, city->get_priest_position());
+        auto priest =
+            std::make_unique<Priest>(next_npc_id++, NPCType::PRIEST, city->get_priest_position());
         add_npc(std::move(priest));
 
-        auto merchant = std::make_unique<Merchant>(next_npc_id++, city->get_merchant_position());
+        auto merchant = std::make_unique<Merchant>(next_npc_id++, NPCType::MERCHANT,
+                                                   city->get_merchant_position());
         add_npc(std::move(merchant));
 
-        auto banker = std::make_unique<Banker>(next_npc_id++, city->get_banker_position());
+        auto banker =
+            std::make_unique<Banker>(next_npc_id++, NPCType::BANKER, city->get_banker_position());
         add_npc(std::move(banker));
     }
 }
@@ -729,9 +751,22 @@ void World::update(float tick_seconds) {
     }
 
     // acciones de NPCs hostiles
-    for (auto& [id, npc] : npcs) {
-        if (npc->is_dead() || !npc->is_hostile())
+    for (auto it = npcs.begin(); it != npcs.end();) {
+        auto& npc = it->second;
+
+        if (npc->is_dead()) {
+            Position pos = npc->get_position();
+            occupied[pos.y][pos.x] = false;
+            it = npcs.erase(it);  // remuevo NPC del mundo
             continue;
+        }
+
+        npc->set_moving(false);
+
+        if (!npc->is_hostile()) {
+            ++it;
+            continue;
+        }
 
         auto nearby = get_players_near(npc->get_position(), npc->get_attack_range());
         NPCBehavior behavior = npc->update(tick_seconds, nearby);
@@ -749,6 +784,7 @@ void World::update(float tick_seconds) {
             case NPCAction::STILL:
                 break;
         }
+        ++it;
     }
 
     // spawn de NPCs hostiles

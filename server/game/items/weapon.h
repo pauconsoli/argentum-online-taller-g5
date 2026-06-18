@@ -37,6 +37,10 @@ class Weapon: public Item {
     virtual WeaponEffect apply_effect(const Player& attacker) const;
 
     virtual bool is_healing() const;
+
+    virtual bool is_magic() const;
+
+    virtual std::string get_attack_name() const;
 };
 
 #endif

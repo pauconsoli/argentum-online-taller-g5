@@ -44,35 +44,80 @@ const char* SpriteManager::terrain_key(TerrainType t) {
             return "terrain_stone";
         case TerrainType::SAND:
             return "terrain_sand";
-        case TerrainType::DUNGEON_FLOOR:
-        case TerrainType::DUNGEON_ENTRANCE:
+        case TerrainType::WOOD:
+            return "terrain_wood";
+        case TerrainType::DUNGEON_FLOOR_1:
+        case TerrainType::DUNGEON_ENTRANCE_1:
             return "terrain_dungeon_floor";
-        case TerrainType::DUNGEON_WALL:
+        case TerrainType::DUNGEON_FLOOR_2:
+        case TerrainType::DUNGEON_ENTRANCE_2:
+            return "terrain_dungeon_floor_2";
+        case TerrainType::DUNGEON_WALL_1:
             return "terrain_dungeon_wall";
+        case TerrainType::DUNGEON_WALL_2:
+            return "terrain_dungeon_wall_2";
+        case TerrainType::CITY_FLOOR_1:
+        case TerrainType::CITY_WALL_1:
+            return "terrain_city_floor_1";
+        case TerrainType::CITY_FLOOR_2:
+        case TerrainType::CITY_WALL_2:
+            return "terrain_city_floor_2";
     }
     return "terrain_grass";
 }
 
-void SpriteManager::load_terrain_textures(const std::string& assets_dir) {
+void SpriteManager::load_terrain_textures(const std::string& dir) {
+    this->assets_dir = dir;
     const std::string sep = assets_dir.back() == '/' ? "" : "/";
-    load("terrain_grass", assets_dir + sep + "grass_tile.png");
-    load("terrain_water", assets_dir + sep + "water.png");
-    load("terrain_dirt", assets_dir + sep + "dirt.png");
-    load("terrain_stone", assets_dir + sep + "stone.png");
-    load("terrain_sand", assets_dir + sep + "sand.png");
-    load("terrain_dungeon_floor", assets_dir + sep + "dungeon_floor.png");
-    load("terrain_dungeon_wall", assets_dir + sep + "dungeon_wall.png");
-    load("tree", assets_dir + sep + "tree.png");
+    const std::string terrain_dir = assets_dir + sep + "sprites/terrain/";
+    load("terrain_grass", terrain_dir + "grass_tile.png");
+    load("terrain_water", terrain_dir + "water.png");
+    load("terrain_dirt", terrain_dir + "dirt.png");
+    load("terrain_stone", terrain_dir + "stone.png");
+    load("terrain_sand", terrain_dir + "sand.png");
+    load("terrain_dungeon_floor", terrain_dir + "dungeon_floor.png");
+    load("terrain_dungeon_wall", terrain_dir + "dungeon_wall.png");
+    load("terrain_dungeon_floor_2", terrain_dir + "dungeon_floor_2.png");
+    load("terrain_dungeon_wall_2", terrain_dir + "dungeon_wall_2.png");
+    load("terrain_wood", terrain_dir + "wood.png");
+    load("terrain_city_floor_1", terrain_dir + "city_floor_1.png");
+    load("terrain_city_floor_2", terrain_dir + "city_floor_2.png");
+    load("tree", terrain_dir + "tree.png");
     // Pociones, flauta y oro cargadas eagerly: tienen clave de nombre en lugar de numérica.
-    const std::string items_dir = assets_dir + sep + "items/";
+    const std::string items_dir = assets_dir + sep + "sprites/items/";
     load_lazy("item_pocion_vida", items_dir + "item_pocion_vida.png");
     load_lazy("item_pocion_mana", items_dir + "item_pocion_mana.png");
     load_lazy("item_flauta_elfica", items_dir + "item_flauta_elfica.png");
-    load_lazy("item_gold", items_dir + "item_gold.png");
+    load_lazy("item_oro", items_dir + "item_oro.png");
 }
 
 SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
     return get(terrain_key(t));
+}
+
+const char* SpriteManager::terrain_overlay_key(TerrainType t) {
+    switch (t) {
+        case TerrainType::DUNGEON_ENTRANCE_1:
+            return "terrain_overlay_dungeon_entrance_1";
+        case TerrainType::DUNGEON_ENTRANCE_2:
+            return "terrain_overlay_dungeon_entrance_2";
+        case TerrainType::CITY_WALL_1:
+            return "terrain_overlay_city_wall_1";
+        case TerrainType::CITY_WALL_2:
+            return "terrain_overlay_city_wall_2";
+        default:
+            return nullptr;
+    }
+}
+
+SDL_Texture* SpriteManager::get_terrain_overlay(TerrainType t) {
+    const char* key = terrain_overlay_key(t);
+    if (!key)
+        return nullptr;
+    // Archivo esperado: assets/sprites/terrain/<key>.png (e.g. terrain_overlay_city_wall_1.png)
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    std::string path = assets_dir + sep + "sprites/terrain/" + key + ".png";
+    return load_lazy(key, path);  // nullptr si el archivo todavía no existe
 }
 
 SDL_Texture* SpriteManager::get_tree() const {
@@ -86,10 +131,11 @@ std::string SpriteManager::body_key(uint8_t race, uint8_t klass) {
 void SpriteManager::load_body_textures(const std::string& dir) {
     assets_dir = dir;
     const std::string sep = dir.back() == '/' ? "" : "/";
+    const std::string bodies_dir = dir + sep + "sprites/characters/bodies/";
     for (uint8_t race = 0; race < 4; ++race) {
         for (uint8_t klass = 0; klass < 4; ++klass) {
             std::string key = body_key(race, klass);
-            std::string path = dir + sep + key + ".png";
+            std::string path = bodies_dir + key + ".png";
             load(key, path);
         }
     }
@@ -123,52 +169,115 @@ SDL_Texture* SpriteManager::load_lazy(const std::string& key, const std::string&
     return texture;
 }
 
+SDL_Texture* SpriteManager::load_optional_lazy(const std::string& key, const std::string& path) {
+    auto it = textures.find(key);
+    if (it != textures.end()) {
+        return it->second;  // puede ser nullptr si se intentó y el PNG no existía
+    }
+    SDL_Texture* tex = load_lazy(key, path);
+    if (!tex) {
+        textures[key] = nullptr;  // cachear la ausencia; los overlays opcionales no se reintentarán
+    }
+    return tex;
+}
+
 SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
     if (head_index == 0)
         head_index = 1;
     std::string key = head_key(head_index);
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "heads/" + key + ".png";
+    std::string path = assets_dir + sep + "sprites/characters/heads/" + key + ".png";
     SDL_Texture* tex = load_lazy(key, path);
     if (tex == nullptr) {
-        tex = load_lazy(head_key(1), assets_dir + sep + "heads/head_1.png");
+        tex = load_lazy(head_key(1), assets_dir + sep + "sprites/characters/heads/head_1.png");
     }
     return tex;
 }
 
 std::string SpriteManager::item_key_for_name(const std::string& name) {
     static const std::unordered_map<std::string, std::string> table = {
-        {"Espada", "item_2"},
-        {"Hacha", "item_3"},
-        {"Martillo", "item_15"},
-        {"Vara de fresno", "item_159"},
-        {"Báculo nudoso", "item_401"},
-        {"Báculo engarzado", "item_479"},
-        {"Arco simple", "item_574"},
-        {"Arco compuesto", "item_656"},
-        {"Armadura de cuero", "item_30"},
-        {"Armadura de placas", "item_1800"},
-        {"Túnica azul", "item_1797"},
-        {"Capucha", "item_132"},
-        {"Casco de hierro", "item_243"},
-        {"Escudo de tortuga", "item_1700"},
-        {"Escudo de hierro", "item_1715"},
-        {"Sombrero mágico", "item_996"},
+        {"Espada", "item_espada"},
+        {"Hacha", "item_hacha"},
+        {"Martillo", "item_martillo"},
+        {"Vara de fresno", "item_vara_fresno"},
+        {"Báculo nudoso", "item_baculo_nudoso"},
+        {"Báculo engarzado", "item_baculo_engarzado"},
+        {"Arco simple", "item_arco_simple"},
+        {"Arco compuesto", "item_arco_compuesto"},
+        {"Armadura de cuero", "item_armadura_cuero"},
+        {"Armadura de placas", "item_armadura_placas"},
+        {"Túnica azul", "item_tunica_azul"},
+        {"Capucha", "item_capucha"},
+        {"Casco de hierro", "item_casco_hierro"},
+        {"Escudo de tortuga", "item_escudo_tortuga"},
+        {"Escudo de hierro", "item_escudo_hierro"},
+        {"Sombrero mágico", "item_sombrero_magico"},
         {"Flauta élfica", "item_flauta_elfica"},
         {"Pocion de vida", "item_pocion_vida"},
         {"Pocion de mana", "item_pocion_mana"},
     };
     auto it = table.find(name);
-    return it != table.end() ? it->second : "item_2";
+    return it != table.end() ? it->second : "item_espada";
 }
 
 SDL_Texture* SpriteManager::get_item(const std::string& key) {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "items/" + key + ".png";
+    std::string path = assets_dir + sep + "sprites/items/" + key + ".png";
     return load_lazy(key, path);
 }
 
 SDL_Texture* SpriteManager::get_gold() {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    return load_lazy("item_gold", assets_dir + sep + "items/item_gold.png");
+    return load_lazy("item_oro", assets_dir + sep + "sprites/items/item_oro.png");
+}
+
+SDL_Texture* SpriteManager::get_transition_overlay(const char* key) {
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    std::string path = assets_dir + sep + "sprites/terrain/" + key + ".png";
+    return load_optional_lazy(key, path);
+}
+
+SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
+    const char* filename = nullptr;
+    switch (type) {
+        case NPCVisualType::BANKER:
+            filename = "npc_banker.png";
+            break;
+        case NPCVisualType::PRIEST:
+            filename = "npc_priest.png";
+            break;
+        case NPCVisualType::MERCHANT:
+            filename = "npc_merchant.png";
+            break;
+        case NPCVisualType::GOBLIN:
+            filename = "npc_goblin.png";
+            break;
+        case NPCVisualType::SKELETON:
+            filename = "npc_skeleton.png";
+            break;
+        case NPCVisualType::ZOMBIE:
+            filename = "npc_zombie.png";
+            break;
+        case NPCVisualType::SPIDER:
+            filename = "npc_spider.png";
+            break;
+        case NPCVisualType::ORC:
+            filename = "npc_orc.png";
+            break;
+        case NPCVisualType::GOLEM_ICE:
+            filename = "npc_golem_ice.png";
+            break;
+        case NPCVisualType::GOLEM_STONE:
+            filename = "npc_golem_stone.png";
+            break;
+        case NPCVisualType::GOLEM_INFERNAL:
+            filename = "npc_golem_infernal.png";
+            break;
+        default:
+            return nullptr;
+    }
+    std::string key = std::string("npc_") + filename;
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    std::string path = assets_dir + sep + "sprites/npcs/" + filename;
+    return load_lazy(key, path);
 }

@@ -48,7 +48,7 @@ class World {
     Bank bank;
 
     float npc_spawn_timer = 0.0f;
-    uint32_t next_npc_id = 1;
+    uint32_t next_npc_id = 1000;
 
     std::map<Position, GroundItem> ground_items;
 

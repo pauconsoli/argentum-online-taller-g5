@@ -69,6 +69,12 @@ void GameLoopThread::run() {
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
 
+                    for (const auto& [slot, item] : p->get_equipment()) {
+                        if (item) {
+                            ps.equipment.push_back(item->get_name());
+                        }
+                    }
+
                     snapshots.push_back(ps);
                 }
 
@@ -85,6 +91,9 @@ void GameLoopThread::run() {
                     ns.hp = n->get_current_hp();
                     ns.max_hp = n->get_max_hp();
                     ns.is_hostile = n->is_hostile();
+                    ns.npc_type = static_cast<uint32_t>(n->get_type());
+                    ns.direction = static_cast<uint8_t>(n->get_direction());
+                    ns.is_moving = n->is_moving();
                     npc_snapshots.push_back(ns);
                 }
 
