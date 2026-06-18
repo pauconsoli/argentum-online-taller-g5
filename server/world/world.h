@@ -2,6 +2,7 @@
 #define WORLD_H
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -57,6 +58,10 @@ class World {
 
     std::optional<Position> find_closest_free_ground(const Position& start) const;
     std::optional<Position> find_closest_unoccupied_position(const Position& start) const;
+
+    // funcion para no repetir en las dos anteriores, que la reutilizan
+    std::optional<Position> find_closest_free_position(
+        const Position& start, const std::function<bool(const Position&)>& is_free_condition) const;
 
     AttackStatus validate_attack_conditions(const Character* attacker, const Character* target,
                                             bool is_healing) const;

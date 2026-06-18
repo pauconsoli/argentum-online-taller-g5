@@ -173,65 +173,46 @@ const std::map<Position, GroundItem>& World::get_ground_items() const {
     return ground_items;
 }
 
-// no considera si esta ocupada porque el jugador se para sobre los items del suelo
-std::optional<Position> World::find_closest_free_ground(const Position& start) const {
+std::optional<Position> World::find_closest_free_position(
+    const Position& start, const std::function<bool(const Position&)>& is_free_condition) const {
     std::queue<Position> q;
     std::set<Position> visited;
 
-    q.push(start);
-    visited.insert(start);
+    if (map.is_valid_position(start)) {
+        q.push(start);
+        visited.insert(start);
+    }
 
     while (!q.empty()) {
         Position curr = q.front();
         q.pop();
-        if (map.is_valid_position(curr) && !map.is_position_blocked(curr)) {
-            if (ground_items.find(curr) == ground_items.end()) {
-                return curr;
-            }
+
+        if (!map.is_position_blocked(curr) && is_free_condition(curr)) {
+            return curr;
         }
 
         const Position neighbors[] = {
             {curr.x, curr.y - 1}, {curr.x, curr.y + 1}, {curr.x - 1, curr.y}, {curr.x + 1, curr.y}};
 
         for (const Position& neighbor : neighbors) {
-            if (map.is_valid_position(neighbor) && !map.is_position_blocked(neighbor)) {
-                if (visited.insert(neighbor).second) {
-                    q.push(neighbor);
-                }
+            if (map.is_valid_position(neighbor) && visited.insert(neighbor).second) {
+                q.push(neighbor);
             }
         }
     }
     return std::nullopt;
 }
 
+// no considera si esta ocupada porque el jugador se para sobre los items del suelo
+std::optional<Position> World::find_closest_free_ground(const Position& start) const {
+    return find_closest_free_position(start, [this](const Position& pos) {
+        return ground_items.find(pos) == ground_items.end();
+    });
+}
+
 std::optional<Position> World::find_closest_unoccupied_position(const Position& start) const {
-    std::queue<Position> q;
-    std::set<Position> visited;
-
-    q.push(start);
-    visited.insert(start);
-
-    while (!q.empty()) {
-        Position curr = q.front();
-        q.pop();
-        if (map.is_valid_position(curr) && !map.is_position_blocked(curr)) {
-            if (!is_position_occupied(curr)) {
-                return curr;
-            }
-        }
-
-        const Position neighbors[] = {
-            {curr.x, curr.y - 1}, {curr.x, curr.y + 1}, {curr.x - 1, curr.y}, {curr.x + 1, curr.y}};
-
-        for (const Position& neighbor : neighbors) {
-            if (map.is_valid_position(neighbor) && !map.is_position_blocked(neighbor)) {
-                if (visited.insert(neighbor).second) {
-                    q.push(neighbor);
-                }
-            }
-        }
-    }
-    return std::nullopt;
+    return find_closest_free_position(
+        start, [this](const Position& pos) { return !is_position_occupied(pos); });
 }
 
 void World::drop_loot_in_world(const Position& center, Loot loot) {
