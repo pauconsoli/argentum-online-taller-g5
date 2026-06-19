@@ -393,15 +393,16 @@ TEST_F(InventoryTest, EquippableItemsDoNotStack) {
     EXPECT_EQ(inventory.get_slots()[1].quantity, 1);
 }
 
-TEST_F(InventoryTest, EquipAlreadyEquippedItemDoesNotUnequip) {
+TEST_F(InventoryTest, EquipAlreadyEquippedItemTogglesItOff) {
     auto sword = std::make_unique<Weapon>("Espada", 5, 15, false);
     Item* ptr = sword.get();
     inventory.add_item(std::move(sword));
 
-    // Equipamos y volvemos a equipar (comprobando que NO hace toggle)
+    // Equipamos la primera vez
     EXPECT_TRUE(inventory.equip(*ptr, player));
-    EXPECT_TRUE(inventory.equip(*ptr, player));
-
     EXPECT_TRUE(inventory.slot_has_item(EquipmentSlot::WEAPON));
-    EXPECT_EQ(inventory.get_equipped_item(EquipmentSlot::WEAPON), ptr);
+
+    // Al equipar de nuevo, se desequipa (toggle)
+    EXPECT_TRUE(inventory.equip(*ptr, player));
+    EXPECT_FALSE(inventory.slot_has_item(EquipmentSlot::WEAPON));
 }

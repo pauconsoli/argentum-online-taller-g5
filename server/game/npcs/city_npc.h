@@ -51,7 +51,7 @@ class CityNPC: public NPC {
     }  // no dropean nada
 
     InteractResult interact(NPCInteraction type, const std::string& arg, int amount, Player& player,
-                            Bank& bank);
+                            Bank& bank) override;
 };
 
 #endif

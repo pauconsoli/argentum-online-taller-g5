@@ -65,6 +65,8 @@ class Character {
         return AttackStatus::SUCCESS;
     }
 
+    virtual bool can_enter_safe_zones() const = 0;
+
     void receive_damage(int damage);
 
     int heal(int amount);

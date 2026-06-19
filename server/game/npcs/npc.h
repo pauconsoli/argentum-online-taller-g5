@@ -2,13 +2,17 @@
 #define NPC_H
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/direction.h"
+#include "common/npc_interact_result.h"
+#include "common/npc_interaction.h"
 #include "common/position.h"
 #include "server/game/character.h"
-#include "common/npc_type.h"
+#include "server/game/npcs/npc_type.h"
 
+class Bank;
 class Player;
 
 enum class NPCAction { STILL, CHASE, ATTACK };
@@ -49,6 +53,11 @@ class NPC: public Character {
     virtual int get_attack_range() const {
         return 0;
     }
+
+    bool can_enter_safe_zones() const override;
+
+    virtual InteractResult interact(NPCInteraction type, const std::string& arg, int amount,
+                                    Player& player, Bank& bank);
 
     const std::string& get_name() const;
 

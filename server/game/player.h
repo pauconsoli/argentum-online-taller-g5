@@ -70,6 +70,8 @@ class Player: public Character {
 
     void add_experience(uint64_t amount) override;
 
+    bool can_enter_safe_zones() const override;
+
     bool is_healing_attack() const override;
     bool is_ranged_attack() const override;
     bool is_magic_attack() const override;

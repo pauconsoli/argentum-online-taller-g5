@@ -32,6 +32,10 @@ class TestCharacter: public Character {
     Loot drop_loot() override {  // DUMMY
         return Loot{};
     }
+
+    bool can_enter_safe_zones() const override {
+        return true;
+    }
 };
 
 class CharacterTest: public ::testing::Test {

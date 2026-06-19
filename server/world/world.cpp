@@ -313,8 +313,8 @@ bool World::move_character(uint32_t character_id, Direction direction) {
         return false;
     }
 
-    if (dynamic_cast<NPC*>(character) && map.is_safe(next)) {
-        return false;  // Los NPCs no pueden entrar a zonas seguras
+    if (map.is_safe(next) && !character->can_enter_safe_zones()) {
+        return false;
     }
 
     if (is_position_occupied(next)) {
@@ -399,10 +399,6 @@ std::vector<NPC*> World::get_npcs() {
     return active_npcs;
 }
 
-CityNPC* World::get_city_npc(uint32_t npc_id) {
-    return dynamic_cast<CityNPC*>(get_npc(npc_id));
-}
-
 Bank& World::get_bank() {
     return bank;
 }
@@ -423,7 +419,7 @@ std::vector<Player*> World::get_players_near(const Position& pos, float range) c
 InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
                                         const std::string& arg, int amount) {
     Player* player = get_player(player_id);
-    CityNPC* npc = get_city_npc(npc_id);
+    NPC* npc = get_npc(npc_id);
 
     if (!player || !npc)
         return InteractResult{InteractStatus::INVALID_TARGET};

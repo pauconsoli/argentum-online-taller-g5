@@ -101,6 +101,10 @@ void Player::add_experience(uint64_t amount) {
     }
 }
 
+bool Player::can_enter_safe_zones() const {
+    return true;
+}
+
 bool Player::is_healing_attack() const {
     Weapon* weapon = get_equipped_weapon();
     return weapon ? weapon->is_healing() : false;
