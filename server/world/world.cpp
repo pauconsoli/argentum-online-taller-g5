@@ -722,9 +722,7 @@ void World::spawn_initial_hostile_npcs() {
     }
 }
 
-std::vector<AttackResult> World::update(float tick_seconds) {
-    std::vector<AttackResult> attack_results;
-
+void World::update_players(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())
             continue;
@@ -750,7 +748,9 @@ std::vector<AttackResult> World::update(float tick_seconds) {
             player->decrease_partial_mana(restore_amount);
         }
     }
+}
 
+void World::update_resurrections(float tick_seconds) {
     // procesar resurrecciones pendientes
     for (auto it = pending_resurrections.begin(); it != pending_resurrections.end();) {
         it->second.timer -= tick_seconds;
@@ -766,7 +766,10 @@ std::vector<AttackResult> World::update(float tick_seconds) {
             ++it;
         }
     }
+}
 
+std::vector<AttackResult> World::update_npcs(float tick_seconds) {
+    std::vector<AttackResult> attack_results;
     // acciones de NPCs hostiles
     for (auto it = npcs.begin(); it != npcs.end();) {
         auto& npc = it->second;
@@ -803,12 +806,22 @@ std::vector<AttackResult> World::update(float tick_seconds) {
         }
         ++it;
     }
+    return attack_results;
+}
 
+void World::update_spawning(float tick_seconds) {
     // spawn de NPCs hostiles
     npc_spawn_timer += tick_seconds;
     if (npc_spawn_timer >= GameConfig::get_instance().get_npc_spawn_time_seconds()) {
         npc_spawn_timer = 0.0f;
         try_spawn_npc();
     }
+}
+
+std::vector<AttackResult> World::update(float tick_seconds) {
+    update_players(tick_seconds);
+    update_resurrections(tick_seconds);
+    std::vector<AttackResult> attack_results = update_npcs(tick_seconds);
+    update_spawning(tick_seconds);
     return attack_results;
 }

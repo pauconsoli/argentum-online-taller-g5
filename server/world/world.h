@@ -68,6 +68,11 @@ class World {
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
 
+    void update_players(float tick_seconds);
+    void update_resurrections(float tick_seconds);
+    std::vector<AttackResult> update_npcs(float tick_seconds);
+    void update_spawning(float tick_seconds);
+
     void npc_move_towards(NPC* npc, const Position& target_pos);
     AttackResult npc_attack(NPC* npc, Character* target);
     void try_spawn_npc();
