@@ -16,7 +16,7 @@ class Banker: public CityNPC {
     InteractResult on_list(Player& player, Bank& bank) override;
 
  public:
-    Banker(uint32_t id, const Position& pos);
+    Banker(uint32_t id, NPCType npc_type, const Position& pos);
     ~Banker() override = default;
 };
 

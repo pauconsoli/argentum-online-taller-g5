@@ -25,6 +25,20 @@ void Renderer::draw_frame(SDL_Texture* texture, int frame_x, int frame_y, int fr
     SDL_RenderCopy(sdl_renderer, texture, &src, &dst);
 }
 
+void Renderer::draw_frame_scaled(SDL_Texture* texture, int frame_x, int frame_y, int frame_w,
+                                 int frame_h, int x, int y, int draw_w, int draw_h) {
+    SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
+    SDL_Rect dst = {x, y, draw_w, draw_h};
+    SDL_RenderCopy(sdl_renderer, texture, &src, &dst);
+}
+
+void Renderer::draw_frame_rotated(SDL_Texture* texture, int frame_x, int frame_y, int frame_w,
+                                  int frame_h, int x, int y, double angle_deg) {
+    SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
+    SDL_Rect dst = {x, y, frame_w, frame_h};
+    SDL_RenderCopyEx(sdl_renderer, texture, &src, &dst, angle_deg, nullptr, SDL_FLIP_NONE);
+}
+
 void Renderer::clear() {
     SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 255);
     SDL_RenderClear(sdl_renderer);

@@ -8,10 +8,11 @@
 #include "server/game/items/item_registry.h"
 #include "server/game/player.h"
 
-HostileNPC::HostileNPC(uint32_t id, const std::string& name, int level, int max_hp, int defense,
-                       int agility, int min_damage, int max_damage, int attack_range,
-                       const std::vector<std::string>& allowed_zones, const Position& pos):
-    NPC(id, name, level, max_hp, defense, pos),
+HostileNPC::HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, int level,
+                       int max_hp, int defense, int agility, int min_damage, int max_damage,
+                       int attack_range, const std::vector<std::string>& allowed_zones,
+                       const Position& pos):
+    NPC(id, name, npc_type, level, max_hp, defense, pos),
     agility(agility),
     min_damage(min_damage),
     max_damage(max_damage),
@@ -23,12 +24,17 @@ int HostileNPC::get_agility() const {
 }
 
 int HostileNPC::calculate_base_damage() const {
-    return GameFormulas::calculate_npc_damage(min_damage, max_damage);
+    return GameFormulas::calculate_base_damage_in_range(min_damage, max_damage);
 }
 
-NPCBehavior HostileNPC::update(float /*time*/, const std::vector<Player*>& nearby_targets) {
+NPCBehavior HostileNPC::update(float time, const std::vector<Player*>& nearby_targets) {
     NPCBehavior behavior;
     behavior.action = NPCAction::STILL;
+
+    action_timer += time;
+    if (action_timer < 0.5f) {  // cooldown de 0.5s para no ser inmatables. extraer al config
+        return behavior;
+    }
 
     if (nearby_targets.empty()) {
         return behavior;
@@ -60,9 +66,11 @@ NPCBehavior HostileNPC::update(float /*time*/, const std::vector<Player*>& nearb
     if (std::abs(dx) <= 1 && std::abs(dy) <= 1) {  // adyacente-->ataque
         behavior.action = NPCAction::ATTACK;
         behavior.target_id = closest->get_id();
+        action_timer = 0.0f;
     } else {  // no adyacente pero dentro del rango-->perseguir
         behavior.action = NPCAction::CHASE;
         behavior.target_position = closest->get_position();
+        action_timer = 0.0f;
     }
 
     return behavior;

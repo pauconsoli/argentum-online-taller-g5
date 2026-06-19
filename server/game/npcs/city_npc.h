@@ -29,7 +29,7 @@ class CityNPC: public NPC {
     virtual InteractResult on_list(Player& player, Bank& bank);
 
  public:
-    CityNPC(uint32_t id, const std::string& name, const Position& pos);
+    CityNPC(uint32_t id, const std::string& name, NPCType npc_type, const Position& pos);
 
     ~CityNPC() override = default;
 
@@ -51,7 +51,7 @@ class CityNPC: public NPC {
     }  // no dropean nada
 
     InteractResult interact(NPCInteraction type, const std::string& arg, int amount, Player& player,
-                            Bank& bank);
+                            Bank& bank) override;
 };
 
 #endif

@@ -51,6 +51,12 @@ class Character {
     virtual bool is_ranged_attack() const {
         return false;
     }
+    virtual bool is_magic_attack() const {
+        return false;
+    }
+    virtual std::string get_attack_name() const {
+        return "";
+    }
     virtual int calculate_base_damage() const = 0;
     virtual int calculate_base_healing() const {
         return 0;
@@ -61,9 +67,11 @@ class Character {
 
     virtual const std::string& get_name() const = 0;
 
+    virtual bool can_enter_safe_zones() const = 0;
+
     void receive_damage(int damage);
 
-    void heal(int amount);
+    int heal(int amount);
 
     bool is_dead() const;
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract inventory item icons from Recursos/Graficos into client/assets/items/.
+"""Extract inventory item icons from Recursos/Graficos into assets/sprites/items/.
 
 Each item is saved as a 32x32 RGBA PNG named item_N.png.
 Items with non-32x32 source sprites are resized to fit 32x32 with padding.
@@ -16,7 +16,7 @@ RECURSOS = Path(__file__).parent.parent / "Recursos"
 GRAFICOS_INI = RECURSOS / "init" / "graficos.ini"
 OBJ_DAT = RECURSOS / "Dat" / "obj.dat"
 GRAFICOS_DIR = RECURSOS / "Graficos"
-OUTPUT_DIR = Path(__file__).parent.parent / "client" / "assets" / "items"
+OUTPUT_DIR = Path(__file__).parent.parent / "assets" / "sprites" / "items"
 
 ICON_SIZE = 32
 

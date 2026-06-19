@@ -16,6 +16,7 @@ constexpr uint8_t MEDITATE = 0x12;
 constexpr uint8_t PICK_UP = 0x13;
 constexpr uint8_t DROP_ITEM = 0x14;
 constexpr uint8_t EQUIP_ITEM = 0x15;
+constexpr uint8_t INTERACT = 0x16;
 
 constexpr uint8_t CHAT = 0x20;
 
@@ -41,8 +42,10 @@ constexpr uint8_t REVIVE = 0x93;
 constexpr uint8_t ATTACKED = 0x94;
 
 constexpr uint8_t INVENTORY = 0xA0;
+constexpr uint8_t CATALOG = 0xA1;
 
-constexpr uint8_t CHAT_MSG = 0xB0;
+constexpr uint8_t CHAT_MSG = 0xB0;    // chat de jugador a jugadores (broadcast)
+constexpr uint8_t SYSTEM_MSG = 0xB1;  // mensaje del sistema (NPCs, errores) a 1 jugador
 
 constexpr uint8_t ERROR = 0xEE;
 }  // namespace ServerOpcode
@@ -53,6 +56,6 @@ constexpr uint8_t MATCH_NOT_FOUND = 0x02;
 constexpr uint8_t MATCH_FULL = 0x03;
 constexpr uint8_t COMMAND_NOT_ALLOWED = 0x04;
 constexpr uint8_t INVALID_ARG = 0x05;
-}
+}  // namespace ProtocolError
 
 #endif

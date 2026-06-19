@@ -16,16 +16,18 @@ void Character::receive_damage(int damage) {
     }
 }
 
-void Character::heal(int amount) {
+int Character::heal(int amount) {
     if (amount <= 0 || dead) {
-        return;
+        return 0;
     }
 
+    int old_hp = current_hp;
     current_hp += amount;
 
     if (current_hp > max_hp) {
         current_hp = max_hp;
     }
+    return current_hp - old_hp;
 }
 
 bool Character::is_dead() const {

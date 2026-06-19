@@ -12,11 +12,12 @@ class HostileNPC: public NPC {
     int min_damage;
     int max_damage;
     int attack_range;
+    float action_timer = 0.0f;
     std::vector<std::string> allowed_zones;
 
  public:
-    HostileNPC(uint32_t id, const std::string& name, int level, int max_hp, int defense,
-               int agility, int min_damage, int max_damage, int attack_range,
+    HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, int level, int max_hp,
+               int defense, int agility, int min_damage, int max_damage, int attack_range,
                const std::vector<std::string>& allowed_zones, const Position& pos);
 
     ~HostileNPC() override = default;

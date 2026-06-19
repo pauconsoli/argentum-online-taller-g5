@@ -84,30 +84,30 @@ BaseStats GameFormulas::calculate_base_stats(PlayerRace race, PlayerClass klass)
 // RECOVERY
 
 // Vida = FRazaRecuperacion * segundos
-int GameFormulas::calculate_health_recovery(const Player& player, float seconds) {
+float GameFormulas::calculate_health_recovery(const Player& player, float seconds) {
     const GameConfig& config = GameConfig::get_instance();
     float recovery_factor = config.get_race_recovery_factor(player.get_race());
-    return static_cast<int>(recovery_factor * seconds);
+    return recovery_factor * seconds;
 }
 
 // Mana = FRazaRecuperacion * segundos
-int GameFormulas::calculate_time_mana_recovery(const Player& player, float seconds) {
+float GameFormulas::calculate_time_mana_recovery(const Player& player, float seconds) {
     if (!player.can_cast_magic()) {
-        return 0;
+        return 0.0f;
     }
     const GameConfig& config = GameConfig::get_instance();
     float recovery_factor = config.get_race_recovery_factor(player.get_race());
-    return static_cast<int>(recovery_factor * seconds);
+    return recovery_factor * seconds;
 }
 
 // Mana = FClaseMeditacion * Inteligencia * segundos
-int GameFormulas::calculate_meditation_mana_recovery(const Player& player, float seconds) {
+float GameFormulas::calculate_meditation_mana_recovery(const Player& player, float seconds) {
     if (!player.can_cast_magic()) {
-        return 0;
+        return 0.0f;
     }
     const GameConfig& config = GameConfig::get_instance();
     float meditation_factor = config.get_class_meditation_factor(player.get_class());
-    return static_cast<int>(meditation_factor * player.get_intelligence() * seconds);
+    return meditation_factor * player.get_intelligence() * seconds;
 }
 
 
@@ -173,7 +173,7 @@ int GameFormulas::calculate_damage(const Player& attacker, const Weapon* weapon)
     return attacker.get_strength() * weapon_damage;
 }
 
-int GameFormulas::calculate_npc_damage(int min_damage, int max_damage) {
+int GameFormulas::calculate_base_damage_in_range(int min_damage, int max_damage) {
     return get_random_int(min_damage, max_damage);
 }
 

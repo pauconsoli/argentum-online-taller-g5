@@ -44,6 +44,7 @@ target_sources(taller_game
     items/consumable_item.h
     items/item_registry.h
     npcs/npc.h
+    npcs/npc_type.h
     npcs/hostile_npc.h
     npcs/city_npc.h
     npcs/npc_registry.h

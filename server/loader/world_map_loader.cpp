@@ -38,7 +38,7 @@ static std::pair<TerrainType, bool> char_to_cell(char c) {
             return {TerrainType::DUNGEON_FLOOR_2, false};
         case 'P':
             return {TerrainType::DUNGEON_WALL_2, true};
-        case '=':
+        case '<':
             return {TerrainType::DUNGEON_ENTRANCE_2, false};
         case '-':
             return {TerrainType::CITY_FLOOR_1, false};

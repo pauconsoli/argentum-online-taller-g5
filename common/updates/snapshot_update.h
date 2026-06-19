@@ -24,6 +24,7 @@ struct PlayerSnapshot {
     uint16_t level;
     bool is_ghost;
     bool is_meditating;
+    std::vector<std::string> equipment;
 };
 
 struct GroundItemSnapshot {
@@ -42,6 +43,9 @@ struct NPCSnapshot {
     int32_t hp;
     int32_t max_hp;
     bool is_hostile;
+    uint32_t npc_type;
+    uint8_t direction;
+    bool is_moving;
 };
 
 class SnapshotUpdate: public GameUpdate {

@@ -187,10 +187,11 @@ if(ARGENTUM_CLIENT)
     target_include_directories(argentum_client PRIVATE ${libSDL2pp_SOURCE_DIR})
     target_include_directories(argentum_client PRIVATE ${sdl2_image_SOURCE_DIR}/include)
     target_include_directories(argentum_client PRIVATE ${sdl2_ttf_SOURCE_DIR})
+    target_include_directories(argentum_client PRIVATE ${sdl2_mixer_SOURCE_DIR}/include)
 
 
     # Link the taller_common lib target
-    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf spdlog::spdlog)
+    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf SDL2_mixer spdlog::spdlog)
 endif()
 
 # Binario CLI del cliente (sin GUI). Para smoke-testear el server mientras
@@ -208,8 +209,6 @@ if(ARGENTUM_CLIENT_CLI)
     target_link_libraries(argentum_client_cli taller_common spdlog::spdlog)
 endif()
 
-# Binario del cliente con menú Qt (pre-juego). El handoff a SDL para el
-# in-game lo integra Chiari después.
 if(ARGENTUM_CLIENT_QT)
     find_package(Qt5 COMPONENTS Core Widgets QUIET)
     if(Qt5_FOUND)
@@ -239,6 +238,8 @@ if(ARGENTUM_CLIENT_QT)
             client/sdl/mini_chat.cpp
             client/sdl/sprite_manager.cpp
             client/sdl/client_map.cpp
+            client/sdl/audio_manager.cpp
+            client/sdl/terrain_renderer.cpp
         )
 
         add_dependencies(argentum_client_qt taller_common SDL2pp::SDL2pp)
@@ -250,6 +251,7 @@ if(ARGENTUM_CLIENT_QT)
             ${libSDL2pp_SOURCE_DIR}
             ${sdl2_image_SOURCE_DIR}/include
             ${sdl2_ttf_SOURCE_DIR}
+            ${sdl2_mixer_SOURCE_DIR}/include
         )
 
         target_link_libraries(argentum_client_qt
@@ -259,6 +261,7 @@ if(ARGENTUM_CLIENT_QT)
             SDL2pp::SDL2pp
             SDL2_image
             SDL2_ttf
+            SDL2_mixer
             spdlog::spdlog
         )
     else()

@@ -12,7 +12,7 @@ class Merchant: public CityNPC {
     InteractResult on_sell(const std::string& item_name, Player& player) override;
 
  public:
-    Merchant(uint32_t id, const Position& pos);
+    Merchant(uint32_t id, NPCType npc_type, const Position& pos);
 
     ~Merchant() override = default;
 };

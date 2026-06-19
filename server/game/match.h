@@ -34,6 +34,8 @@ class Match {
     virtual void stop() = 0;
 
     virtual void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) = 0;
+    virtual void send_update_to_player(uint32_t player_id,
+                                       std::shared_ptr<const GameUpdate> update) = 0;
 };
 
 #endif

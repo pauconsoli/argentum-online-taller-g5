@@ -40,6 +40,8 @@ class Player: public Character {
     uint32_t clan_id;
 
     bool meditating;
+    float partial_hp_regen;
+    float partial_mana_regen;
 
     std::unique_ptr<Inventory> inventory;
 
@@ -70,8 +72,12 @@ class Player: public Character {
 
     void add_experience(uint64_t amount) override;
 
+    bool can_enter_safe_zones() const override;
+
     bool is_healing_attack() const override;
     bool is_ranged_attack() const override;
+    bool is_magic_attack() const override;
+    std::string get_attack_name() const override;
     int calculate_base_damage() const override;
     int calculate_base_healing() const override;
     AttackStatus consume_attack_resources() override;
@@ -85,6 +91,13 @@ class Player: public Character {
     void resurrect();
 
     bool is_meditating() const;
+
+    void add_partial_hp(float hp);
+    float get_partial_hp() const;
+    void decrease_partial_hp(float hp);
+    void add_partial_mana(float mana);
+    float get_partial_mana() const;
+    void decrease_partial_mana(float mana);
 
     const std::string& get_name() const override;
 

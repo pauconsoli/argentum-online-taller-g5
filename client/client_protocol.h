@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/direction.h"
+#include "common/npc_interaction.h"
 #include "common/socket.h"
 #include "common/updates/game_update.h"
 
@@ -41,7 +42,10 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_attacked();
     std::unique_ptr<GameUpdate> recv_death();
     std::unique_ptr<GameUpdate> recv_inventory();
+    std::unique_ptr<GameUpdate> recv_chat_msg();
+    std::unique_ptr<GameUpdate> recv_system_msg();
     std::unique_ptr<GameUpdate> recv_error();
+    std::unique_ptr<GameUpdate> recv_catalog();
 
  public:
     explicit ClientProtocol(Socket& socket);
@@ -57,6 +61,9 @@ class ClientProtocol {
     void send_pick_up();
     void send_drop_item(uint8_t slot_index);
     void send_equip_item(uint8_t slot_index);
+    void send_chat(const std::string& text);
+    void send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
+                       int32_t amount);
     void send_disconnect();
     void send_leave_match();
 

@@ -38,6 +38,8 @@ class BasicMatch: public Match {
     void stop() override;
 
     void broadcast_update_to_all(std::shared_ptr<const GameUpdate> update) override;
+    void send_update_to_player(uint32_t player_id,
+                               std::shared_ptr<const GameUpdate> update) override;
 
  private:
     uint32_t match_id;
@@ -51,8 +53,6 @@ class BasicMatch: public Match {
     Queue<std::unique_ptr<ClientCommand>> command_queue;
 
     std::unique_ptr<World> world;
-
-    void send_update_to_player(uint32_t player_id, std::shared_ptr<const GameUpdate> update);
 };
 
 #endif
