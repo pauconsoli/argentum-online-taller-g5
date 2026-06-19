@@ -619,9 +619,23 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                                                target_name);
                     }
                 } else if (r.target_id == my_player_id) {
-                    if (!r.target_died)
+                    if (r.is_healing) {
+                        std::string healer_name = "";
+                        auto player_it = players.find(r.attacker_id);
+                        if (player_it != players.end()) {
+                            healer_name = player_it->second.nick;
+                        } else {
+                            auto npc_it = npcs_.find(r.attacker_id);
+                            if (npc_it != npcs_.end()) {
+                                healer_name = npc_it->second.name;
+                            }
+                        }
+                        mini_chat->add_message(healer_name + " te curó " +
+                                               std::to_string(r.heal_amount) + " puntos de vida");
+                    } else if (!r.target_died) {
                         mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
                                                " de daño");
+                    }
                 }
 
                 switch (r.type) {
