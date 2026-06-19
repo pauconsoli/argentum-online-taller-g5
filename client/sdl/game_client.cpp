@@ -27,9 +27,6 @@
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
-enum class ItemType { WEAPON, STAFF, ARMOR, HELMET, SHIELD, OTHER };
-
-// nombre - categoria item
 static ItemType get_item_type(const std::string& name) {
     static const std::unordered_map<std::string, ItemType> table = {
         {"Espada", ItemType::WEAPON},
@@ -54,7 +51,13 @@ static ItemType get_item_type(const std::string& name) {
     return it != table.end() ? it->second : ItemType::OTHER;
 }
 
-// directorio assets
+static constexpr int TILE_W = 32;
+static constexpr int TILE_H = 32;
+static constexpr Uint32 FRAME_DELAY = 100;
+static constexpr Uint32 FRAME_TIME_MS = 1000 / 60;
+static constexpr Uint32 MOVE_INTERVAL_MS = 200;
+
+// esto deberia estar en sprite manager??
 static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
         return std::string(env_dir);
@@ -62,7 +65,7 @@ static std::string get_base_asset_dir() {
     return "assets";
 }
 
-// Primera cabeza del rango de cada raza (HeadAndBodyData.json, male range start).
+// esto deberia estar aca?
 static uint16_t head_index_for_race(uint8_t race) {
     switch (race) {
         case 1:
@@ -76,45 +79,6 @@ static uint16_t head_index_for_race(uint8_t race) {
     }
 }
 
-// dimensiones del frame
-struct NPCSpriteInfo {
-    int fw;
-    int fh;
-    int fpd[4];
-    int draw_w = 0;
-    int draw_h = 0;
-    int head_index = 0;
-};
-
-// datos de animacion x png
-static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
-    switch (t) {
-        case NPCVisualType::BANKER:
-            return {26, 46, {7, 7, 7, 7}};
-        case NPCVisualType::PRIEST:
-            return {27, 47, {6, 6, 5, 5}, 0, 0, 3};
-        case NPCVisualType::MERCHANT:
-            return {27, 47, {6, 6, 5, 5}, 0, 0, 30};
-        case NPCVisualType::GOBLIN:
-            return {32, 32, {6, 6, 6, 6}};
-        case NPCVisualType::SKELETON:
-            return {25, 52, {6, 6, 5, 5}};
-        case NPCVisualType::ZOMBIE:
-            return {128, 128, {6, 6, 6, 4}};
-        case NPCVisualType::SPIDER:
-            return {128, 128, {8, 8, 8, 8}};
-        case NPCVisualType::ORC:
-            return {24, 52, {6, 6, 5, 5}};
-        case NPCVisualType::GOLEM_ICE:
-            return {128, 128, {8, 8, 8, 8}, 64, 64};
-        case NPCVisualType::GOLEM_STONE:
-            return {128, 128, {8, 8, 8, 8}, 64, 64};
-        case NPCVisualType::GOLEM_INFERNAL:
-            return {128, 128, {8, 8, 8, 8}, 64, 64};
-        default:
-            return {32, 32, {1, 1, 1, 1}};
-    }
-}
 
 // inicializa video + audio
 static void init_sdl_window(SDL_Window*& window, int width, int height) {
@@ -128,6 +92,10 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
     }
 }
 
+
+// Constructor standalone: TODO conectar cliente y ejecutar lobby sin Qt
+GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
+    GameClient(width, height, std::make_unique<Client>(host, port), 1, 1, 0) {}
 
 //  handoff desde qt
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
@@ -147,8 +115,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     player_x(400),
     player_y(300),
     width(width),
-    height(height),
-    from_handoff(true) {
+    height(height) {
     init_sdl_window(window, width, height);
     my_hp = 100;
     my_max_hp = 100;
@@ -158,8 +125,10 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     my_gold = 0;
     my_xp = 0;
     renderer = new Renderer(window);
+    character_renderer = new CharacterRenderer(renderer);
     std::string base_assets = get_base_asset_dir();
     std::string font_path = base_assets + "/fonts/font.ttf";
+    renderer->load_font(font_path, 12);
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
@@ -173,6 +142,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
 GameClient::~GameClient() {
     client->stop();
     client->join();
+    delete character_renderer;
     delete hud;
     delete mini_chat;
     delete terrain_renderer_;
@@ -184,222 +154,52 @@ GameClient::~GameClient() {
 }
 
 void GameClient::run() {
-    bool running = true;
-    SDL_Event event;
+    running_ = true;
 
-    // frame de body y cabeza en el spritesheet.
-    const int frame_w = 27;
-    const int frame_h = 48;
-    const int tile_w = 32;
-    const int tile_h = 32;
-    const int head_w = 27;
-    const int head_h = 64;
-
-    //  musica de fondo al entrar al mundo.
     audio_manager->play_background_music(get_base_asset_dir() + "/audio/music/background.mp3",
                                          MIX_MAX_VOLUME / 2);
 
-    player_x = -1;  // posición real llega con el primer SnapshotUpdate
-    player_y = -1;
-
     ClientMap client_map = build_sample_client_map();
 
-    // Estado de ANIMACION.
-    int direction = 0;
-    int current_frame = 0;
-    int total_frames = 6;
-    Uint32 last_frame_time = SDL_GetTicks();
-    const Uint32 frame_delay =
-        100;  // el personaje cambie de imagen cada 100 ms mientras camina -> 10 x segundo
+    player_x = -1;
+    player_y = -1;
 
-    // movimiento se limita a 5 tiles/segundo
-    const Uint32 frame_time_ms = 1000 / 60;
-    const Uint32 move_interval_ms = 200;  // máx 5 tiles/seg
-    Uint32 last_move_time = 0;
+    direction_ = 0;
+    current_frame_ = 0;
+    total_frames_ = 6;
+    last_frame_time_ = SDL_GetTicks();
+    last_move_time_ = 0;
 
-    while (running) {
-        Uint32 frame_start = SDL_GetTicks();
+    while (running_) {
+        frame_start_ = SDL_GetTicks();
 
-        // ---- Procesamiento de eventos SDL ----
-        while (SDL_PollEvent(&event)) {
-            if (!input_handler.handle(event))
-                running = false;
+        process_sdl_events();
+        process_keyword_input();
+        process_server_updates(TILE_W, TILE_H, client_map);
 
-            //  chat esta activo -> los eventos de teclado van al input de texto
-            if (chat_active_) {
-                if (event.type == SDL_TEXTINPUT) {
-                    chat_input_ += event.text.text;
-                } else if (event.type == SDL_KEYDOWN) {
-                    switch (event.key.keysym.sym) {
-                        case SDLK_RETURN:
-                        case SDLK_RETURN2:
-                            if (!chat_input_.empty()) {
-                                // comandos
-                                if (chat_input_.rfind("/tomar", 0) == 0) {
-                                    client->do_pick_up();
-                                    mini_chat->add_message("/tomar");
-                                    // /tirar tira un item del inventario
-                                } else if (chat_input_.rfind("/tirar", 0) == 0) {
-                                    std::string rest = chat_input_.substr(6);
-                                    size_t pos = rest.find_first_not_of(' ');
-                                    int slot = -1;
-                                    if (pos != std::string::npos) {
-                                        try {
-                                            slot = std::stoi(rest.substr(pos));
-                                        } catch (...) {
-                                            slot = -1;
-                                        }
-                                    } else {
-                                        slot = selected_slot_;
-                                    }
-                                    if (slot >= 0 &&
-                                        slot < static_cast<int>(inventory_slots_.size()) &&
-                                        !inventory_slots_[slot].item_name.empty()) {
-                                        client->do_drop_item(static_cast<uint8_t>(slot));
-                                        mini_chat->add_message("Tiraste el item");
-                                        selected_slot_ = -1;
-                                    } else if (pos == std::string::npos && selected_slot_ < 0) {
-                                        mini_chat->add_message(
-                                            "Seleccioná un item con click derecho primero");
-                                    } else {
-                                        mini_chat->add_message("Slot inválido o vacío");
-                                    }
-                                } else {
-                                    // manejo normal del chat
-                                    client->do_chat(chat_input_);
-                                    mini_chat->add_message(chat_input_);
-                                }
-                            }
-                            chat_input_.clear();
-                            chat_active_ = false;
-                            SDL_StopTextInput();
-                            break;
-                        case SDLK_BACKSPACE:
-                            if (!chat_input_.empty())
-                                chat_input_.pop_back();
-                            break;
-                        case SDLK_ESCAPE:
-                            chat_input_.clear();
-                            chat_active_ = false;
-                            SDL_StopTextInput();
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                // Enter fuera del chat abre el input de texto.
-            } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
-                chat_active_ = true;
-                SDL_StartTextInput();
-                // Click izquierdo: atacar jugador en esa casilla o equipar item del HUD.
-            } else if (event.type == SDL_MOUSEBUTTONDOWN &&
-                       event.button.button == SDL_BUTTON_LEFT) {
-                if (!my_is_ghost) {
-                    int world_x = camera.get_x() + event.button.x;
-                    int world_y = camera.get_y() + event.button.y;
-                    int tile_x = world_x / tile_w;
-                    int tile_y = world_y / tile_h;
-                    for (const auto& [pid, ps] : players) {
-                        if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
-                            client->do_attack(pid);
-                            break;
-                        }
-                    }
-                    // agrego ataquen a npcs
-                    for (const auto& [nid, ns] : npcs_) {
-                        if (ns.x == tile_x && ns.y == tile_y) {
-                            client->do_attack(nid);
-                            break;
-                        }
-                    }
-                    int slot = hud->get_slot_at(event.button.x, event.button.y);
-                    if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
-                        !inventory_slots_[slot].item_name.empty()) {
-                        client->do_equip_item(static_cast<uint8_t>(slot));
-                    }
-                }
-                // Click derecho sobre el inventario: selecciona el slot (para /tirar).
-            } else if (event.type == SDL_MOUSEBUTTONDOWN &&
-                       event.button.button == SDL_BUTTON_RIGHT) {
-                int slot = hud->get_slot_at(event.button.x, event.button.y);
-                if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
-                    !inventory_slots_[slot].item_name.empty()) {
-                    selected_slot_ = slot;
-                }
-            }
-        }
-
-        // ---- Movimiento con teclas de dirección ----
-        const Uint8* keys = SDL_GetKeyboardState(nullptr);
-        bool moving = false;
-        if (!chat_active_) {
-            bool can_move = (frame_start - last_move_time >= move_interval_ms);
-            if (keys[SDL_SCANCODE_DOWN]) {
-                direction = 0;
-                total_frames = 6;
-                moving = true;
-                if (can_move) {
-                    client->do_move(Direction::DOWN);
-                    last_move_time = frame_start;
-                }
-            } else if (keys[SDL_SCANCODE_UP]) {
-                direction = 1;
-                total_frames = 6;
-                moving = true;
-                if (can_move) {
-                    client->do_move(Direction::UP);
-                    last_move_time = frame_start;
-                }
-            } else if (keys[SDL_SCANCODE_LEFT]) {
-                direction = 2;
-                total_frames = 5;
-                moving = true;
-                if (can_move) {
-                    client->do_move(Direction::LEFT);
-                    last_move_time = frame_start;
-                }
-            } else if (keys[SDL_SCANCODE_RIGHT]) {
-                direction = 3;
-                total_frames = 5;
-                moving = true;
-                if (can_move) {
-                    client->do_move(Direction::RIGHT);
-                    last_move_time = frame_start;
-                }
-            }
-        }
-
-        // ---- Actualización de estado desde el servidor ----
-        process_server_updates(tile_w, tile_h, client_map);
-
-        // Avanza el frame de animación del jugador local sólo mientras se mueve.
-        if (moving) {
+        if (moving_) {
             Uint32 now = SDL_GetTicks();
-            if (now - last_frame_time > frame_delay) {
-                current_frame = (current_frame + 1) % total_frames;
-                last_frame_time = now;
+            if (now - last_frame_time_ > FRAME_DELAY) {
+                current_frame_ = (current_frame_ + 1) % total_frames_;
+                last_frame_time_ = now;
             }
         } else {
-            current_frame = 0;
+            current_frame_ = 0;
         }
 
-        // centra la camara en el jugador local (solo cuando ya llegó la posición del servidor)
         if (player_x >= 0 && player_y >= 0) {
-            camera.center_on(player_x, player_y, client_map.get_width() * tile_w,
-                             client_map.get_height() * tile_h);
+            camera.center_on(player_x, player_y, client_map.get_width() * TILE_W,
+                             client_map.get_height() * TILE_H);
         }
 
-        // ---- Render ----
         renderer->clear();
 
-        // 1) Terreno: sólo los tiles visibles en pantalla.
-        int start_col = camera.get_x() / tile_w;
-        int end_col = start_col + width / tile_w + 1;
-        int start_row = camera.get_y() / tile_h;
-        int end_row = start_row + height / tile_h + 1;
-        terrain_renderer_->draw(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
+        int start_col = camera.get_x() / TILE_W;
+        int end_col = start_col + width / TILE_W + 1;
+        int start_row = camera.get_y() / TILE_H;
+        int end_row = start_row + height / TILE_H + 1;
+        terrain_renderer_->draw(start_col, end_col, start_row, end_row, TILE_W, TILE_H, client_map);
 
-        // 2) Items en el suelo: encima del terreno pero debajo de personajes.
         for (const auto& gi : ground_items_) {
             SDL_Texture* item_tex = nullptr;
             if (gi.is_gold) {
@@ -411,32 +211,26 @@ void GameClient::run() {
             if (item_tex == nullptr)
                 item_tex = sprite_manager->get_item("item_espada");
             if (item_tex != nullptr) {
-                int gx = camera.get_screen_x(gi.x * tile_w);
-                int gy = camera.get_screen_y(gi.y * tile_h);
-                renderer->draw_frame(item_tex, 0, 0, tile_w, tile_h, gx, gy);
+                int gx = camera.get_screen_x(gi.x * TILE_W);
+                int gy = camera.get_screen_y(gi.y * TILE_H);
+                renderer->draw_frame(item_tex, 0, 0, TILE_W, TILE_H, gx, gy);
             }
         }
 
-        // 3) Jugadores con cuerpo, cabeza e items equipados visibles.
-        render_players(tile_w, tile_h, frame_w, frame_h, head_w, head_h, direction, current_frame);
+        render_players(TILE_W, TILE_H, direction_, current_frame_);
+        render_npcs(TILE_W, TILE_H);
 
-        // 4) NPCs animados.
-        render_npcs(tile_w, tile_h);
-
-        // 5) HUD: barras de vida/mana, nivel, oro, experiencia e inventario.
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
         hud->draw_inventory(sprite_manager, inventory_slots_, selected_slot_);
 
-        // 6) Chat: mensajes recientes y, si está activo, el input actual.
         mini_chat->draw();
         if (chat_active_)
             mini_chat->draw_input(chat_input_, height - 30);
         renderer->present();
 
-        // Espera el tiempo restante del frame para mantener ~60 FPS.
-        Uint32 elapsed = SDL_GetTicks() - frame_start;
-        if (elapsed < frame_time_ms) {
-            SDL_Delay(frame_time_ms - elapsed);
+        Uint32 elapsed = SDL_GetTicks() - frame_start_;
+        if (elapsed < FRAME_TIME_MS) {
+            SDL_Delay(FRAME_TIME_MS - elapsed);
         }
     }
 }
@@ -446,6 +240,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
     auto& update_queue = client->get_received_updates();
     std::unique_ptr<GameUpdate> update;
     while (update_queue.try_pop(update)) {
+
         switch (update->get_type()) {
             case UpdateType::ERROR: {
                 // Filtra errores de movimiento (silenciosos) y traduce el resto al chat.
@@ -645,73 +440,92 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
 
 
 // Dibuja todos los jugadores: cuerpo animado + cabeza + items equipados visibles + nickname.
-void GameClient::render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w,
-                                int head_h, int direction, int current_frame) {
-    static const int head_offset_x[] = {0, 0, 0, 0};
-    static const int head_offset_y[] = {-8, -15, -15, -15};
-    // Spritesheet rows order: UP(0),RIGHT(1),DOWN(2),LEFT(3); direction: 0=DOWN,1=UP,2=LEFT,3=RIGHT
-    static const int head_dir_to_row[] = {2, 0, 3, 1};
+void GameClient::render_players(int tile_w, int tile_h, int direction, int current_frame) {
 
+    // Itera sobre todos los jugadores conocidos (pid = id, ps = estado del jugador).
     for (const auto& [pid, ps] : players) {
+
+        // Convierte la posición en tiles a coordenadas de pantalla relativas a la cámara.
         int px = camera.get_screen_x(ps.x * tile_w);
         int py = camera.get_screen_y(ps.y * tile_h);
 
-        // Otros jugadores se muestran en frame 0 sin animación local.
-        int p_dir = (pid == my_player_id) ? direction : 0;
-        int p_frame = (pid == my_player_id) ? current_frame : 0;
-        int p_total = (p_dir < 2) ? 6 : 5;
-        int p_frame_clamped = p_frame % p_total;
+        // Obtiene la textura del cuerpo según la raza y clase del jugador.
 
-        SDL_Texture* body_tex = sprite_manager->get_body(ps.race, ps.klass);
-        SDL_Texture* head_tex = sprite_manager->get_head(head_index_for_race(ps.race));
-        // Los fantasmas (muertos) se dibujan semi-transparentes.
-        uint8_t alpha = ps.is_ghost ? 128 : 255;
-        SDL_SetTextureAlphaMod(body_tex, alpha);
-        SDL_SetTextureAlphaMod(head_tex, alpha);
+        SDL_Texture* body_texture = sprite_manager->get_body(ps.race, ps.klass);
+        // Obtiene la textura de la cabeza según el índice de sprite que corresponde a su raza.
+        SDL_Texture* head_texture = sprite_manager->get_head(head_index_for_race(ps.race));
 
-        renderer->draw_frame(body_tex, p_frame_clamped * frame_w, p_dir * frame_h, frame_w, frame_h,
-                             px, py);
+        // Solo el jugador local usa la dirección real; los remotos miran hacia abajo (dirección 0).
+        int player_direction = (pid == my_player_id) ? direction : 0;
 
-        int hx = px + head_offset_x[p_dir];
-        int hy = py + head_offset_y[p_dir];
-        renderer->draw_frame(head_tex, 0, head_dir_to_row[p_dir] * head_h, head_w, head_h, hx, hy);
+        // Solo el jugador local avanza frames de animación; los remotos se fijan en frame 0.
+        int player_frame = (pid == my_player_id) ? current_frame : 0;
 
-        SDL_SetTextureAlphaMod(body_tex, 255);
-        SDL_SetTextureAlphaMod(head_tex, 255);
+        // Dibuja cuerpo + cabeza en pantalla; is_ghost afecta la opacidad del render.
+        character_renderer->draw_character(body_texture, head_texture, px, py, player_direction,
+                                           player_frame, ps.is_ghost);
 
-        // Para el jugador local dibuja encima los items equipados (arma, escudo, casco).
+        // Los items equipados y el nickname solo se renderizan para el jugador local.
         if (pid == my_player_id) {
-            constexpr int ISIZE = 32;
-            constexpr int HSIZE = 24;
+            // Recorre todos los slots del inventario buscando items que estén equipados.
             for (const auto& islot : inventory_slots_) {
+                // Salta slots vacíos o sin item equipado.
                 if (!islot.is_equipped || islot.item_name.empty())
                     continue;
+
+                // Determina el tipo de item (arma, escudo, casco…) a partir de su nombre.
                 ItemType itype = get_item_type(islot.item_name);
-                if (itype == ItemType::ARMOR || itype == ItemType::OTHER)
-                    continue;
+
+                // Obtiene la textura SDL del sprite del item por nombre.
                 SDL_Texture* itex =
                     sprite_manager->get_item(SpriteManager::item_key_for_name(islot.item_name));
+                // Si no hay textura cargada para este item, lo omite.
                 if (!itex)
                     continue;
-                if (itype == ItemType::WEAPON || itype == ItemType::STAFF) {
-                    renderer->draw_frame(itex, 0, 0, ISIZE, ISIZE, px + tile_w / 2 + 2, py);
-                } else if (itype == ItemType::SHIELD) {
-                    renderer->draw_frame(itex, 0, 0, ISIZE, ISIZE, px - tile_w / 2 - 2 - ISIZE, py);
-                } else if (itype == ItemType::HELMET) {
-                    SDL_Rect src = {0, 0, ISIZE, ISIZE};
-                    SDL_Rect dst = {px + (frame_w - HSIZE) / 2, py - 12, HSIZE, HSIZE};
-                    SDL_RenderCopy(renderer->get_sdl_renderer(), itex, &src, &dst);
-                }
+                // Superpone el sprite del item equipado sobre el personaje.
+                character_renderer->draw_equipped_item(px, py, itex, itype, tile_w);
             }
+            // Dibuja el nickname centrado, un poco por encima de la cabeza del jugador.
         }
+        character_renderer->draw_nickname(ps.nick, px, py);
+    }
+}
 
-        // Nickname con sombra debajo del sprite.
-        int nick_center_x = px + frame_w / 2;
-        int nick_y = py + frame_h + 3;
-        SDL_Color shadow = {0, 0, 0, 200};
-        SDL_Color white = {255, 255, 255, 255};
-        mini_chat->draw_label(ps.nick, nick_center_x + 1, nick_y + 1, shadow);
-        mini_chat->draw_label(ps.nick, nick_center_x, nick_y, white);
+struct NPCSpriteInfo {
+    int fw;
+    int fh;
+    int fpd[4];
+    int draw_w = 0;
+    int draw_h = 0;
+    int head_index = 0;
+};
+
+static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
+    switch (t) {
+        case NPCVisualType::BANKER:
+            return {26, 46, {7, 7, 7, 7}};
+        case NPCVisualType::PRIEST:
+            return {27, 47, {6, 6, 5, 5}, 0, 0, 3};
+        case NPCVisualType::MERCHANT:
+            return {27, 47, {6, 6, 5, 5}, 0, 0, 30};
+        case NPCVisualType::GOBLIN:
+            return {32, 32, {6, 6, 6, 6}};
+        case NPCVisualType::SKELETON:
+            return {25, 52, {6, 6, 5, 5}};
+        case NPCVisualType::ZOMBIE:
+            return {128, 128, {6, 6, 6, 4}};
+        case NPCVisualType::SPIDER:
+            return {128, 128, {8, 8, 8, 8}};
+        case NPCVisualType::ORC:
+            return {24, 52, {6, 6, 5, 5}};
+        case NPCVisualType::GOLEM_ICE:
+            return {128, 128, {8, 8, 8, 8}, 64, 64};
+        case NPCVisualType::GOLEM_STONE:
+            return {128, 128, {8, 8, 8, 8}, 64, 64};
+        case NPCVisualType::GOLEM_INFERNAL:
+            return {128, 128, {8, 8, 8, 8}, 64, 64};
+        default:
+            return {32, 32, {1, 1, 1, 1}};
     }
 }
 
@@ -781,4 +595,172 @@ void GameClient::load_audio_assets() {
     audio_manager->load_sound("explosion", audio_path + "explosion.wav");
     audio_manager->load_sound("death", audio_path + "death.wav");
     audio_manager->load_sound("drink_potion", audio_path + "drink_potion.wav");
+}
+
+
+void GameClient::process_sdl_events() {
+    while (SDL_PollEvent(&event_)) {
+        if (!input_handler.handle_quit(event_))
+            running_ = false;
+
+        if (chat_active_) {
+            if (event_.type == SDL_TEXTINPUT) {
+                chat_input_ += event_.text.text;
+            } else if (event_.type == SDL_KEYDOWN) {
+                switch (event_.key.keysym.sym) {
+                    case SDLK_RETURN:
+                    case SDLK_RETURN2:
+                        if (!chat_input_.empty()) {
+                            if (chat_input_.rfind("/tomar", 0) == 0) {
+                                client->do_pick_up();
+                                mini_chat->add_message("/tomar");
+                            } else if (chat_input_.rfind("/tirar", 0) == 0) {
+                                std::string rest = chat_input_.substr(6);
+                                size_t pos = rest.find_first_not_of(' ');
+                                int slot = -1;
+                                if (pos != std::string::npos) {
+                                    try {
+                                        slot = std::stoi(rest.substr(pos));
+                                    } catch (...) {
+                                        slot = -1;
+                                    }
+                                } else {
+                                    slot = selected_slot_;
+                                }
+                                if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
+                                    !inventory_slots_[slot].item_name.empty()) {
+                                    client->do_drop_item(static_cast<uint8_t>(slot));
+                                    mini_chat->add_message("Tiraste el item");
+                                    selected_slot_ = -1;
+                                } else if (pos == std::string::npos && selected_slot_ < 0) {
+                                    mini_chat->add_message(
+                                        "Seleccioná un item con click derecho primero");
+                                } else {
+                                    mini_chat->add_message("Slot inválido o vacío");
+                                }
+                            } else {
+                                client->do_chat(chat_input_);
+                                mini_chat->add_message(chat_input_);
+                            }
+                        }
+                        chat_input_.clear();
+                        chat_active_ = false;
+                        SDL_StopTextInput();
+                        break;
+                    case SDLK_BACKSPACE:
+                        if (!chat_input_.empty())
+                            chat_input_.pop_back();
+                        break;
+                    case SDLK_ESCAPE:
+                        chat_input_.clear();
+                        chat_active_ = false;
+                        SDL_StopTextInput();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } else if (event_.type == SDL_KEYDOWN && event_.key.keysym.sym == SDLK_RETURN) {
+            chat_active_ = true;
+            SDL_StartTextInput();
+        } else if (event_.type == SDL_MOUSEBUTTONDOWN && event_.button.button == SDL_BUTTON_LEFT) {
+            if (!my_is_ghost) {
+                int world_x = camera.get_x() + event_.button.x;
+                int world_y = camera.get_y() + event_.button.y;
+                int tile_x = world_x / TILE_W;
+                int tile_y = world_y / TILE_H;
+                for (const auto& [pid, ps] : players) {
+                    if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
+                        client->do_attack(pid);
+                        break;
+                    }
+                }
+                for (const auto& [nid, ns] : npcs_) {
+                    if (ns.x == tile_x && ns.y == tile_y) {
+                        client->do_attack(nid);
+                        break;
+                    }
+                }
+                int slot = hud->get_slot_at(event_.button.x, event_.button.y);
+                if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
+                    !inventory_slots_[slot].item_name.empty()) {
+                    client->do_equip_item(static_cast<uint8_t>(slot));
+                }
+            }
+        } else if (event_.type == SDL_MOUSEBUTTONDOWN && event_.button.button == SDL_BUTTON_RIGHT) {
+            int slot = hud->get_slot_at(event_.button.x, event_.button.y);
+            if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
+                !inventory_slots_[slot].item_name.empty()) {
+                selected_slot_ = slot;
+            }
+        }
+    }
+}
+
+void GameClient::process_keyword_input() {
+    const Uint8* keys = SDL_GetKeyboardState(nullptr);
+    moving_ = false;
+    if (!chat_active_) {
+        bool can_move = (frame_start_ - last_move_time_ >= MOVE_INTERVAL_MS);
+        if (keys[SDL_SCANCODE_DOWN]) {
+            direction_ = 0;
+            total_frames_ = 6;
+            moving_ = true;
+            if (can_move) {
+                client->do_move(Direction::DOWN);
+                last_move_time_ = frame_start_;
+            }
+        } else if (keys[SDL_SCANCODE_UP]) {
+            direction_ = 1;
+            total_frames_ = 6;
+            moving_ = true;
+            if (can_move) {
+                client->do_move(Direction::UP);
+                last_move_time_ = frame_start_;
+            }
+        } else if (keys[SDL_SCANCODE_LEFT]) {
+            direction_ = 2;
+            total_frames_ = 5;
+            moving_ = true;
+            if (can_move) {
+                client->do_move(Direction::LEFT);
+                last_move_time_ = frame_start_;
+            }
+        } else if (keys[SDL_SCANCODE_RIGHT]) {
+            direction_ = 3;
+            total_frames_ = 5;
+            moving_ = true;
+            if (can_move) {
+                client->do_move(Direction::RIGHT);
+                last_move_time_ = frame_start_;
+            }
+        }
+    }
+}
+
+// NUEVAS
+void GameClient::send_chat_message(const std::string& text) {
+    if (text.empty())
+        return;
+    client->do_chat(text);
+}
+
+void GameClient::toggle_chat() {
+    chat_active_ = !chat_active_;
+    if (!chat_active_) {
+        chat_input_.clear();
+    }
+}
+
+void GameClient::process_chat_input(const SDL_Event& event) {
+    if (event.type == SDL_TEXTINPUT) {
+        chat_input_ += event.text.text;
+    } else if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.sym == SDLK_BACKSPACE && !chat_input_.empty()) {
+            chat_input_.pop_back();
+        } else if (event.key.keysym.sym == SDLK_RETURN && !chat_input_.empty()) {
+            send_chat_message(chat_input_);
+            chat_input_.clear();
+        }
+    }
 }

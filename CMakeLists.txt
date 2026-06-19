@@ -232,6 +232,7 @@ if(ARGENTUM_CLIENT_QT)
             client/client_protocol.cpp
             client/sdl/game_client.cpp
             client/sdl/renderer.cpp
+            client/sdl/character_renderer.cpp
             client/sdl/input_handler.cpp
             client/sdl/camera.cpp
             client/sdl/hud.cpp

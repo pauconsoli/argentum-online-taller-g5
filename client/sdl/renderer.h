@@ -5,13 +5,16 @@
 
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 
 class Renderer {
  private:
     SDL_Renderer* sdl_renderer;
+    TTF_Font* font = nullptr;
 
  public:
     explicit Renderer(SDL_Window* window);
+    void load_font(const std::string& path, int size);
     ~Renderer();
 
     Renderer(const Renderer&) = delete;
@@ -21,10 +24,14 @@ class Renderer {
                     int y);
     void draw_frame_scaled(SDL_Texture* texture, int frame_x, int frame_y, int frame_w, int frame_h,
                            int x, int y, int draw_w, int draw_h);
+
     // Igual que draw_frame pero aplica rotación clockwise en grados (0, 90, 180, 270).
     // El centro de rotación es el centro del tile destino.
     void draw_frame_rotated(SDL_Texture* texture, int frame_x, int frame_y, int frame_w,
                             int frame_h, int x, int y, double angle_deg);
+
+    void draw_label(const std::string& text, int center_x, int y, SDL_Color color);
+
     void clear();
     void present();
     SDL_Renderer* get_sdl_renderer() const;

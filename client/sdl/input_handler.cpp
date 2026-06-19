@@ -2,7 +2,7 @@
 
 InputHandler::InputHandler() {}
 
-bool InputHandler::handle(const SDL_Event& event) {
+bool InputHandler::handle_quit(const SDL_Event& event) {
     if (event.type == SDL_QUIT) {
         return false;
     }

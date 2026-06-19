@@ -14,6 +14,7 @@ class ClientMap;
 #include "../client.h"
 #include "audio_manager.h"
 #include "camera.h"
+#include "character_renderer.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
 #include "hud.h"
@@ -27,6 +28,7 @@ class GameClient {
  private:
     SDL_Window* window;
     Renderer* renderer;
+    CharacterRenderer* character_renderer;
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
@@ -49,7 +51,6 @@ class GameClient {
     int my_level;
     uint64_t my_gold;
     uint64_t my_xp;
-    bool from_handoff;
     bool my_is_ghost = false;
     std::map<uint32_t, PlayerSnapshot> players;
     std::vector<GroundItemSnapshot> ground_items_;
@@ -69,6 +70,17 @@ class GameClient {
     std::string chat_input_;
     int selected_slot_ = -1;
 
+    // Run-loop state shared across extracted methods
+    bool running_ = false;
+    SDL_Event event_{};
+    Uint32 frame_start_ = 0;
+    bool moving_ = false;
+    int direction_ = 0;
+    int current_frame_ = 0;
+    int total_frames_ = 6;
+    Uint32 last_frame_time_ = 0;
+    Uint32 last_move_time_ = 0;
+
  public:
     // Constructor standalone: crea y arranca su propio Client (binario argentum_client).
     GameClient(int width, int height, const std::string& host, const std::string& port);
@@ -85,9 +97,13 @@ class GameClient {
  private:
     void load_audio_assets();
     void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
-    void render_players(int tile_w, int tile_h, int frame_w, int frame_h, int head_w, int head_h,
-                        int direction, int current_frame);
+    void render_players(int tile_w, int tile_h, int direction, int current_frame);
     void render_npcs(int tile_w, int tile_h);
+    void process_sdl_events();
+    void process_keyword_input();
+    void send_chat_message(const std::string& text);
+    void toggle_chat();
+    void process_chat_input(const SDL_Event& e);
 };
 
 #endif

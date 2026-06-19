@@ -5,6 +5,7 @@ target_sources(argentum_client
     client_protocol.cpp
     sdl/game_client.cpp
     sdl/renderer.cpp
+    sdl/character_renderer.cpp
     sdl/input_handler.cpp
     sdl/camera.cpp
     sdl/hud.cpp
@@ -18,6 +19,7 @@ target_sources(argentum_client
     client_protocol.h
     sdl/game_client.h
     sdl/renderer.h
+    sdl/character_renderer.h
     sdl/input_handler.h
     sdl/camera.h
     sdl/hud.h

@@ -28,7 +28,6 @@ class MiniChat {
 
     void add_message(const std::string& msg);
     void draw();
-    void draw_label(const std::string& text, int center_x, int y, SDL_Color color);
     // Dibuja el cuadro de entrada de texto en la posición y dada.
     void draw_input(const std::string& input, int y);
 };
