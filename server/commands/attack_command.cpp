@@ -59,6 +59,20 @@ std::vector<std::unique_ptr<GameUpdate>> AttackCommand::execute(World& world) {
         updates.push_back(std::make_unique<AttackUpdate>(result, result.target_id));
     }
 
+    // si la víctima está en un clan, notificar a los miembros con el mismo AttackUpdate
+    if (result.damage > 0 && result.target_clan_id != 0) {
+        Clan* target_clan = world.get_clan(result.target_clan_id);
+        if (target_clan) {
+            for (uint32_t member_id : target_clan->get_members()) {
+                // el atacante y la víctima ya recibieron su update, no enviar de nuevo
+                if (member_id != result.attacker_id && member_id != result.target_id) {
+                    updates.push_back(std::make_unique<AttackUpdate>(result, member_id));
+                }
+            }
+        }
+    }
+
+
     if (result.target_died) {
         updates.push_back(std::make_unique<DeathUpdate>(target_id, player_id));
 

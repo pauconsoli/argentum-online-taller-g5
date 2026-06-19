@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "common/updates/attack_update.h"
+#include "server/game/clan.h"
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
@@ -95,6 +96,7 @@ void World::remove_player(uint32_t player_id) {
         pending_resurrections.erase(player_id);  // cancelo la resurrección si se desconecta
     }
 }
+
 
 Player* World::get_player(uint32_t player_id) {
     auto it = players.find(player_id);
@@ -539,8 +541,9 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
-        return AttackResult{attacker_id, target_id, 0, false,
-                            false,       false,     0, AttackStatus::INVALID_TARGET};
+        return AttackResult{
+            attacker_id,        target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
+            AttackType::NORMAL, "",        0};
     }
 
     AttackType attack_type = AttackType::NORMAL;
@@ -553,13 +556,13 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     AttackStatus status = validate_attack_conditions(attacker, target);
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,      false,       false,
-                            false,       0,         status, attack_type, attack_name};
+        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
+                            0,           status,    attack_type, attack_name, 0};
     }
     status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,      false,       false,
-                            false,       0,         status, attack_type, attack_name};
+        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
+                            0,           status,    attack_type, attack_name, 0};
     }
 
     int base_damage = attacker->calculate_base_damage();
@@ -588,8 +591,17 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id, target_id, real_damage,           evaded,      died,
-                        false,       0,         AttackStatus::SUCCESS, attack_type, attack_name};
+    return AttackResult{attacker_id,
+                        target_id,
+                        real_damage,
+                        evaded,
+                        died,
+                        false,
+                        0,
+                        AttackStatus::SUCCESS,
+                        attack_type,
+                        attack_name,
+                        target->get_clan_id()};
 }
 
 AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
@@ -597,35 +609,36 @@ AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!healer || !target) {
-        return AttackResult{healer_id, target_id, 0, false,
-                            false,     false,     0, AttackStatus::INVALID_TARGET};
+        return AttackResult{
+            healer_id,         target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
+            AttackType::MAGIC, "",        0};
     }
 
     AttackType attack_type = AttackType::MAGIC;
     std::string attack_name = healer->get_attack_name();
 
     if (healer->is_dead() || target->is_dead()) {
-        return AttackResult{healer_id, target_id,          0,           false,      false, false,
-                            0,         AttackStatus::DEAD, attack_type, attack_name};
+        return AttackResult{healer_id, target_id,          0,           false,       false, false,
+                            0,         AttackStatus::DEAD, attack_type, attack_name, 0};
     }
 
     if (!is_in_range_for_attack(healer, target)) {
-        return AttackResult{healer_id,   target_id,  0, false,
-                            false,       false,      0, AttackStatus::OUT_OF_RANGE,
-                            attack_type, attack_name};
+        return AttackResult{healer_id,   target_id,   0, false,
+                            false,       false,       0, AttackStatus::OUT_OF_RANGE,
+                            attack_type, attack_name, 0};
     }
 
     AttackStatus status = healer->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{healer_id, target_id, 0,      false,       false,
-                            false,     0,         status, attack_type, attack_name};
+        return AttackResult{healer_id, target_id, 0,           false,       false, false,
+                            0,         status,    attack_type, attack_name, 0};
     }
 
     int potential_healing = healer->calculate_base_healing();
     int actual_healing = target->heal(potential_healing);
     return AttackResult{
-        healer_id,   target_id,  0, false, false, true, actual_healing, AttackStatus::SUCCESS,
-        attack_type, attack_name};
+        healer_id,   target_id,   0, false, false, true, actual_healing, AttackStatus::SUCCESS,
+        attack_type, attack_name, 0};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
@@ -735,9 +748,17 @@ AttackResult World::npc_attack(NPC* npc, Character* target) {
         handle_target_death(npc, target);
     }
 
-    return AttackResult{
-        attacker_id,           target_id,          real_damage, evaded, died, false, 0,
-        AttackStatus::SUCCESS, AttackType::NORMAL, attack_name};
+    return AttackResult{attacker_id,
+                        target_id,
+                        real_damage,
+                        evaded,
+                        died,
+                        false,
+                        0,
+                        AttackStatus::SUCCESS,
+                        AttackType::NORMAL,
+                        attack_name,
+                        target->get_clan_id()};
 }
 
 std::optional<Position> World::find_random_spawn_position(

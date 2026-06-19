@@ -76,6 +76,7 @@ void GameLoopThread::run() {
                     ps.level = p->get_level();
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
+                    ps.clan_id = p->get_clan_id();
 
                     for (const auto& [slot, item] : p->get_equipment()) {
                         if (item) {
