@@ -118,7 +118,7 @@ bool Player::is_magic_attack() const {
 
 std::string Player::get_attack_name() const {
     Weapon* weapon = get_equipped_weapon();
-    return weapon ? weapon->get_attack_name() : "";
+    return weapon ? weapon->get_attack_name() : "Ataque con puños";
 }
 
 int Player::calculate_base_damage() const {

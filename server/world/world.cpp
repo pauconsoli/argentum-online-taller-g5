@@ -247,25 +247,22 @@ void World::add_ground_item(const Position& pos, GroundItem item) {
     ground_items[free_pos] = std::move(item);
 }
 
-AttackStatus World::validate_attack_conditions(const Character* attacker, const Character* target,
-                                               bool is_healing) const {
+AttackStatus World::validate_attack_conditions(const Character* attacker,
+                                               const Character* target) const {
     if (attacker->is_dead() || target->is_dead()) {
         return AttackStatus::DEAD;
     }
 
-    if (!is_healing) {
-        if (attacker->get_id() == target->get_id()) {
-            return AttackStatus::INVALID_TARGET;
-        }
+    if (attacker->get_id() == target->get_id()) {
+        return AttackStatus::INVALID_TARGET;
+    }
 
-        if (!target->validate_attack_from(attacker->get_level())) {
-            return AttackStatus::INVALID_TARGET;
-        }
+    if (!target->validate_attack_from(attacker->get_level())) {
+        return AttackStatus::INVALID_TARGET;
+    }
 
-        // En zonas seguras (ciudades y pueblos) no se puede atacar ni ser atacado
-        if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
-            return AttackStatus::INVALID_TARGET;
-        }
+    if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
+        return AttackStatus::INVALID_TARGET;
     }
 
     if (!is_in_range_for_attack(attacker, target)) {
@@ -448,7 +445,6 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 
 // TODO(Pau): clanes
 
-// otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* attacker = get_character(attacker_id);
     Character* target = get_character(target_id);
@@ -458,8 +454,6 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
                             false,       false,     0, AttackStatus::INVALID_TARGET};
     }
 
-    bool is_healing = attacker->is_healing_attack();
-
     AttackType attack_type = AttackType::NORMAL;
     if (attacker->is_magic_attack()) {
         attack_type = AttackType::MAGIC;
@@ -468,7 +462,7 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     }
     std::string attack_name = attacker->get_attack_name();
 
-    AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
+    AttackStatus status = validate_attack_conditions(attacker, target);
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0,      false,       false,
                             false,       0,         status, attack_type, attack_name};
@@ -477,14 +471,6 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0,      false,       false,
                             false,       0,         status, attack_type, attack_name};
-    }
-
-    if (is_healing) {
-        int healing = attacker->calculate_base_healing();
-        target->heal(healing);
-        return AttackResult{attacker_id, target_id,  0,       false,
-                            false,       true,       healing, AttackStatus::SUCCESS,
-                            attack_type, attack_name};
     }
 
     int base_damage = attacker->calculate_base_damage();
@@ -508,6 +494,42 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     return AttackResult{attacker_id, target_id, real_damage,           evaded,      died,
                         false,       0,         AttackStatus::SUCCESS, attack_type, attack_name};
+}
+
+AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
+    Character* healer = get_character(healer_id);
+    Character* target = get_character(target_id);
+
+    if (!healer || !target) {
+        return AttackResult{healer_id, target_id, 0, false,
+                            false,     false,     0, AttackStatus::INVALID_TARGET};
+    }
+
+    AttackType attack_type = AttackType::MAGIC;
+    std::string attack_name = healer->get_attack_name();
+
+    if (healer->is_dead() || target->is_dead()) {
+        return AttackResult{healer_id, target_id,          0,           false,      false, false,
+                            0,         AttackStatus::DEAD, attack_type, attack_name};
+    }
+
+    if (!is_in_range_for_attack(healer, target)) {
+        return AttackResult{healer_id,   target_id,  0, false,
+                            false,       false,      0, AttackStatus::OUT_OF_RANGE,
+                            attack_type, attack_name};
+    }
+
+    AttackStatus status = healer->consume_attack_resources();
+    if (status != AttackStatus::SUCCESS) {
+        return AttackResult{healer_id, target_id, 0,      false,       false,
+                            false,     0,         status, attack_type, attack_name};
+    }
+
+    int potential_healing = healer->calculate_base_healing();
+    int actual_healing = target->heal(potential_healing);
+    return AttackResult{
+        healer_id,   target_id,  0, false, false, true, actual_healing, AttackStatus::SUCCESS,
+        attack_type, attack_name};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos

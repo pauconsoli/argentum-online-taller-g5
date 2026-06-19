@@ -67,7 +67,7 @@ class Character {
 
     void receive_damage(int damage);
 
-    void heal(int amount);
+    int heal(int amount);
 
     bool is_dead() const;
 

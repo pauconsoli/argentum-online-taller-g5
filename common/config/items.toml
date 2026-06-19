@@ -126,7 +126,7 @@ min_damage = 4
 max_damage = 8
 min_heal = 0
 max_heal = 0
-mana_cost = 15
+mana_cost = 10
 price = 20
 
 [items.attached_staff]
@@ -137,7 +137,7 @@ min_damage = 8
 max_damage = 20
 min_heal = 0
 max_heal = 0
-mana_cost = 30
+mana_cost = 10
 price = 50
 
 [items.elven_flute]
@@ -148,7 +148,7 @@ min_damage = 0
 max_damage = 0
 min_heal = 20
 max_heal = 40
-mana_cost = 100
+mana_cost = 10
 price = 100
 
 [items.health_potion]

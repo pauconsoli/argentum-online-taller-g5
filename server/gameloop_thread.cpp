@@ -43,9 +43,15 @@ void GameLoopThread::run() {
                 auto attack_results = world.update(tick_seconds);
 
                 for (const auto& result : attack_results) {
-                    auto attack_update = std::make_shared<AttackUpdate>(result);
-                    match.broadcast_update_to_all(attack_update);
+                    // enviar el resultado del ataque solo al atacante y al objetivo
+                    auto update_for_attacker =
+                        std::make_shared<AttackUpdate>(result, result.attacker_id);
+                    match.send_update_to_player(result.attacker_id, update_for_attacker);
+                    auto update_for_target =
+                        std::make_shared<AttackUpdate>(result, result.target_id);
+                    match.send_update_to_player(result.target_id, update_for_target);
                     if (result.target_died) {
+                        // la muerte si se notifica a todos
                         auto death_update =
                             std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);
                         match.broadcast_update_to_all(death_update);

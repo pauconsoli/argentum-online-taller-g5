@@ -173,14 +173,7 @@ int GameFormulas::calculate_damage(const Player& attacker, const Weapon* weapon)
     return attacker.get_strength() * weapon_damage;
 }
 
-// DañoMágico = Inteligencia * rand(DañoHechizoMin, DañoHechizoMax)
-// Formula inventada, no está en el enunciado
-int GameFormulas::calculate_magic_damage(const Player& attacker, int min_damage, int max_damage) {
-    int spell_damage = get_random_int(min_damage, max_damage);
-    return attacker.get_intelligence() * spell_damage;
-}
-
-int GameFormulas::calculate_npc_damage(int min_damage, int max_damage) {
+int GameFormulas::calculate_base_damage_in_range(int min_damage, int max_damage) {
     return get_random_int(min_damage, max_damage);
 }
 

@@ -598,11 +598,26 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 if (r.evaded) {
                     mini_chat->add_message("Ataque esquivado");
                 } else if (r.attacker_id == my_player_id) {
-                    if (r.target_died)
-                        mini_chat->add_message(npcs_.count(r.target_id) ? "Mataste al NPC" :
-                                                                          "Mataste al jugador");
-                    else
-                        mini_chat->add_message("Causaste " + std::to_string(r.damage) + " de daño");
+                    std::string target_name = "";
+                    auto player_it = players.find(r.target_id);
+                    if (player_it != players.end()) {
+                        target_name = player_it->second.nick;
+                    } else {
+                        auto npc_it = npcs_.find(r.target_id);
+                        if (npc_it != npcs_.end()) {
+                            target_name = npc_it->second.name;
+                        }
+                    }
+
+                    if (r.is_healing) {
+                        mini_chat->add_message(r.weapon_or_spell_name + ": curaste a " +
+                                               target_name + " por " +
+                                               std::to_string(r.heal_amount) + " puntos");
+                    } else if (!r.target_died) {
+                        mini_chat->add_message(r.weapon_or_spell_name + ": causaste " +
+                                               std::to_string(r.damage) + " de daño a " +
+                                               target_name);
+                    }
                 } else if (r.target_id == my_player_id) {
                     if (!r.target_died)
                         mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
@@ -637,7 +652,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // Muerte propia: avisa al jugador. Muerte ajena: sonido atenuado por distancia.
                 const auto& du = static_cast<const DeathUpdate&>(*update);
                 if (du.get_dead_id() == my_player_id) {
-                    mini_chat->add_message("Moriste. Dirigete al sanador para resucitar.");
+                    mini_chat->add_message("Moriste. Dirigite al sacerdote para resucitar");
                     audio_manager->play_sound("death");
                 } else {
                     int vol = MIX_MAX_VOLUME;
@@ -645,14 +660,25 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     int dead_tx = -1, dead_ty = -1;
                     auto pit = players.find(dead_id);
                     if (pit != players.end()) {
-                        dead_tx = pit->second.x;
-                        dead_ty = pit->second.y;
-                        mini_chat->add_message("Un jugador murio en combate.");
+                        const auto& dead_player_snapshot = pit->second;
+                        dead_tx = dead_player_snapshot.x;
+                        dead_ty = dead_player_snapshot.y;
+                        if (du.get_killer_id() == my_player_id) {
+                            mini_chat->add_message("Mataste a " + dead_player_snapshot.nick);
+                        } else {
+                            mini_chat->add_message("Un jugador murio en combate");
+                        }
                     } else {
                         auto nit = npcs_.find(dead_id);
                         if (nit != npcs_.end()) {
-                            dead_tx = nit->second.x;
-                            dead_ty = nit->second.y;
+                            const auto& dead_npc_snapshot = nit->second;
+                            dead_tx = dead_npc_snapshot.x;
+                            dead_ty = dead_npc_snapshot.y;
+                            if (du.get_killer_id() == my_player_id) {
+                                mini_chat->add_message("Mataste a " + dead_npc_snapshot.name);
+                            } else {
+                                mini_chat->add_message("Un NPC murió en combate");
+                            }
                         }
                     }
                     if (dead_tx >= 0) {

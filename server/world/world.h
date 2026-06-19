@@ -63,8 +63,8 @@ class World {
     std::optional<Position> find_closest_free_position(
         const Position& start, const std::function<bool(const Position&)>& is_free_condition) const;
 
-    AttackStatus validate_attack_conditions(const Character* attacker, const Character* target,
-                                            bool is_healing) const;
+    AttackStatus validate_attack_conditions(const Character* attacker,
+                                            const Character* target) const;
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
 
@@ -111,6 +111,7 @@ class World {
     bool start_resurrection(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
+    AttackResult heal(uint32_t healer_id, uint32_t target_id);
 
     void add_npc(std::unique_ptr<NPC> npc);
     NPC* get_npc(uint32_t npc_id);

@@ -19,16 +19,21 @@ std::vector<std::unique_ptr<GameUpdate>> AttackCommand::execute(World& world) {
 
     if (!attacker || !target) {
         updates.push_back(std::make_unique<ErrorUpdate>(
-            player_id, ProtocolError::COMMAND_NOT_ALLOWED, "Invalid attacker or target"));
+            player_id, ProtocolError::COMMAND_NOT_ALLOWED, "Ataque inválido"));
         return updates;
     }
 
-    AttackResult result = world.attack(player_id, target_id);
+    AttackResult result;
+    if (attacker->is_healing_attack()) {
+        result = world.heal(player_id, target_id);
+    } else {
+        result = world.attack(player_id, target_id);
+    }
     if (result.status != AttackStatus::SUCCESS) {
         std::string error_msg;
         switch (result.status) {
             case AttackStatus::NO_MANA:
-                error_msg = "No tienes suficiente mana";
+                error_msg = "No tenes suficiente mana";
                 break;
             case AttackStatus::OUT_OF_RANGE:
                 error_msg = "El objetivo está fuera de rango";
@@ -48,7 +53,11 @@ std::vector<std::unique_ptr<GameUpdate>> AttackCommand::execute(World& world) {
         return updates;
     }
 
-    updates.push_back(std::make_unique<AttackUpdate>(result));
+    // el resultado del ataque se envía al atacante y al objetivo, no a todos
+    updates.push_back(std::make_unique<AttackUpdate>(result, result.attacker_id));
+    if (result.attacker_id != result.target_id) {
+        updates.push_back(std::make_unique<AttackUpdate>(result, result.target_id));
+    }
 
     if (result.target_died) {
         updates.push_back(std::make_unique<DeathUpdate>(target_id, player_id));
