@@ -63,17 +63,6 @@ void World::add_player(std::unique_ptr<Player> player) {
 
     occupied[pos.y][pos.x] = true;    // marco la posición como ocupada
     players[id] = std::move(player);  // agrego el player al map de players
-
-    // notificar al clan que el jugador se conectó
-    uint32_t clan_id = players[id]->get_clan_id();
-    if (clan_id != 0) {
-        std::string msg = players[id]->get_name() + " se conectó";
-        for (auto& [other_id, other_player] : players) {
-            if (other_id != id && other_player->get_clan_id() == clan_id) {
-                pending_events.push_back({other_id, msg});
-            }
-        }
-    }
 }
 
 void World::remove_player(uint32_t player_id) {
