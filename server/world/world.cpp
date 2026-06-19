@@ -342,26 +342,7 @@ int World::handle_successful_attack(Character* attacker, Character* target, int 
     int exp = GameFormulas::calculate_attack_experience_gain(*attacker, *target, real_damage);
     attacker->add_experience(exp);
 
-    // aviso al clan si un jugador recibe daño
-    if (real_damage > 0) {
-        notify_clan_member_attacked(attacker, target);
-    }
-
     return real_damage;
-}
-
-void World::notify_clan_member_attacked(const Character* attacker, const Character* target) {
-    uint32_t clan_id = target->get_clan_id();
-    if (clan_id == 0) {
-        return;
-    }
-
-    std::string msg = "¡" + target->get_name() + " fue atacado por " + attacker->get_name() + "!";
-    for (auto& [id, p] : players) {
-        if (p->get_clan_id() == clan_id && id != target->get_id()) {
-            pending_events.push_back({id, msg});
-        }
-    }
 }
 
 bool World::move_character(uint32_t character_id, Direction direction) {
