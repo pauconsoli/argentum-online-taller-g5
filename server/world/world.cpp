@@ -97,6 +97,15 @@ bool World::player_exists(uint32_t player_id) const {
     return players.find(player_id) != players.end();
 }
 
+Player* World::get_player_by_name(const std::string& name) {
+    for (auto& [id, player] : players) {
+        if (player->get_name() == name) {
+            return player.get();
+        }
+    }
+    return nullptr;
+}
+
 Character* World::get_character(uint32_t id) {
     if (Player* p = get_player(id)) {
         return p;

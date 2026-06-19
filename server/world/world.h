@@ -100,6 +100,7 @@ class World {
     void add_player(std::unique_ptr<Player> player);
     void remove_player(uint32_t player_id);
     Player* get_player(uint32_t player_id);
+    Player* get_player_by_name(const std::string& name);
     std::vector<Player*> get_players();
     bool player_exists(uint32_t player_id) const;
 

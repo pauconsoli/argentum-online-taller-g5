@@ -17,6 +17,7 @@ constexpr uint8_t PICK_UP = 0x13;
 constexpr uint8_t DROP_ITEM = 0x14;
 constexpr uint8_t EQUIP_ITEM = 0x15;
 constexpr uint8_t INTERACT = 0x16;
+constexpr uint8_t CLAN = 0x17;
 
 constexpr uint8_t CHAT = 0x20;
 

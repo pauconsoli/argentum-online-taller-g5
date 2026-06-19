@@ -14,6 +14,7 @@ enum class CommandType : uint8_t {
     CHAT = 0x06,
     RESURRECT = 0x07,
     INTERACT = 0x08,
+    CLAN = 0x09,
 };
 
 class World;

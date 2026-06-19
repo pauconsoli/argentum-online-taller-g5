@@ -19,6 +19,10 @@ uint32_t Clan::get_founder_id() const {
     return founder_id;
 }
 
+bool Clan::is_founder(uint32_t caller_id) const {
+    return caller_id == founder_id;
+}
+
 bool Clan::request_join(uint32_t player_id) {
     if (is_member(player_id) || is_pending(player_id) || is_banned(player_id) || is_full()) {
         return false;
@@ -27,35 +31,46 @@ bool Clan::request_join(uint32_t player_id) {
     return true;
 }
 
-bool Clan::accept(uint32_t player_id) {
-    if (!is_pending(player_id))
+bool Clan::accept(uint32_t caller_id, uint32_t target_id) {
+    if (!is_founder(caller_id))
+        return false;
+    if (!is_pending(target_id))
         return false;
     if (is_full())
         return false;
-    pending.erase(player_id);
-    members.insert(player_id);
+    pending.erase(target_id);
+    members.insert(target_id);
     return true;
 }
 
-bool Clan::reject(uint32_t player_id) {
-    if (!is_pending(player_id))
+bool Clan::reject(uint32_t caller_id, uint32_t target_id) {
+    if (!is_founder(caller_id))
         return false;
-    pending.erase(player_id);
+    if (!is_pending(target_id))
+        return false;
+    pending.erase(target_id);
     return true;
 }
 
-void Clan::ban(uint32_t player_id) {
-    pending.erase(player_id);  // cancela el pedido si lo tenía
-    members.erase(player_id);  // expulsa si era miembro
-    banned.insert(player_id);
+bool Clan::ban(uint32_t caller_id, uint32_t target_id) {
+    if (!is_founder(caller_id))
+        return false;
+    if (target_id == founder_id)
+        return false;          // el fundador no puede banearse a sí mismo
+    pending.erase(target_id);  // cancela el pedido si lo tenía
+    members.erase(target_id);  // expulsa si era miembro
+    banned.insert(target_id);
+    return true;
 }
 
-bool Clan::kick(uint32_t player_id) {
-    if (player_id == founder_id)
+bool Clan::kick(uint32_t caller_id, uint32_t target_id) {
+    if (!is_founder(caller_id))
         return false;
-    if (!is_member(player_id))
+    if (target_id == founder_id)
         return false;
-    members.erase(player_id);
+    if (!is_member(target_id))
+        return false;
+    members.erase(target_id);
     return true;
 }
 
