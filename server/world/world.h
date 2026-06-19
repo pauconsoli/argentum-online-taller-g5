@@ -10,6 +10,9 @@
 #include <vector>
 
 #include "common/attack_result.h"
+#include "common/clan/clan_action_status.h"
+#include "common/clan/clan_result.h"
+#include "common/clan/clan_review_result.h"
 #include "common/direction.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
@@ -89,6 +92,13 @@ class World {
     void spawn_city_npcs();
     void spawn_initial_hostile_npcs();
 
+    // Helper común a accept/reject/ban/kick: resuelve el clan del fundador y
+    // el Player target por nick, devolviendo el motivo de fallo si corresponde.
+    // Si devuelve true, clan_out y target_out quedan seteados y son válidos.
+    bool resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
+                                    Clan** clan_out, Player** target_out,
+                                    ClanActionStatus* fail_status);
+
  public:
     World(int width, int height);
     explicit World(WorldMap map);  // para cargar un mapa ya creado
@@ -138,6 +148,20 @@ class World {
     Clan* create_clan(const std::string& name, uint32_t founder_id);
     Clan* get_clan(uint32_t clan_id);
     Clan* get_clan_by_name(const std::string& name);
+
+    // Orquestación de comandos de clan: resuelven Player(s) por id/nombre,
+    // delegan la regla de negocio en Clan, y sincronizan Player::clan_id.
+    // Devuelven datos crudos (no GameUpdate); el Command los traduce a updates.
+    ClanResult found_clan(uint32_t founder_id, const std::string& clan_name);
+    ClanResult request_join_clan(uint32_t player_id, const std::string& clan_name);
+    ClanResult accept_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult reject_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult ban_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult kick_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult leave_clan(uint32_t player_id);
+    ClanReviewResult review_clan(uint32_t founder_id);
+
+
     Bank& get_bank();
 
     std::vector<AttackResult> update(float tick_seconds);
