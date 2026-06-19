@@ -79,17 +79,6 @@ void World::add_player(std::unique_ptr<Player> player) {
 void World::remove_player(uint32_t player_id) {
     auto it = players.find(player_id);
     if (it != players.end()) {
-        // notificar al clan que el jugador se desconectó
-        uint32_t clan_id = it->second->get_clan_id();
-        if (clan_id != 0) {
-            std::string msg = it->second->get_name() + " se desconectó";
-            for (auto& [other_id, other_player] : players) {
-                if (other_id != player_id && other_player->get_clan_id() == clan_id) {
-                    pending_events.push_back({other_id, msg});
-                }
-            }
-        }
-
         Position pos = it->second->get_position();
         occupied[pos.y][pos.x] = false;          // marco la posición como libre
         players.erase(it);                       // elimino el jugador
