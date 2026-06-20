@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "common/cheat_type.h"
 #include "common/clan/clan_action.h"
 #include "common/direction.h"
 #include "common/npc_interaction.h"
@@ -71,6 +72,7 @@ class ClientProtocol {
     void send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                        int32_t amount);
     void send_clan_action(ClanAction action, const std::string& arg);
+    void send_cheat(CheatType cheat_type);
     void send_disconnect();
     void send_leave_match();
 

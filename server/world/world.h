@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common/attack_result.h"
+#include "common/cheat_type.h"
 #include "common/clan/clan_action_status.h"
 #include "common/clan/clan_result.h"
 #include "common/clan/clan_review_result.h"
@@ -137,6 +138,8 @@ class World {
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
     AttackResult heal(uint32_t healer_id, uint32_t target_id);
+
+    CheatResult apply_cheat(uint32_t player_id, CheatType cheat);
 
     void add_npc(std::unique_ptr<NPC> npc);
     NPC* get_npc(uint32_t npc_id);

@@ -258,6 +258,15 @@ void ClientProtocol::send_clan_action(ClanAction action, const std::string& arg)
     }
 }
 
+void ClientProtocol::send_cheat(CheatType cheat_type) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::CHEAT);
+    put_u8(buf, static_cast<uint8_t>(cheat_type));
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_cheat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {

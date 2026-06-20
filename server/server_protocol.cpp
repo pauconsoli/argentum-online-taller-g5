@@ -8,8 +8,10 @@
 
 #include <arpa/inet.h>
 
+#include "common/cheat_type.h"
 #include "common/commands/attack_command.h"
 #include "common/commands/chat_command.h"
+#include "common/commands/cheat_command.h"
 #include "common/commands/clan_command.h"
 #include "common/commands/drop_item_command.h"
 #include "common/commands/equip_item_command.h"
@@ -249,6 +251,12 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_chat_payload(uint32_t player
                                                                  const std::string& nick) {
     std::string text = recv_string();
     return std::make_unique<ChatCommand>(player_id, nick, std::move(text));
+}
+
+std::unique_ptr<ClientCommand> ServerProtocol::recv_cheat_payload(uint32_t player_id) {
+    uint8_t type_raw = recv_u8();
+    CheatType cheat_type = static_cast<CheatType>(type_raw);
+    return std::make_unique<CheatCommand>(player_id, cheat_type);
 }
 
 void ServerProtocol::send_update(const GameUpdate& update) {

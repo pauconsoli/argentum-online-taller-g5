@@ -393,6 +393,44 @@ bool World::teleport_player(uint32_t player_id, const Position& dest) {
     return true;
 }
 
+CheatResult World::apply_cheat(uint32_t player_id, CheatType cheat) {
+    Player* player = get_player(player_id);
+    if (!player)
+        return {};
+
+    switch (cheat) {
+        case CheatType::HEAL_FULL:
+            if (player->is_dead())
+                return {};
+            player->heal(player->get_max_hp());
+            return {true, false};
+
+        case CheatType::RESTORE_MANA:
+            if (player->is_dead())
+                return {};
+            player->restore_mana(player->get_max_mana());
+            return {true, false};
+
+        case CheatType::DIE:
+            if (player->is_dead())
+                return {};
+            player->receive_damage(player->get_max_hp() + 1);
+            return {true, true};
+
+        case CheatType::LEVEL_UP:
+            if (player->is_dead())
+                return {};
+            player->level_up();
+            return {true, false};
+
+        case CheatType::GIVE_GOLD:
+            player->add_gold(10000);
+            return {true, false};
+    }
+
+    return {};
+}
+
 MeditateStatus World::meditate(uint32_t player_id) {
     Player* player = get_player(player_id);
     if (!player || player->is_dead()) {

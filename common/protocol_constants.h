@@ -19,6 +19,7 @@ constexpr uint8_t EQUIP_ITEM = 0x15;
 constexpr uint8_t INTERACT = 0x16;
 constexpr uint8_t CLAN = 0x17;
 constexpr uint8_t RESURRECT = 0x18;
+constexpr uint8_t CHEAT = 0x19;
 
 constexpr uint8_t CHAT = 0x20;
 

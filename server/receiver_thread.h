@@ -35,6 +35,7 @@ class ReceiverThread: public Thread {
     void handle_interact();
     void handle_clan();
     void handle_chat();
+    void handle_cheat();
     void handle_leave_match();
 
     void send_error(uint8_t code, const std::string& detail);

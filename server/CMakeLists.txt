@@ -22,6 +22,7 @@ target_sources(argentum_server
     commands/interact_npc_command.cpp
     commands/chat_command.cpp
     commands/clan_command.cpp
+    commands/cheat_command.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp

@@ -165,6 +165,11 @@ void Client::do_clan_action(ClanAction action, const std::string& arg) {
     protocol.send_clan_action(action, arg);
 }
 
+void Client::do_cheat(CheatType cheat_type) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_cheat(cheat_type);
+}
+
 void Client::do_leave_match() {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_leave_match();

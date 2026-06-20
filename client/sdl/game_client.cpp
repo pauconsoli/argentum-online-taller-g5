@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "client_map.h"
+#include "common/cheat_type.h"
 #include "common/clan/clan_action.h"
 #include "common/clan/clan_action_status.h"
 #include "common/updates/attack_update.h"
@@ -29,6 +30,7 @@
 #include "common/updates/player_left_update.h"
 #include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -363,10 +365,38 @@ void GameClient::run() {
                             break;
                     }
                 }
-                // Enter fuera del chat abre el input de texto.
-            } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
-                chat_active_ = true;
-                SDL_StartTextInput();
+                // Teclas fuera del chat: Enter abre chat, Ctrl+letra son cheats.
+            } else if (event.type == SDL_KEYDOWN) {
+                bool ctrl = (event.key.keysym.mod & KMOD_CTRL) != 0;
+                switch (event.key.keysym.sym) {
+                    case SDLK_RETURN:
+                    case SDLK_RETURN2:
+                        chat_active_ = true;
+                        SDL_StartTextInput();
+                        break;
+                    case SDLK_h:
+                        if (ctrl)
+                            client->do_cheat(CheatType::HEAL_FULL);
+                        break;
+                    case SDLK_m:
+                        if (ctrl)
+                            client->do_cheat(CheatType::RESTORE_MANA);
+                        break;
+                    case SDLK_k:
+                        if (ctrl)
+                            client->do_cheat(CheatType::DIE);
+                        break;
+                    case SDLK_l:
+                        if (ctrl)
+                            client->do_cheat(CheatType::LEVEL_UP);
+                        break;
+                    case SDLK_g:
+                        if (ctrl)
+                            client->do_cheat(CheatType::GIVE_GOLD);
+                        break;
+                    default:
+                        break;
+                }
                 // Click izquierdo: atacar jugador en esa casilla o equipar item del HUD.
             } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                        event.button.button == SDL_BUTTON_LEFT) {
@@ -767,6 +797,11 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
                 const auto& message = static_cast<const ChatMsgUpdate&>(*update);
                 mini_chat->add_message(message.sender_nick + ": " + message.text);
+                break;
+            }
+            case UpdateType::SYSTEM_MSG: {
+                const auto& sm = static_cast<const SystemMsgUpdate&>(*update);
+                mini_chat->add_message(sm.get_message());
                 break;
             }
             case UpdateType::NPC_INTERACT: {
