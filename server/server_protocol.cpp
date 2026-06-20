@@ -32,6 +32,7 @@
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
@@ -287,6 +288,9 @@ void ServerProtocol::send_update(const GameUpdate& update) {
             break;
         case UpdateType::CATALOG:
             send_catalog(update);
+            break;
+        case UpdateType::NPC_INTERACT:
+            send_npc_interact(update);
             break;
         case UpdateType::CHAT_MSG:
             send_chat_msg(update);
@@ -590,6 +594,20 @@ void ServerProtocol::send_system_msg(const GameUpdate& update) {
     put_string(buf, u.get_text());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_system_msg: client closed connection");
+    }
+}
+
+void ServerProtocol::send_npc_interact(const GameUpdate& update) {
+    const auto& u = static_cast<const NpcInteractUpdate&>(update);
+    const InteractResult& r = u.get_result();
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::NPC_INTERACT);
+    put_u8(buf, static_cast<uint8_t>(u.get_npc_interaction_type()));
+    put_u8(buf, static_cast<uint8_t>(r.status));
+    put_string(buf, r.item_name);
+    put_u64(buf, r.gold_amount);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_npc_interact: client closed connection");
     }
 }
 

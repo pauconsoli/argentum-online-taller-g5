@@ -25,6 +25,7 @@
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
@@ -296,6 +297,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_chat_msg();
         case ServerOpcode::SYSTEM_MSG:
             return recv_system_msg();
+        case ServerOpcode::NPC_INTERACT:
+            return recv_npc_interact();
         case ServerOpcode::CLAN_RESULT:
             return recv_clan_result();
         case ServerOpcode::CLAN_REVIEW:
@@ -502,6 +505,15 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_system_msg() {
     uint32_t target_player_id = recv_u32();
     std::string text = recv_string();
     return std::make_unique<SystemMsgUpdate>(target_player_id, std::move(text));
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_npc_interact() {
+    NPCInteraction type = static_cast<NPCInteraction>(recv_u8());
+    InteractStatus status = static_cast<InteractStatus>(recv_u8());
+    std::string item_name = recv_string();
+    uint64_t gold_amount = recv_u64();
+    InteractResult result(status, std::move(item_name), gold_amount);
+    return std::make_unique<NpcInteractUpdate>(0, type, std::move(result));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_clan_result() {

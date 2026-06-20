@@ -25,6 +25,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/npc_interact_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/world_map_update.h"
@@ -745,6 +746,80 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
                 const auto& message = static_cast<const ChatMsgUpdate&>(*update);
                 mini_chat->add_message(message.sender_nick + ": " + message.text);
+                break;
+            }
+            case UpdateType::NPC_INTERACT: {
+                const auto& nu = static_cast<const NpcInteractUpdate&>(*update);
+                const InteractResult& r = nu.get_result();
+                if (r.status != InteractStatus::SUCCESS) {
+                    switch (r.status) {
+                        case InteractStatus::INSUFFICIENT_GOLD:
+                            mini_chat->add_message("No tenes oro suficiente");
+                            break;
+                        case InteractStatus::INVENTORY_FULL:
+                            mini_chat->add_message("No tenes espacio en el inventario");
+                            break;
+                        case InteractStatus::ITEM_NOT_FOUND:
+                            mini_chat->add_message("Item no encontrado");
+                            break;
+                        case InteractStatus::NOT_ALLOWED:
+                            mini_chat->add_message("El NPC no puede hacer eso");
+                            break;
+                        case InteractStatus::PLAYER_DEAD:
+                            mini_chat->add_message("No puedes hacer eso estando muerto");
+                            break;
+                        case InteractStatus::PLAYER_NOT_DEAD:
+                            mini_chat->add_message("No estas muerto");
+                            break;
+                        case InteractStatus::ALREADY_FULL:
+                            mini_chat->add_message("Ya tenes salud y mana al maximo");
+                            break;
+                        case InteractStatus::INVALID_AMOUNT:
+                            mini_chat->add_message("Cantidad de oro invalida");
+                            break;
+                        case InteractStatus::OUT_OF_RANGE:
+                            mini_chat->add_message("Estas demasiado lejos del NPC");
+                            break;
+                        case InteractStatus::INVALID_TARGET:
+                            mini_chat->add_message("NPC no encontrado");
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                }
+                switch (nu.get_npc_interaction_type()) {
+                    case NPCInteraction::BUY:
+                        mini_chat->add_message("Compraste " + r.item_name + " por " +
+                                               std::to_string(r.gold_amount) + " de oro");
+                        break;
+                    case NPCInteraction::SELL:
+                        mini_chat->add_message("Vendiste " + r.item_name + " por " +
+                                               std::to_string(r.gold_amount) + " de oro");
+                        break;
+                    case NPCInteraction::DEPOSIT_GOLD:
+                        mini_chat->add_message("Depositaste " + std::to_string(r.gold_amount) +
+                                               " de oro");
+                        break;
+                    case NPCInteraction::WITHDRAW_GOLD:
+                        mini_chat->add_message("Retiraste " + std::to_string(r.gold_amount) +
+                                               " de oro");
+                        break;
+                    case NPCInteraction::DEPOSIT_ITEM:
+                        mini_chat->add_message("Depositaste " + r.item_name);
+                        break;
+                    case NPCInteraction::WITHDRAW_ITEM:
+                        mini_chat->add_message("Retiraste " + r.item_name);
+                        break;
+                    case NPCInteraction::HEAL:
+                        mini_chat->add_message("Has sido curado completamente");
+                        break;
+                    case NPCInteraction::RESURRECT:
+                        mini_chat->add_message("Has sido resucitado");
+                        break;
+                    default:
+                        break;
+                }
                 break;
             }
             case UpdateType::CLAN_RESULT: {

@@ -45,6 +45,7 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_chat_msg();
     std::unique_ptr<GameUpdate> recv_system_msg();
+    std::unique_ptr<GameUpdate> recv_npc_interact();
     std::unique_ptr<GameUpdate> recv_clan_result();
     std::unique_ptr<GameUpdate> recv_clan_review();
     std::unique_ptr<GameUpdate> recv_error();

@@ -47,6 +47,7 @@ class ServerProtocol {
     void send_inventory(const GameUpdate& update);
     void send_chat_msg(const GameUpdate& update);
     void send_system_msg(const GameUpdate& update);
+    void send_npc_interact(const GameUpdate& update);
     void send_clan_result(const GameUpdate& update);
     void send_clan_review(const GameUpdate& update);
     void send_error(const GameUpdate& update);
