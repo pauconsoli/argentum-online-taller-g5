@@ -10,6 +10,7 @@
 
 #include "common/commands/attack_command.h"
 #include "common/commands/chat_command.h"
+#include "common/commands/clan_command.h"
 #include "common/commands/drop_item_command.h"
 #include "common/commands/equip_item_command.h"
 #include "common/commands/interact_npc_command.h"
@@ -21,6 +22,8 @@
 #include "common/updates/attack_update.h"
 #include "common/updates/catalog_update.h"
 #include "common/updates/chat_msg_update.h"
+#include "common/updates/clan_result_update.h"
+#include "common/updates/clan_review_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
@@ -228,6 +231,13 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_interact_payload(uint32_t pl
     return std::make_unique<InteractNPCCommand>(player_id, npc_id, type, arg, amount);
 }
 
+std::unique_ptr<ClientCommand> ServerProtocol::recv_clan_payload(uint32_t player_id) {
+    uint8_t action_val = recv_u8();
+    ClanAction action = static_cast<ClanAction>(action_val);
+    std::string arg = recv_string();
+    return std::make_unique<ClanCommand>(player_id, action, std::move(arg));
+}
+
 std::unique_ptr<ClientCommand> ServerProtocol::recv_chat_payload(uint32_t player_id,
                                                                  const std::string& nick) {
     std::string text = recv_string();
@@ -283,6 +293,12 @@ void ServerProtocol::send_update(const GameUpdate& update) {
             break;
         case UpdateType::SYSTEM_MSG:
             send_system_msg(update);
+            break;
+        case UpdateType::CLAN_RESULT:
+            send_clan_result(update);
+            break;
+        case UpdateType::CLAN_REVIEW:
+            send_clan_review(update);
             break;
         case UpdateType::ERROR:
             send_error(update);
@@ -500,6 +516,7 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         put_u16(buf, p.level);
         put_u8(buf, p.is_ghost ? 1 : 0);
         put_u8(buf, p.is_meditating ? 1 : 0);
+        put_u32(buf, p.clan_id);
 
         put_u8(buf, static_cast<uint8_t>(p.equipment.size()));
         for (const auto& eq_name : p.equipment) {
@@ -573,6 +590,46 @@ void ServerProtocol::send_system_msg(const GameUpdate& update) {
     put_string(buf, u.get_text());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_system_msg: client closed connection");
+    }
+}
+
+void ServerProtocol::send_clan_result(const GameUpdate& update) {
+    const auto& u = static_cast<const ClanResultUpdate&>(update);
+    const ClanResult& r = u.get_result();
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::CLAN_RESULT);
+    put_u8(buf, static_cast<uint8_t>(u.get_action()));
+    put_u8(buf, static_cast<uint8_t>(r.status));
+    put_string(buf, r.clan_name);
+    put_string(buf, r.actor_nick);
+    put_u32(buf, r.other_player_id);
+    put_string(buf, r.other_nick);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_clan_result: client closed connection");
+    }
+}
+
+void ServerProtocol::send_clan_review(const GameUpdate& update) {
+    const auto& u = static_cast<const ClanReviewUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::CLAN_REVIEW);
+    put_string(buf, u.get_clan_name());
+    put_u16(buf, static_cast<uint16_t>(u.get_members().size()));
+    for (const auto& m : u.get_members()) {
+        put_u32(buf, m.player_id);
+        put_string(buf, m.nick);
+        put_u8(buf, m.is_founder ? 1 : 0);
+        put_u8(buf, m.is_online ? 1 : 0);
+    }
+    put_u16(buf, static_cast<uint16_t>(u.get_pending().size()));
+    for (const auto& p : u.get_pending()) {
+        put_u32(buf, p.player_id);
+        put_string(buf, p.nick);
+        put_u8(buf, 0);
+        put_u8(buf, p.is_online ? 1 : 0);
+    }
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_clan_review: client closed connection");
     }
 }
 

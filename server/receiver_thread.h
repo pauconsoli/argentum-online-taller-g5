@@ -32,6 +32,7 @@ class ReceiverThread: public Thread {
     void handle_drop_item();
     void handle_equip_item();
     void handle_interact();
+    void handle_clan();
     void handle_chat();
     void handle_leave_match();
 

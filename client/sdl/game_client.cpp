@@ -13,8 +13,12 @@
 #include <vector>
 
 #include "client_map.h"
+#include "common/clan/clan_action.h"
+#include "common/clan/clan_action_status.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/chat_msg_update.h"
+#include "common/updates/clan_result_update.h"
+#include "common/updates/clan_review_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
@@ -304,6 +308,34 @@ void GameClient::run() {
                                     } else {
                                         mini_chat->add_message("Slot inválido o vacío");
                                     }
+                                } else if (chat_input_.rfind("/fundar-clan ", 0) == 0) {
+                                    std::string name = chat_input_.substr(13);
+                                    if (!name.empty())
+                                        client->do_clan_action(ClanAction::FOUND, name);
+                                } else if (chat_input_.rfind("/unirse ", 0) == 0) {
+                                    std::string name = chat_input_.substr(8);
+                                    if (!name.empty())
+                                        client->do_clan_action(ClanAction::JOIN_REQUEST, name);
+                                } else if (chat_input_ == "/revisar-clan") {
+                                    client->do_clan_action(ClanAction::REVIEW, "");
+                                } else if (chat_input_.rfind("/clan-aceptar ", 0) == 0) {
+                                    std::string nick = chat_input_.substr(14);
+                                    if (!nick.empty())
+                                        client->do_clan_action(ClanAction::ACCEPT, nick);
+                                } else if (chat_input_.rfind("/clan-rechazar ", 0) == 0) {
+                                    std::string nick = chat_input_.substr(15);
+                                    if (!nick.empty())
+                                        client->do_clan_action(ClanAction::REJECT, nick);
+                                } else if (chat_input_.rfind("/clan-ban ", 0) == 0) {
+                                    std::string nick = chat_input_.substr(10);
+                                    if (!nick.empty())
+                                        client->do_clan_action(ClanAction::BAN, nick);
+                                } else if (chat_input_.rfind("/clan-kick ", 0) == 0) {
+                                    std::string nick = chat_input_.substr(11);
+                                    if (!nick.empty())
+                                        client->do_clan_action(ClanAction::KICK, nick);
+                                } else if (chat_input_ == "/dejar-clan") {
+                                    client->do_clan_action(ClanAction::LEAVE, "");
                                 } else {
                                     // manejo normal del chat
                                     client->do_chat(chat_input_);
@@ -713,6 +745,124 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
                 const auto& message = static_cast<const ChatMsgUpdate&>(*update);
                 mini_chat->add_message(message.sender_nick + ": " + message.text);
+                break;
+            }
+            case UpdateType::CLAN_RESULT: {
+                const auto& cu = static_cast<const ClanResultUpdate&>(*update);
+                const ClanResult& r = cu.get_result();
+                bool i_am_other = (r.other_player_id != 0 && r.other_player_id == my_player_id);
+                if (r.status != ClanActionStatus::SUCCESS) {
+                    switch (r.status) {
+                        case ClanActionStatus::LEVEL_TOO_LOW:
+                            mini_chat->add_message("Necesitas nivel 6 o mas para fundar un clan");
+                            break;
+                        case ClanActionStatus::ALREADY_IN_CLAN:
+                            mini_chat->add_message("Ya perteneces a un clan");
+                            break;
+                        case ClanActionStatus::NAME_TAKEN:
+                            mini_chat->add_message("Ya existe un clan con ese nombre");
+                            break;
+                        case ClanActionStatus::NAME_EMPTY:
+                            mini_chat->add_message("El nombre del clan no puede estar vacio");
+                            break;
+                        case ClanActionStatus::CLAN_NOT_FOUND:
+                            mini_chat->add_message("No existe el clan '" + r.clan_name + "'");
+                            break;
+                        case ClanActionStatus::NOT_FOUNDER:
+                            mini_chat->add_message("Solo el fundador puede hacer eso");
+                            break;
+                        case ClanActionStatus::NOT_IN_CLAN:
+                            mini_chat->add_message("No perteneces a ningun clan");
+                            break;
+                        case ClanActionStatus::NOT_PENDING:
+                            mini_chat->add_message(r.other_nick + " no tiene solicitud pendiente");
+                            break;
+                        case ClanActionStatus::CLAN_FULL:
+                            mini_chat->add_message("El clan esta lleno");
+                            break;
+                        case ClanActionStatus::TARGET_OFFLINE:
+                            mini_chat->add_message(
+                                (r.other_nick.empty() ? "El jugador" : r.other_nick) +
+                                " no esta conectado");
+                            break;
+                        case ClanActionStatus::TARGET_IS_SELF:
+                            mini_chat->add_message("No puedes hacerte eso a ti mismo");
+                            break;
+                        case ClanActionStatus::FOUNDER_CANNOT_LEAVE:
+                            mini_chat->add_message("El fundador no puede abandonar el clan");
+                            break;
+                        default:
+                            mini_chat->add_message("Error en operacion de clan");
+                            break;
+                    }
+                    break;
+                }
+                switch (cu.get_action()) {
+                    case ClanAction::FOUND:
+                        mini_chat->add_message("Fundaste el clan '" + r.clan_name + "'");
+                        break;
+                    case ClanAction::JOIN_REQUEST:
+                        if (i_am_other)
+                            mini_chat->add_message(r.actor_nick + " pide unirse a tu clan");
+                        else
+                            mini_chat->add_message("Pedido enviado al clan '" + r.clan_name + "'");
+                        break;
+                    case ClanAction::ACCEPT:
+                        if (i_am_other)
+                            mini_chat->add_message("Fuiste aceptado en el clan '" + r.clan_name +
+                                                   "'");
+                        else
+                            mini_chat->add_message("Aceptaste a " + r.other_nick + " en el clan");
+                        break;
+                    case ClanAction::REJECT:
+                        if (i_am_other)
+                            mini_chat->add_message("Tu solicitud al clan '" + r.clan_name +
+                                                   "' fue rechazada");
+                        else
+                            mini_chat->add_message("Rechazaste la solicitud de " + r.other_nick);
+                        break;
+                    case ClanAction::BAN:
+                        if (i_am_other)
+                            mini_chat->add_message("Fuiste baneado del clan '" + r.clan_name + "'");
+                        else
+                            mini_chat->add_message("Baneaste a " + r.other_nick + " del clan");
+                        break;
+                    case ClanAction::KICK:
+                        if (i_am_other)
+                            mini_chat->add_message("Fuiste expulsado del clan '" + r.clan_name +
+                                                   "'");
+                        else
+                            mini_chat->add_message("Expulsaste a " + r.other_nick + " del clan");
+                        break;
+                    case ClanAction::LEAVE:
+                        mini_chat->add_message("Dejaste el clan '" + r.clan_name + "'");
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            }
+            case UpdateType::CLAN_REVIEW: {
+                const auto& cu = static_cast<const ClanReviewUpdate&>(*update);
+                mini_chat->add_message("=== Clan: " + cu.get_clan_name() + " ===");
+                std::string members_line = "Miembros:";
+                for (const auto& m : cu.get_members()) {
+                    members_line += " " + m.nick;
+                    if (m.is_founder)
+                        members_line += "[F]";
+                    if (!m.is_online)
+                        members_line += "[off]";
+                }
+                mini_chat->add_message(members_line);
+                if (!cu.get_pending().empty()) {
+                    std::string pending_line = "Pendientes:";
+                    for (const auto& p : cu.get_pending()) {
+                        pending_line += " " + p.nick;
+                        if (!p.is_online)
+                            pending_line += "[off]";
+                    }
+                    mini_chat->add_message(pending_line);
+                }
                 break;
             }
             default:

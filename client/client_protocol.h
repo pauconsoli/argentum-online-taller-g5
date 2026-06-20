@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "common/clan/clan_action.h"
 #include "common/direction.h"
 #include "common/npc_interaction.h"
 #include "common/socket.h"
@@ -44,6 +45,8 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_chat_msg();
     std::unique_ptr<GameUpdate> recv_system_msg();
+    std::unique_ptr<GameUpdate> recv_clan_result();
+    std::unique_ptr<GameUpdate> recv_clan_review();
     std::unique_ptr<GameUpdate> recv_error();
     std::unique_ptr<GameUpdate> recv_catalog();
 
@@ -64,6 +67,7 @@ class ClientProtocol {
     void send_chat(const std::string& text);
     void send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                        int32_t amount);
+    void send_clan_action(ClanAction action, const std::string& arg);
     void send_disconnect();
     void send_leave_match();
 

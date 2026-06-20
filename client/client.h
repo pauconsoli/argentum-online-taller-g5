@@ -7,6 +7,7 @@
 #include <string>
 
 #include "client_protocol.h"
+#include "common/clan/clan_action.h"
 #include "common/direction.h"
 #include "common/npc_interaction.h"
 #include "common/queue.h"
@@ -44,6 +45,7 @@ class Client {
     void do_equip_item(uint8_t slot_index);
     void do_chat(const std::string& text);
     void do_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg, int32_t amount);
+    void do_clan_action(ClanAction action, const std::string& arg);
     void do_leave_match();
     void do_disconnect();
 

@@ -48,6 +48,9 @@ constexpr uint8_t CATALOG = 0xA1;
 constexpr uint8_t CHAT_MSG = 0xB0;    // chat de jugador a jugadores (broadcast)
 constexpr uint8_t SYSTEM_MSG = 0xB1;  // mensaje del sistema (NPCs, errores) a 1 jugador
 
+constexpr uint8_t CLAN_RESULT = 0xC0;  // resultado de un comando de clan (targeted)
+constexpr uint8_t CLAN_REVIEW = 0xC1;  // respuesta a /revisar-clan (targeted)
+
 constexpr uint8_t ERROR = 0xEE;
 }  // namespace ServerOpcode
 

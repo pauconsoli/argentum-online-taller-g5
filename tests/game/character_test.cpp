@@ -36,6 +36,11 @@ class TestCharacter: public Character {
     bool can_enter_safe_zones() const override {
         return true;
     }
+
+    const std::string& get_name() const override {
+        static const std::string name = "TestCharacter";
+        return name;
+    }
 };
 
 class CharacterTest: public ::testing::Test {

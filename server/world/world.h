@@ -92,11 +92,9 @@ class World {
     void spawn_city_npcs();
     void spawn_initial_hostile_npcs();
 
-    // Helper común a accept/reject/ban/kick: resuelve el clan del fundador y
-    // el Player target por nick, devolviendo el motivo de fallo si corresponde.
-    // Si devuelve true, clan_out y target_out quedan seteados y son válidos.
+    // común a accept/reject/ban/kick para no repetir código, checks previos
     bool resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
-                                    Clan** clan_out, Player** target_out,
+                                    Player** founder_out, Clan** clan_out, Player** target_out,
                                     ClanActionStatus* fail_status);
 
  public:

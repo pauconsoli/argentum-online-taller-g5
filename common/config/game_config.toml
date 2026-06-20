@@ -140,7 +140,7 @@ max_level_difference = 10
 
 [clan]
 max_members = 16
-min_level_to_found = 6
+min_level_to_found = 2
 bonus_factor = 0.1     #10%
 bonus_range = 5   #5 tiles
 

@@ -506,7 +506,7 @@ Clan* World::get_clan_by_name(const std::string& name) {
 
 
 bool World::resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
-                                       Clan** clan_out, Player** target_out,
+                                       Player** founder_out, Clan** clan_out, Player** target_out,
                                        ClanActionStatus* fail_status) {
     Player* founder = get_player(founder_id);
     Clan* clan = founder ? get_clan(founder->get_clan_id()) : nullptr;
@@ -521,6 +521,7 @@ bool World::resolve_founder_and_target(uint32_t founder_id, const std::string& t
         return false;
     }
 
+    *founder_out = founder;
     *clan_out = clan;
     *target_out = target;
     return true;
@@ -547,7 +548,7 @@ ClanResult World::found_clan(uint32_t founder_id, const std::string& clan_name) 
         return ClanResult(ClanActionStatus::NAME_TAKEN, clan_name);
     }
     founder->set_clan_id(clan->get_id());
-    return ClanResult(ClanActionStatus::SUCCESS, clan_name);
+    return ClanResult(ClanActionStatus::SUCCESS, clan_name, founder->get_name());
 }
 
 ClanResult World::request_join_clan(uint32_t player_id, const std::string& clan_name) {
@@ -566,94 +567,110 @@ ClanResult World::request_join_clan(uint32_t player_id, const std::string& clan_
     if (!clan->request_join(player_id)) {
         ClanActionStatus status =
             clan->is_full() ? ClanActionStatus::CLAN_FULL : ClanActionStatus::INTERNAL_ERROR;
-        return ClanResult(status, clan->get_name());
+        return ClanResult(status, clan->get_name(), player->get_name());
     }
 
-    ClanResult result(ClanActionStatus::SUCCESS, clan->get_name());
+    ClanResult result(ClanActionStatus::SUCCESS, clan->get_name(), player->get_name());
     Player* founder = get_player(clan->get_founder_id());
     if (founder) {
         result.other_player_id = founder->get_id();
-        result.other_nick = player->get_name();
+        result.other_nick = founder->get_name();
     }
     return result;
 }
 
 ClanResult World::accept_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
     Clan* clan = nullptr;
     Player* target = nullptr;
     ClanActionStatus fail_status;
-    if (!resolve_founder_and_target(founder_id, target_nick, &clan, &target, &fail_status)) {
-        return ClanResult(fail_status, "", 0, target_nick);
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
     }
+    std::string founder_nick = founder_ptr->get_name();
 
     if (!clan->accept(founder_id, target->get_id())) {
         ClanActionStatus status = clan->get_founder_id() != founder_id ?
                                       ClanActionStatus::NOT_FOUNDER :
                                       ClanActionStatus::NOT_PENDING;
-        return ClanResult(status, clan->get_name(), 0, target_nick);
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
     }
 
     target->set_clan_id(clan->get_id());
-    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), target->get_id(), target_nick);
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
 }
 
 ClanResult World::reject_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
     Clan* clan = nullptr;
     Player* target = nullptr;
     ClanActionStatus fail_status;
-    if (!resolve_founder_and_target(founder_id, target_nick, &clan, &target, &fail_status)) {
-        return ClanResult(fail_status, "", 0, target_nick);
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
     }
+    std::string founder_nick = founder_ptr->get_name();
 
     if (!clan->reject(founder_id, target->get_id())) {
         ClanActionStatus status = clan->get_founder_id() != founder_id ?
                                       ClanActionStatus::NOT_FOUNDER :
                                       ClanActionStatus::NOT_PENDING;
-        return ClanResult(status, clan->get_name(), 0, target_nick);
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
     }
 
-    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), target->get_id(), target_nick);
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
 }
 
 ClanResult World::ban_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
     Clan* clan = nullptr;
     Player* target = nullptr;
     ClanActionStatus fail_status;
-    if (!resolve_founder_and_target(founder_id, target_nick, &clan, &target, &fail_status)) {
-        return ClanResult(fail_status, "", 0, target_nick);
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
     }
+    std::string founder_nick = founder_ptr->get_name();
 
     bool was_member = clan->is_member(target->get_id());
     if (!clan->ban(founder_id, target->get_id())) {
         ClanActionStatus status = clan->get_founder_id() != founder_id ?
                                       ClanActionStatus::NOT_FOUNDER :
                                       ClanActionStatus::TARGET_IS_SELF;
-        return ClanResult(status, clan->get_name(), 0, target_nick);
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
     }
 
     if (was_member) {
         target->set_clan_id(0);
     }
-    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), target->get_id(), target_nick);
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
 }
 
 ClanResult World::kick_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
     Clan* clan = nullptr;
     Player* target = nullptr;
     ClanActionStatus fail_status;
-    if (!resolve_founder_and_target(founder_id, target_nick, &clan, &target, &fail_status)) {
-        return ClanResult(fail_status, "", 0, target_nick);
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
     }
+    std::string founder_nick = founder_ptr->get_name();
 
     if (!clan->kick(founder_id, target->get_id())) {
         ClanActionStatus status = clan->get_founder_id() != founder_id ?
                                       ClanActionStatus::NOT_FOUNDER :
                                       ClanActionStatus::NOT_PENDING;
-        return ClanResult(status, clan->get_name(), 0, target_nick);
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
     }
 
     target->set_clan_id(0);
-    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), target->get_id(), target_nick);
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
 }
 
 ClanResult World::leave_clan(uint32_t player_id) {
@@ -664,12 +681,14 @@ ClanResult World::leave_clan(uint32_t player_id) {
     }
 
     if (!clan->leave(player_id)) {
-        return ClanResult(ClanActionStatus::FOUNDER_CANNOT_LEAVE, clan->get_name());
+        return ClanResult(ClanActionStatus::FOUNDER_CANNOT_LEAVE, clan->get_name(),
+                          player->get_name());
     }
 
     std::string clan_name = clan->get_name();
+    std::string player_nick = player->get_name();
     player->set_clan_id(0);
-    return ClanResult(ClanActionStatus::SUCCESS, clan_name);
+    return ClanResult(ClanActionStatus::SUCCESS, clan_name, player_nick);
 }
 
 ClanReviewResult World::review_clan(uint32_t founder_id) {

@@ -49,7 +49,7 @@ class ClientReceiverThread: public Thread {
     }
 };
 
-} 
+}  // namespace
 
 Client::Client(const std::string& host, const std::string& port):
     socket(host.c_str(), port.c_str()),
@@ -153,6 +153,11 @@ void Client::do_interact(uint32_t npc_id, NPCInteraction type, const std::string
                          int32_t amount) {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_interact(npc_id, type, arg, amount);
+}
+
+void Client::do_clan_action(ClanAction action, const std::string& arg) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_clan_action(action, arg);
 }
 
 void Client::do_leave_match() {
