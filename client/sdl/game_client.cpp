@@ -105,8 +105,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     player_x(400),
     player_y(300),
     width(width),
-    height(height),
-    from_handoff(false) {
+    height(height) {
     init_sdl_window(window, width, height);
     my_hp = 100;
     my_max_hp = 100;
@@ -765,7 +764,21 @@ void GameClient::process_sdl_events() {
                     if (ns.x == tile_x && ns.y == tile_y) {
                         if (!ns.is_hostile) {
                             selected_npc_id_ = static_cast<int>(nid);
-                            mini_chat->add_message("Seleccionaste un NPC");
+                            NPCVisualType npc_city = npc_visual_type_from_network(ns.npc_type);
+                            switch (npc_city) {
+                                case NPCVisualType::PRIEST:
+                                    mini_chat->add_message("Seleccionaste al sacerdote");
+                                    break;
+                                case NPCVisualType::MERCHANT:
+                                    mini_chat->add_message("Seleccionaste al mercader");
+                                    break;
+                                case NPCVisualType::BANKER:
+                                    mini_chat->add_message("Seleccionaste al banquero");
+                                    break;
+                                default:
+                                    mini_chat->add_message("Seleccionaste a un NPC");
+                                    break;
+                            }
                         } else {
                             client->do_attack(nid);
                         }
