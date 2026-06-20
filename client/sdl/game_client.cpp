@@ -13,24 +13,16 @@
 #include <vector>
 
 #include "client_map.h"
-#include "common/cheat_type.h"
-#include "common/clan/clan_action.h"
-#include "common/clan/clan_action_status.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/chat_msg_update.h"
-#include "common/updates/clan_result_update.h"
-#include "common/updates/clan_review_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/moved_update.h"
-#include "common/updates/npc_interact_update.h"
 #include "common/updates/player_left_update.h"
-#include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
-#include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -134,46 +126,6 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
     }
-}
-
-// Constructor standalone
-GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
-    window(nullptr),
-    renderer(nullptr),
-    hud(nullptr),
-    mini_chat(nullptr),
-    sprite_manager(nullptr),
-    terrain_renderer_(nullptr),
-    audio_manager(nullptr),
-    client(std::make_unique<Client>(host, port)),
-    camera(width, height),
-    my_player_id(1),  // ID provisorio/dummy para standalone
-    my_race(1),
-    my_klass(1),
-    player_x(400),
-    player_y(300),
-    width(width),
-    height(height),
-    from_handoff(false) {
-    init_sdl_window(window, width, height);
-    my_hp = 100;
-    my_max_hp = 100;
-    my_mp = 100;
-    my_max_mp = 100;
-    my_level = 1;
-    my_gold = 0;
-    my_xp = 0;
-    renderer = new Renderer(window);
-    std::string base_assets = get_base_asset_dir();
-    std::string font_path = base_assets + "/fonts/font.ttf";
-    sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
-    sprite_manager->load_body_textures(base_assets);
-    sprite_manager->load_terrain_textures(base_assets);
-    terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
-    hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
-    mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
-    audio_manager = std::make_unique<AudioManager>();
-    load_audio_assets();
 }
 
 
@@ -312,36 +264,6 @@ void GameClient::run() {
                                     } else {
                                         mini_chat->add_message("Slot inválido o vacío");
                                     }
-                                } else if (chat_input_.rfind("/fundar-clan ", 0) == 0) {
-                                    std::string name = chat_input_.substr(13);
-                                    if (!name.empty())
-                                        client->do_clan_action(ClanAction::FOUND, name);
-                                } else if (chat_input_.rfind("/unirse ", 0) == 0) {
-                                    std::string name = chat_input_.substr(8);
-                                    if (!name.empty())
-                                        client->do_clan_action(ClanAction::JOIN_REQUEST, name);
-                                } else if (chat_input_ == "/revisar-clan") {
-                                    client->do_clan_action(ClanAction::REVIEW, "");
-                                } else if (chat_input_.rfind("/clan-aceptar ", 0) == 0) {
-                                    std::string nick = chat_input_.substr(14);
-                                    if (!nick.empty())
-                                        client->do_clan_action(ClanAction::ACCEPT, nick);
-                                } else if (chat_input_.rfind("/clan-rechazar ", 0) == 0) {
-                                    std::string nick = chat_input_.substr(15);
-                                    if (!nick.empty())
-                                        client->do_clan_action(ClanAction::REJECT, nick);
-                                } else if (chat_input_.rfind("/clan-ban ", 0) == 0) {
-                                    std::string nick = chat_input_.substr(10);
-                                    if (!nick.empty())
-                                        client->do_clan_action(ClanAction::BAN, nick);
-                                } else if (chat_input_.rfind("/clan-kick ", 0) == 0) {
-                                    std::string nick = chat_input_.substr(11);
-                                    if (!nick.empty())
-                                        client->do_clan_action(ClanAction::KICK, nick);
-                                } else if (chat_input_ == "/dejar-clan") {
-                                    client->do_clan_action(ClanAction::LEAVE, "");
-                                } else if (chat_input_ == "/resucitar") {
-                                    client->do_resurrect();
                                 } else {
                                     // manejo normal del chat
                                     client->do_chat(chat_input_);
@@ -365,38 +287,10 @@ void GameClient::run() {
                             break;
                     }
                 }
-                // Teclas fuera del chat: Enter abre chat, Ctrl+letra son cheats.
-            } else if (event.type == SDL_KEYDOWN) {
-                bool ctrl = (event.key.keysym.mod & KMOD_CTRL) != 0;
-                switch (event.key.keysym.sym) {
-                    case SDLK_RETURN:
-                    case SDLK_RETURN2:
-                        chat_active_ = true;
-                        SDL_StartTextInput();
-                        break;
-                    case SDLK_h:
-                        if (ctrl)
-                            client->do_cheat(CheatType::HEAL_FULL);
-                        break;
-                    case SDLK_m:
-                        if (ctrl)
-                            client->do_cheat(CheatType::RESTORE_MANA);
-                        break;
-                    case SDLK_k:
-                        if (ctrl)
-                            client->do_cheat(CheatType::DIE);
-                        break;
-                    case SDLK_l:
-                        if (ctrl)
-                            client->do_cheat(CheatType::LEVEL_UP);
-                        break;
-                    case SDLK_g:
-                        if (ctrl)
-                            client->do_cheat(CheatType::GIVE_GOLD);
-                        break;
-                    default:
-                        break;
-                }
+                // Enter fuera del chat abre el input de texto.
+            } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
+                chat_active_ = true;
+                SDL_StartTextInput();
                 // Click izquierdo: atacar jugador en esa casilla o equipar item del HUD.
             } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                        event.button.button == SDL_BUTTON_LEFT) {
@@ -554,8 +448,24 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
     while (update_queue.try_pop(update)) {
         switch (update->get_type()) {
             case UpdateType::ERROR: {
+                // Filtra errores de movimiento (silenciosos) y traduce el resto al chat.
                 const auto& eu = static_cast<const ErrorUpdate&>(*update);
-                mini_chat->add_message("Error: " + eu.detail);
+                const auto& d = eu.detail;
+                if (d.find("move_player") != std::string::npos ||
+                    d.find("mover") != std::string::npos) {
+                    break;
+                }
+                if (d.find("muertos") != std::string::npos ||
+                    d.find("muerto") != std::string::npos || d.find("ghost") != std::string::npos ||
+                    d.find("fantasma") != std::string::npos) {
+                    mini_chat->add_message("No puedes atacar a un jugador muerto");
+                } else if (d.find("objetivo") != std::string::npos ||
+                           d.find("target") != std::string::npos ||
+                           d.find("attack") != std::string::npos) {
+                    mini_chat->add_message("Debes estar más cerca para atacar");
+                } else {
+                    mini_chat->add_message("Error: " + d);
+                }
                 break;
             }
             case UpdateType::SNAPSHOT: {
@@ -645,66 +555,20 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // Muestra el resultado del ataque en el chat y reproduce el sonido correcto.
                 const auto& au = static_cast<const AttackUpdate&>(*update);
                 const AttackResult& r = au.get_result();
-                if (r.status != AttackStatus::SUCCESS) {
-                    switch (r.status) {
-                        case AttackStatus::NO_MANA:
-                            mini_chat->add_message("No tenes suficiente mana");
-                            break;
-                        case AttackStatus::OUT_OF_RANGE:
-                            mini_chat->add_message("El objetivo esta fuera de rango");
-                            break;
-                        case AttackStatus::DEAD:
-                            mini_chat->add_message("No puedes atacar a un jugador muerto");
-                            break;
-                        case AttackStatus::INVALID_TARGET:
-                            mini_chat->add_message("Objetivo invalido");
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                }
                 if (r.evaded) {
                     mini_chat->add_message("Ataque esquivado");
                 } else if (r.attacker_id == my_player_id) {
-                    std::string target_name = "";
-                    auto player_it = players.find(r.target_id);
-                    if (player_it != players.end()) {
-                        target_name = player_it->second.nick;
-                    } else {
-                        auto npc_it = npcs_.find(r.target_id);
-                        if (npc_it != npcs_.end()) {
-                            target_name = npc_it->second.name;
-                        }
-                    }
-
-                    if (r.is_healing) {
-                        mini_chat->add_message(r.weapon_or_spell_name + ": curaste a " +
-                                               target_name + " por " +
-                                               std::to_string(r.heal_amount) + " puntos");
-                    } else if (!r.target_died) {
-                        mini_chat->add_message(r.weapon_or_spell_name + ": causaste " +
-                                               std::to_string(r.damage) + " de daño a " +
-                                               target_name);
-                    }
+                    if (r.target_died)
+                        mini_chat->add_message(npcs_.count(r.target_id) ? "Mataste al NPC" :
+                                                                          "Mataste al jugador");
+                    else
+                        mini_chat->add_message("Causaste " + std::to_string(r.damage) + " de daño");
                 } else if (r.target_id == my_player_id) {
-                    if (r.is_healing) {
-                        std::string healer_name = "";
-                        auto player_it = players.find(r.attacker_id);
-                        if (player_it != players.end()) {
-                            healer_name = player_it->second.nick;
-                        } else {
-                            auto npc_it = npcs_.find(r.attacker_id);
-                            if (npc_it != npcs_.end()) {
-                                healer_name = npc_it->second.name;
-                            }
-                        }
-                        mini_chat->add_message(healer_name + " te curó " +
-                                               std::to_string(r.heal_amount) + " puntos de vida");
-                    } else if (!r.target_died) {
+                    if (r.target_died)
+                        mini_chat->add_message("Moriste");
+                    else
                         mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
                                                " de daño");
-                    }
                 }
 
                 switch (r.type) {
@@ -735,7 +599,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // Muerte propia: avisa al jugador. Muerte ajena: sonido atenuado por distancia.
                 const auto& du = static_cast<const DeathUpdate&>(*update);
                 if (du.get_dead_id() == my_player_id) {
-                    mini_chat->add_message("Moriste. Dirigite al sacerdote para resucitar");
+                    mini_chat->add_message("Moriste. Dirigete al sanador para resucitar.");
                     audio_manager->play_sound("death");
                 } else {
                     int vol = MIX_MAX_VOLUME;
@@ -743,25 +607,14 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     int dead_tx = -1, dead_ty = -1;
                     auto pit = players.find(dead_id);
                     if (pit != players.end()) {
-                        const auto& dead_player_snapshot = pit->second;
-                        dead_tx = dead_player_snapshot.x;
-                        dead_ty = dead_player_snapshot.y;
-                        if (du.get_killer_id() == my_player_id) {
-                            mini_chat->add_message("Mataste a " + dead_player_snapshot.nick);
-                        } else {
-                            mini_chat->add_message("Un jugador murio en combate");
-                        }
+                        dead_tx = pit->second.x;
+                        dead_ty = pit->second.y;
+                        mini_chat->add_message("Un jugador murio en combate.");
                     } else {
                         auto nit = npcs_.find(dead_id);
                         if (nit != npcs_.end()) {
-                            const auto& dead_npc_snapshot = nit->second;
-                            dead_tx = dead_npc_snapshot.x;
-                            dead_ty = dead_npc_snapshot.y;
-                            if (du.get_killer_id() == my_player_id) {
-                                mini_chat->add_message("Mataste a " + dead_npc_snapshot.name);
-                            } else {
-                                mini_chat->add_message("Un NPC murió en combate");
-                            }
+                            dead_tx = nit->second.x;
+                            dead_ty = nit->second.y;
                         }
                     }
                     if (dead_tx >= 0) {
@@ -777,223 +630,11 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 }
                 break;
             }
-            case UpdateType::REVIVE: {
-                const auto& ru = static_cast<const ReviveUpdate&>(*update);
-                switch (ru.get_status()) {
-                    case ResurrectStatus::SUCCESS:
-                        mini_chat->add_message("Comenzando la resurrección. Estarás inmovilizado "
-                                               "durante el proceso...");
-                        break;
-                    case ResurrectStatus::NOT_DEAD:
-                        mini_chat->add_message("No estás muerto");
-                        break;
-                    case ResurrectStatus::ALREADY_RESURRECTING:
-                        break;
-                }
-                break;
-            }
             case UpdateType::CHAT_MSG: {
                 // Mensaje de chat recibido del servidor: lo muestra en el mini_chat.
-                // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
+                // El update es ChatMsgUpdate (sender_nick + text), no ChatMessageUpdate.
                 const auto& message = static_cast<const ChatMsgUpdate&>(*update);
                 mini_chat->add_message(message.sender_nick + ": " + message.text);
-                break;
-            }
-            case UpdateType::SYSTEM_MSG: {
-                const auto& sm = static_cast<const SystemMsgUpdate&>(*update);
-                mini_chat->add_message(sm.get_message());
-                break;
-            }
-            case UpdateType::NPC_INTERACT: {
-                const auto& nu = static_cast<const NpcInteractUpdate&>(*update);
-                const InteractResult& r = nu.get_result();
-                if (r.status != InteractStatus::SUCCESS) {
-                    switch (r.status) {
-                        case InteractStatus::INSUFFICIENT_GOLD:
-                            mini_chat->add_message("No tenes oro suficiente");
-                            break;
-                        case InteractStatus::INVENTORY_FULL:
-                            mini_chat->add_message("No tenes espacio en el inventario");
-                            break;
-                        case InteractStatus::ITEM_NOT_FOUND:
-                            mini_chat->add_message("Item no encontrado");
-                            break;
-                        case InteractStatus::NOT_ALLOWED:
-                            mini_chat->add_message("El NPC no puede hacer eso");
-                            break;
-                        case InteractStatus::PLAYER_DEAD:
-                            mini_chat->add_message("No puedes hacer eso estando muerto");
-                            break;
-                        case InteractStatus::PLAYER_NOT_DEAD:
-                            mini_chat->add_message("No estas muerto");
-                            break;
-                        case InteractStatus::ALREADY_FULL:
-                            mini_chat->add_message("Ya tenes salud y mana al maximo");
-                            break;
-                        case InteractStatus::INVALID_AMOUNT:
-                            mini_chat->add_message("Cantidad de oro invalida");
-                            break;
-                        case InteractStatus::OUT_OF_RANGE:
-                            mini_chat->add_message("Estas demasiado lejos del NPC");
-                            break;
-                        case InteractStatus::INVALID_TARGET:
-                            mini_chat->add_message("NPC no encontrado");
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                }
-                switch (nu.get_npc_interaction_type()) {
-                    case NPCInteraction::BUY:
-                        mini_chat->add_message("Compraste " + r.item_name + " por " +
-                                               std::to_string(r.gold_amount) + " de oro");
-                        break;
-                    case NPCInteraction::SELL:
-                        mini_chat->add_message("Vendiste " + r.item_name + " por " +
-                                               std::to_string(r.gold_amount) + " de oro");
-                        break;
-                    case NPCInteraction::DEPOSIT_GOLD:
-                        mini_chat->add_message("Depositaste " + std::to_string(r.gold_amount) +
-                                               " de oro");
-                        break;
-                    case NPCInteraction::WITHDRAW_GOLD:
-                        mini_chat->add_message("Retiraste " + std::to_string(r.gold_amount) +
-                                               " de oro");
-                        break;
-                    case NPCInteraction::DEPOSIT_ITEM:
-                        mini_chat->add_message("Depositaste " + r.item_name);
-                        break;
-                    case NPCInteraction::WITHDRAW_ITEM:
-                        mini_chat->add_message("Retiraste " + r.item_name);
-                        break;
-                    case NPCInteraction::HEAL:
-                        mini_chat->add_message("Has sido curado completamente");
-                        break;
-                    case NPCInteraction::RESURRECT:
-                        mini_chat->add_message("Has sido resucitado");
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            }
-            case UpdateType::CLAN_RESULT: {
-                const auto& cu = static_cast<const ClanResultUpdate&>(*update);
-                const ClanResult& r = cu.get_result();
-                bool i_am_other = (r.other_player_id != 0 && r.other_player_id == my_player_id);
-                if (r.status != ClanActionStatus::SUCCESS) {
-                    switch (r.status) {
-                        case ClanActionStatus::LEVEL_TOO_LOW:
-                            mini_chat->add_message("Necesitas nivel 6 o mas para fundar un clan");
-                            break;
-                        case ClanActionStatus::ALREADY_IN_CLAN:
-                            mini_chat->add_message("Ya perteneces a un clan");
-                            break;
-                        case ClanActionStatus::NAME_TAKEN:
-                            mini_chat->add_message("Ya existe un clan con ese nombre");
-                            break;
-                        case ClanActionStatus::NAME_EMPTY:
-                            mini_chat->add_message("El nombre del clan no puede estar vacio");
-                            break;
-                        case ClanActionStatus::CLAN_NOT_FOUND:
-                            mini_chat->add_message("No existe el clan '" + r.clan_name + "'");
-                            break;
-                        case ClanActionStatus::NOT_FOUNDER:
-                            mini_chat->add_message("Solo el fundador puede hacer eso");
-                            break;
-                        case ClanActionStatus::NOT_IN_CLAN:
-                            mini_chat->add_message("No perteneces a ningun clan");
-                            break;
-                        case ClanActionStatus::NOT_PENDING:
-                            mini_chat->add_message(r.other_nick + " no tiene solicitud pendiente");
-                            break;
-                        case ClanActionStatus::CLAN_FULL:
-                            mini_chat->add_message("El clan esta lleno");
-                            break;
-                        case ClanActionStatus::TARGET_OFFLINE:
-                            mini_chat->add_message(
-                                (r.other_nick.empty() ? "El jugador" : r.other_nick) +
-                                " no esta conectado");
-                            break;
-                        case ClanActionStatus::TARGET_IS_SELF:
-                            mini_chat->add_message("No puedes hacerte eso a ti mismo");
-                            break;
-                        case ClanActionStatus::FOUNDER_CANNOT_LEAVE:
-                            mini_chat->add_message("El fundador no puede abandonar el clan");
-                            break;
-                        default:
-                            mini_chat->add_message("Error en operacion de clan");
-                            break;
-                    }
-                    break;
-                }
-                switch (cu.get_action()) {
-                    case ClanAction::FOUND:
-                        mini_chat->add_message("Fundaste el clan '" + r.clan_name + "'");
-                        break;
-                    case ClanAction::JOIN_REQUEST:
-                        if (i_am_other)
-                            mini_chat->add_message(r.actor_nick + " pide unirse a tu clan");
-                        else
-                            mini_chat->add_message("Pedido enviado al clan '" + r.clan_name + "'");
-                        break;
-                    case ClanAction::ACCEPT:
-                        if (i_am_other)
-                            mini_chat->add_message("Fuiste aceptado en el clan '" + r.clan_name +
-                                                   "'");
-                        else
-                            mini_chat->add_message("Aceptaste a " + r.other_nick + " en el clan");
-                        break;
-                    case ClanAction::REJECT:
-                        if (i_am_other)
-                            mini_chat->add_message("Tu solicitud al clan '" + r.clan_name +
-                                                   "' fue rechazada");
-                        else
-                            mini_chat->add_message("Rechazaste la solicitud de " + r.other_nick);
-                        break;
-                    case ClanAction::BAN:
-                        if (i_am_other)
-                            mini_chat->add_message("Fuiste baneado del clan '" + r.clan_name + "'");
-                        else
-                            mini_chat->add_message("Baneaste a " + r.other_nick + " del clan");
-                        break;
-                    case ClanAction::KICK:
-                        if (i_am_other)
-                            mini_chat->add_message("Fuiste expulsado del clan '" + r.clan_name +
-                                                   "'");
-                        else
-                            mini_chat->add_message("Expulsaste a " + r.other_nick + " del clan");
-                        break;
-                    case ClanAction::LEAVE:
-                        mini_chat->add_message("Dejaste el clan '" + r.clan_name + "'");
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            }
-            case UpdateType::CLAN_REVIEW: {
-                const auto& cu = static_cast<const ClanReviewUpdate&>(*update);
-                mini_chat->add_message("=== Clan: " + cu.get_clan_name() + " ===");
-                std::string members_line = "Miembros:";
-                for (const auto& m : cu.get_members()) {
-                    members_line += " " + m.nick;
-                    if (m.is_founder)
-                        members_line += "[F]";
-                    if (!m.is_online)
-                        members_line += "[off]";
-                }
-                mini_chat->add_message(members_line);
-                if (!cu.get_pending().empty()) {
-                    std::string pending_line = "Pendientes:";
-                    for (const auto& p : cu.get_pending()) {
-                        pending_line += " " + p.nick;
-                        if (!p.is_online)
-                            pending_line += "[off]";
-                    }
-                    mini_chat->add_message(pending_line);
-                }
                 break;
             }
             default:
