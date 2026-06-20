@@ -1,10 +1,9 @@
 #include "common/commands/select_race_class_command.h"
 
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
-#include "common/protocol_constants.h"
-#include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/spawned_update.h"
 #include "server/game/game_formulas.h"
@@ -14,12 +13,8 @@
 std::vector<std::unique_ptr<GameUpdate>> SelectRaceClassCommand::execute(World& world) {
     std::vector<std::unique_ptr<GameUpdate>> updates;
 
-    if (world.player_exists(player_id)) {
-        updates.push_back(
-            std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED,
-                                          "El jugador ya está conectado en el mundo"));
+    if (world.player_exists(player_id))
         return updates;
-    }
 
     try {
         Position spawn = world.get_spawn_position();
@@ -27,7 +22,6 @@ std::vector<std::unique_ptr<GameUpdate>> SelectRaceClassCommand::execute(World& 
 
         uint64_t initial_gold = player->get_gold();
 
-        // inventario inicial (vacío) --> estructura de red para el cliente
         std::vector<InventorySlotData> items_data;
         for (const auto& slot : player->get_inventory().get_slots()) {
             if (slot.item) {
@@ -45,8 +39,8 @@ std::vector<std::unique_ptr<GameUpdate>> SelectRaceClassCommand::execute(World& 
             std::make_unique<InventoryUpdate>(player_id, std::move(items_data), initial_gold));
 
     } catch (const std::exception& e) {
-        updates.push_back(
-            std::make_unique<ErrorUpdate>(player_id, ProtocolError::COMMAND_NOT_ALLOWED, e.what()));
+        std::cerr << "[SelectRaceClass] Error spawning player " << player_id << ": " << e.what()
+                  << "\n";
     }
 
     return updates;
