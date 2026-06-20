@@ -6,6 +6,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPixmap>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTableWidget>
@@ -24,6 +25,13 @@ LobbyWidget::LobbyWidget(QWidget* parent):
         status_label(new QLabel(this)) {
 
     auto* header = new QHBoxLayout;
+    auto* logo = new QLabel(this);
+    {
+        QPixmap pix(":/logo.png");
+        if (!pix.isNull()) {
+            logo->setPixmap(pix.scaledToHeight(60, Qt::SmoothTransformation));
+        }
+    }
     auto* title = new QLabel(tr("Partidas disponibles"), this);
     {
         QFont f = title->font();
@@ -34,6 +42,8 @@ LobbyWidget::LobbyWidget(QWidget* parent):
     logout_button->setStyleSheet(
             "QPushButton { background-color: #4a2418; border: 2px solid #8a3a1f; }"
             "QPushButton:hover { background-color: #6b3424; }");
+    header->addWidget(logo);
+    header->addSpacing(12);
     header->addWidget(title);
     header->addStretch();
     header->addWidget(logout_button);

@@ -227,6 +227,7 @@ if(ARGENTUM_CLIENT_QT)
             client/qt/lobby_widget.h
             client/qt/race_class_widget.cpp
             client/qt/race_class_widget.h
+            client/qt/resources.qrc
             client/client.cpp
             client/client.h
             client/client_protocol.cpp

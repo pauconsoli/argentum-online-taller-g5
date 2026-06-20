@@ -5,6 +5,7 @@
 #include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPixmap>
 #include <QPushButton>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -19,17 +20,25 @@ ConnectionWidget::ConnectionWidget(QWidget* parent):
     options_toggle(new QToolButton(this)),
     options_panel(new QFrame(this)) {
 
-    auto* title = new QLabel(tr("ARGENTUM ONLINE"), this);
-    auto* subtitle = new QLabel(tr("— G5 —"), this);
-    title->setAlignment(Qt::AlignCenter);
-    subtitle->setAlignment(Qt::AlignCenter);
+    auto* logo = new QLabel(this);
+    logo->setAlignment(Qt::AlignCenter);
     {
-        QFont f = title->font();
-        f.setPointSize(36);
-        f.setBold(true);
-        title->setFont(f);
-        title->setStyleSheet("color: #f0c870; letter-spacing: 4px;");
+        QPixmap pix(":/logo.png");
+        if (!pix.isNull()) {
+            logo->setPixmap(
+                pix.scaledToHeight(220, Qt::SmoothTransformation));
+        } else {
+            logo->setText(tr("ARGENTUM ONLINE"));
+            QFont f = logo->font();
+            f.setPointSize(36);
+            f.setBold(true);
+            logo->setFont(f);
+            logo->setStyleSheet("color: #f0c870; letter-spacing: 4px;");
+        }
     }
+
+    auto* subtitle = new QLabel(tr("— G5 —"), this);
+    subtitle->setAlignment(Qt::AlignCenter);
     {
         QFont f = subtitle->font();
         f.setPointSize(14);
@@ -80,9 +89,9 @@ ConnectionWidget::ConnectionWidget(QWidget* parent):
 
     auto* root = new QVBoxLayout(this);
     root->addStretch(2);
-    root->addWidget(title);
+    root->addWidget(logo);
     root->addWidget(subtitle);
-    root->addSpacing(40);
+    root->addSpacing(30);
     root->addWidget(nick_input);
     root->addSpacing(12);
     root->addWidget(connect_button);
@@ -93,7 +102,6 @@ ConnectionWidget::ConnectionWidget(QWidget* parent):
     root->setContentsMargins(80, 40, 80, 40);
 
     connect(connect_button, &QPushButton::clicked, this, &ConnectionWidget::on_connect_clicked);
-    // Enter en el nick también dispara connect.
     connect(nick_input, &QLineEdit::returnPressed, this, &ConnectionWidget::on_connect_clicked);
 }
 
