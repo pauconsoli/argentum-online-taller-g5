@@ -10,10 +10,17 @@
 #include <vector>
 
 #include "common/attack_result.h"
+#include "common/cheat_type.h"
+#include "common/clan/clan_action_status.h"
+#include "common/clan/clan_result.h"
+#include "common/clan/clan_review_result.h"
 #include "common/direction.h"
+#include "common/meditate_status.h"
 #include "common/position.h"
+#include "common/resurrect_status.h"
 #include "common/updates/game_update.h"
 #include "server/game/bank.h"
+#include "server/game/clan.h"
 #include "server/game/items/item.h"
 #include "server/game/loot.h"
 #include "server/game/npcs/city_npc.h"
@@ -50,6 +57,9 @@ class World {
 
     std::map<uint32_t, PendingResurrection> pending_resurrections;
 
+    std::map<uint32_t, std::unique_ptr<Clan>> clans_by_id;
+    uint32_t next_clan_id = 1;
+
     Position calculate_destination(const Position& current, Direction direction) const;
 
     bool is_position_occupied(const Position& position) const;
@@ -67,6 +77,9 @@ class World {
                                             const Character* target) const;
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
+    void notify_clan_member_attacked(const Character* attacker, const Character* target);
+
+    int get_nearby_clan_members_count(const Character* character, int range) const;
 
     void update_players(float tick_seconds);
     void update_resurrections(float tick_seconds);
@@ -82,6 +95,11 @@ class World {
     void spawn_city_npcs();
     void spawn_initial_hostile_npcs();
 
+    // común a accept/reject/ban/kick para no repetir código, checks previos
+    bool resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
+                                    Player** founder_out, Clan** clan_out, Player** target_out,
+                                    ClanActionStatus* fail_status);
+
  public:
     World(int width, int height);
     explicit World(WorldMap map);  // para cargar un mapa ya creado
@@ -93,6 +111,7 @@ class World {
     void add_player(std::unique_ptr<Player> player);
     void remove_player(uint32_t player_id);
     Player* get_player(uint32_t player_id);
+    Player* get_player_by_name(const std::string& name);
     std::vector<Player*> get_players();
     bool player_exists(uint32_t player_id) const;
 
@@ -111,22 +130,43 @@ class World {
     bool equip_item(uint32_t player_id, int slot_index);
 
     bool move_character(uint32_t character_id, Direction direction);
+    void reset_player_movement();
 
     bool teleport_player(uint32_t player_id, const Position& dest);
-    bool start_resurrection(uint32_t player_id);
+    ResurrectStatus start_resurrection(uint32_t player_id);
+    MeditateStatus meditate(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
     AttackResult heal(uint32_t healer_id, uint32_t target_id);
+
+    CheatResult apply_cheat(uint32_t player_id, CheatType cheat);
 
     void add_npc(std::unique_ptr<NPC> npc);
     NPC* get_npc(uint32_t npc_id);
 
     std::vector<NPC*> get_npcs();
 
-    CityNPC* get_city_npc(uint32_t npc_id);
     std::vector<Player*> get_players_near(const Position& pos, float range) const;
     InteractResult interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
                                      const std::string& arg, int amount);
+
+    Clan* create_clan(const std::string& name, uint32_t founder_id);
+    Clan* get_clan(uint32_t clan_id);
+    Clan* get_clan_by_name(const std::string& name);
+
+    // Orquestación de comandos de clan: resuelven Player(s) por id/nombre,
+    // delegan la regla de negocio en Clan, y sincronizan Player::clan_id.
+    // Devuelven datos crudos (no GameUpdate); el Command los traduce a updates.
+    ClanResult found_clan(uint32_t founder_id, const std::string& clan_name);
+    ClanResult request_join_clan(uint32_t player_id, const std::string& clan_name);
+    ClanResult accept_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult reject_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult ban_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult kick_clan_member(uint32_t founder_id, const std::string& target_nick);
+    ClanResult leave_clan(uint32_t player_id);
+    ClanReviewResult review_clan(uint32_t founder_id);
+
+
     Bank& get_bank();
 
     std::vector<AttackResult> update(float tick_seconds);

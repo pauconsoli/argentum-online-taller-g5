@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "common/updates/attack_update.h"
+#include "server/game/clan.h"
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
@@ -74,6 +75,7 @@ void World::remove_player(uint32_t player_id) {
     }
 }
 
+
 Player* World::get_player(uint32_t player_id) {
     auto it = players.find(player_id);
     if (it != players.end()) {
@@ -93,6 +95,15 @@ std::vector<Player*> World::get_players() {
 
 bool World::player_exists(uint32_t player_id) const {
     return players.find(player_id) != players.end();
+}
+
+Player* World::get_player_by_name(const std::string& name) {
+    for (auto& [id, player] : players) {
+        if (player->get_name() == name) {
+            return player.get();
+        }
+    }
+    return nullptr;
 }
 
 Character* World::get_character(uint32_t id) {
@@ -261,7 +272,15 @@ AttackStatus World::validate_attack_conditions(const Character* attacker,
         return AttackStatus::INVALID_TARGET;
     }
 
+    // zonas seguras
     if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
+        return AttackStatus::INVALID_TARGET;
+    }
+
+    // mismo clan
+    uint32_t attacker_clan = attacker->get_clan_id();
+    uint32_t target_clan = target->get_clan_id();
+    if (attacker_clan != 0 && attacker_clan == target_clan) {
         return AttackStatus::INVALID_TARGET;
     }
 
@@ -280,9 +299,30 @@ void World::handle_target_death(Character* attacker, Character* target) {
     drop_loot_in_world(target->get_position(), std::move(loot));
 }
 
+int World::get_nearby_clan_members_count(const Character* character, int range) const {
+    uint32_t clan_id = character->get_clan_id();
+    if (clan_id == 0)
+        return 0;
+
+    auto nearby = get_players_near(character->get_position(), range);
+    return static_cast<int>(
+        std::count_if(nearby.begin(), nearby.end(), [character, clan_id](Player* other) {
+            return other->get_id() != character->get_id() && other->get_clan_id() == clan_id;
+        }));
+}
+
 
 int World::handle_successful_attack(Character* attacker, Character* target, int damage) {
     int defense = target->get_defense();
+
+    // bonus de clan
+    int clan_count =
+        get_nearby_clan_members_count(target, GameConfig::get_instance().get_bonus_range());
+    if (clan_count > 0) {
+        defense +=
+            static_cast<int>(defense * GameConfig::get_instance().get_bonus_factor() * clan_count);
+    }
+
     int real_damage = std::max(0, damage - defense);
     target->receive_damage(real_damage);
 
@@ -313,8 +353,8 @@ bool World::move_character(uint32_t character_id, Direction direction) {
         return false;
     }
 
-    if (dynamic_cast<NPC*>(character) && map.is_safe(next)) {
-        return false;  // Los NPCs no pueden entrar a zonas seguras
+    if (map.is_safe(next) && !character->can_enter_safe_zones()) {
+        return false;
     }
 
     if (is_position_occupied(next)) {
@@ -325,7 +365,15 @@ bool World::move_character(uint32_t character_id, Direction direction) {
     occupied[current.y][current.x] = false;
     character->set_position(next);
     occupied[next.y][next.x] = true;
+    character->set_direction(direction);
+    character->set_moving(true);
     return true;
+}
+
+void World::reset_player_movement() {
+    for (auto& [id, player] : players) {
+        player->set_moving(false);
+    }
 }
 
 bool World::teleport_player(uint32_t player_id, const Position& dest) {
@@ -345,34 +393,78 @@ bool World::teleport_player(uint32_t player_id, const Position& dest) {
     return true;
 }
 
-bool World::start_resurrection(uint32_t player_id) {
+CheatResult World::apply_cheat(uint32_t player_id, CheatType cheat) {
+    Player* player = get_player(player_id);
+    if (!player)
+        return {};
+
+    switch (cheat) {
+        case CheatType::HEAL_FULL:
+            if (player->is_dead())
+                return {};
+            player->heal(player->get_max_hp());
+            return {true, false};
+
+        case CheatType::RESTORE_MANA:
+            if (player->is_dead())
+                return {};
+            player->restore_mana(player->get_max_mana());
+            return {true, false};
+
+        case CheatType::DIE:
+            if (player->is_dead())
+                return {};
+            player->receive_damage(player->get_max_hp() + 1);
+            return {true, true};
+
+        case CheatType::LEVEL_UP:
+            if (player->is_dead())
+                return {};
+            player->level_up();
+            return {true, false};
+
+        case CheatType::GIVE_GOLD:
+            player->add_gold(10000);
+            return {true, false};
+    }
+
+    return {};
+}
+
+MeditateStatus World::meditate(uint32_t player_id) {
+    Player* player = get_player(player_id);
+    if (!player || player->is_dead()) {
+        return MeditateStatus::PLAYER_DEAD;
+    }
+    player->start_meditating();
+    return player->is_meditating() ? MeditateStatus::SUCCESS : MeditateStatus::NO_MANA;
+}
+
+ResurrectStatus World::start_resurrection(uint32_t player_id) {
     Player* player = get_player(player_id);
     if (!player || !player->is_dead()) {
-        return false;
+        return ResurrectStatus::NOT_DEAD;
+    }
+
+    if (pending_resurrections.count(player_id)) {
+        return ResurrectStatus::ALREADY_RESURRECTING;
     }
 
     const City* closest_city = map.get_closest_city(player->get_position());
     if (!closest_city) {
-        return false;  // no hay ciudades
-    }
-
-    if (pending_resurrections.count(player_id)) {
-        return false;  // ya está en proceso de resurrección
+        return ResurrectStatus::NOT_DEAD;  // caso interno, no debería ocurrir con un mapa válido
     }
 
     Position priest_pos = closest_city->get_priest_position();
     Position player_pos = player->get_position();
 
-    // calculo distancia entre el jugador y el sacerdote para determinar el tiempo de espera antes
-    // de la resurrección
     int dx = priest_pos.x - player_pos.x;
     int dy = priest_pos.y - player_pos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
-
     float wait_time = distance * GameConfig::get_instance().get_resurrect_still_factor();
 
     pending_resurrections[player_id] = {wait_time, priest_pos};
-    return true;
+    return ResurrectStatus::SUCCESS;
 }
 
 void World::add_npc(std::unique_ptr<NPC> npc) {
@@ -399,10 +491,6 @@ std::vector<NPC*> World::get_npcs() {
     return active_npcs;
 }
 
-CityNPC* World::get_city_npc(uint32_t npc_id) {
-    return dynamic_cast<CityNPC*>(get_npc(npc_id));
-}
-
 Bank& World::get_bank() {
     return bank;
 }
@@ -423,7 +511,7 @@ std::vector<Player*> World::get_players_near(const Position& pos, float range) c
 InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPCInteraction type,
                                         const std::string& arg, int amount) {
     Player* player = get_player(player_id);
-    CityNPC* npc = get_city_npc(npc_id);
+    NPC* npc = get_npc(npc_id);
 
     if (!player || !npc)
         return InteractResult{InteractStatus::INVALID_TARGET};
@@ -443,15 +531,250 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 }
 
 
-// TODO(Pau): clanes
+Clan* World::create_clan(const std::string& name, uint32_t founder_id) {
+    if (get_clan_by_name(name) != nullptr) {
+        return nullptr;  // Ya existe un clan con ese nombre
+    }
+    uint32_t new_id = next_clan_id++;
+    auto clan = std::make_unique<Clan>(new_id, name, founder_id);
+    Clan* ptr = clan.get();
+    clans_by_id[new_id] = std::move(clan);
+    return ptr;
+}
+
+Clan* World::get_clan(uint32_t clan_id) {
+    auto it = clans_by_id.find(clan_id);
+    return (it != clans_by_id.end()) ? it->second.get() : nullptr;
+}
+
+Clan* World::get_clan_by_name(const std::string& name) {
+    for (const auto& [id, clan] : clans_by_id) {
+        if (clan->get_name() == name) {
+            return clan.get();
+        }
+    }
+    return nullptr;
+}
+
+
+bool World::resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
+                                       Player** founder_out, Clan** clan_out, Player** target_out,
+                                       ClanActionStatus* fail_status) {
+    Player* founder = get_player(founder_id);
+    Clan* clan = founder ? get_clan(founder->get_clan_id()) : nullptr;
+    if (!clan) {
+        *fail_status = ClanActionStatus::NOT_IN_CLAN;
+        return false;
+    }
+
+    Player* target = get_player_by_name(target_nick);
+    if (!target) {
+        *fail_status = ClanActionStatus::TARGET_OFFLINE;
+        return false;
+    }
+
+    *founder_out = founder;
+    *clan_out = clan;
+    *target_out = target;
+    return true;
+}
+
+ClanResult World::found_clan(uint32_t founder_id, const std::string& clan_name) {
+    Player* founder = get_player(founder_id);
+    if (!founder) {
+        return ClanResult(ClanActionStatus::INTERNAL_ERROR, clan_name);
+    }
+    if (clan_name.empty()) {
+        return ClanResult(ClanActionStatus::NAME_EMPTY, clan_name);
+    }
+    int min_level = GameConfig::get_instance().get_clan_min_level_to_found();
+    if (founder->get_level() < min_level) {
+        return ClanResult(ClanActionStatus::LEVEL_TOO_LOW, clan_name);
+    }
+    if (founder->get_clan_id() != 0) {
+        return ClanResult(ClanActionStatus::ALREADY_IN_CLAN, clan_name);
+    }
+
+    Clan* clan = create_clan(clan_name, founder_id);
+    if (!clan) {
+        return ClanResult(ClanActionStatus::NAME_TAKEN, clan_name);
+    }
+    founder->set_clan_id(clan->get_id());
+    return ClanResult(ClanActionStatus::SUCCESS, clan_name, founder->get_name());
+}
+
+ClanResult World::request_join_clan(uint32_t player_id, const std::string& clan_name) {
+    Player* player = get_player(player_id);
+    if (!player) {
+        return ClanResult(ClanActionStatus::INTERNAL_ERROR, clan_name);
+    }
+    if (player->get_clan_id() != 0) {
+        return ClanResult(ClanActionStatus::ALREADY_IN_CLAN, clan_name);
+    }
+
+    Clan* clan = get_clan_by_name(clan_name);
+    if (!clan) {
+        return ClanResult(ClanActionStatus::CLAN_NOT_FOUND, clan_name);
+    }
+    if (!clan->request_join(player_id)) {
+        ClanActionStatus status =
+            clan->is_full() ? ClanActionStatus::CLAN_FULL : ClanActionStatus::INTERNAL_ERROR;
+        return ClanResult(status, clan->get_name(), player->get_name());
+    }
+
+    ClanResult result(ClanActionStatus::SUCCESS, clan->get_name(), player->get_name());
+    Player* founder = get_player(clan->get_founder_id());
+    if (founder) {
+        result.other_player_id = founder->get_id();
+        result.other_nick = founder->get_name();
+    }
+    return result;
+}
+
+ClanResult World::accept_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
+    Clan* clan = nullptr;
+    Player* target = nullptr;
+    ClanActionStatus fail_status;
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
+    }
+    std::string founder_nick = founder_ptr->get_name();
+
+    if (!clan->accept(founder_id, target->get_id())) {
+        ClanActionStatus status = clan->get_founder_id() != founder_id ?
+                                      ClanActionStatus::NOT_FOUNDER :
+                                      ClanActionStatus::NOT_PENDING;
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
+    }
+
+    target->set_clan_id(clan->get_id());
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
+}
+
+ClanResult World::reject_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
+    Clan* clan = nullptr;
+    Player* target = nullptr;
+    ClanActionStatus fail_status;
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
+    }
+    std::string founder_nick = founder_ptr->get_name();
+
+    if (!clan->reject(founder_id, target->get_id())) {
+        ClanActionStatus status = clan->get_founder_id() != founder_id ?
+                                      ClanActionStatus::NOT_FOUNDER :
+                                      ClanActionStatus::NOT_PENDING;
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
+    }
+
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
+}
+
+ClanResult World::ban_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
+    Clan* clan = nullptr;
+    Player* target = nullptr;
+    ClanActionStatus fail_status;
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
+    }
+    std::string founder_nick = founder_ptr->get_name();
+
+    bool was_member = clan->is_member(target->get_id());
+    if (!clan->ban(founder_id, target->get_id())) {
+        ClanActionStatus status = clan->get_founder_id() != founder_id ?
+                                      ClanActionStatus::NOT_FOUNDER :
+                                      ClanActionStatus::TARGET_IS_SELF;
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
+    }
+
+    if (was_member) {
+        target->set_clan_id(0);
+    }
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
+}
+
+ClanResult World::kick_clan_member(uint32_t founder_id, const std::string& target_nick) {
+    Player* founder_ptr = nullptr;
+    Clan* clan = nullptr;
+    Player* target = nullptr;
+    ClanActionStatus fail_status;
+    if (!resolve_founder_and_target(founder_id, target_nick, &founder_ptr, &clan, &target,
+                                    &fail_status)) {
+        return ClanResult(fail_status, "", "", 0, target_nick);
+    }
+    std::string founder_nick = founder_ptr->get_name();
+
+    if (!clan->kick(founder_id, target->get_id())) {
+        ClanActionStatus status = clan->get_founder_id() != founder_id ?
+                                      ClanActionStatus::NOT_FOUNDER :
+                                      ClanActionStatus::NOT_PENDING;
+        return ClanResult(status, clan->get_name(), founder_nick, 0, target_nick);
+    }
+
+    target->set_clan_id(0);
+    return ClanResult(ClanActionStatus::SUCCESS, clan->get_name(), founder_nick, target->get_id(),
+                      target_nick);
+}
+
+ClanResult World::leave_clan(uint32_t player_id) {
+    Player* player = get_player(player_id);
+    Clan* clan = player ? get_clan(player->get_clan_id()) : nullptr;
+    if (!clan) {
+        return ClanResult(ClanActionStatus::NOT_IN_CLAN, "");
+    }
+
+    if (!clan->leave(player_id)) {
+        return ClanResult(ClanActionStatus::FOUNDER_CANNOT_LEAVE, clan->get_name(),
+                          player->get_name());
+    }
+
+    std::string clan_name = clan->get_name();
+    std::string player_nick = player->get_name();
+    player->set_clan_id(0);
+    return ClanResult(ClanActionStatus::SUCCESS, clan_name, player_nick);
+}
+
+ClanReviewResult World::review_clan(uint32_t founder_id) {
+    Player* founder = get_player(founder_id);
+    Clan* clan = founder ? get_clan(founder->get_clan_id()) : nullptr;
+    if (!clan) {
+        return {ClanActionStatus::NOT_IN_CLAN, "", {}, {}};
+    }
+    if (clan->get_founder_id() != founder_id) {
+        return {ClanActionStatus::NOT_FOUNDER, clan->get_name(), {}, {}};
+    }
+
+    ClanReviewResult result{ClanActionStatus::SUCCESS, clan->get_name(), {}, {}};
+    for (uint32_t mid : clan->get_members()) {
+        Player* m = get_player(mid);
+        result.members.push_back(
+            {mid, m ? m->get_name() : "", mid == clan->get_founder_id(), m != nullptr});
+    }
+    for (uint32_t pid : clan->get_pending()) {
+        Player* p = get_player(pid);
+        result.pending.push_back({pid, p ? p->get_name() : "", false, p != nullptr});
+    }
+    return result;
+}
+
 
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* attacker = get_character(attacker_id);
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
-        return AttackResult{attacker_id, target_id, 0, false,
-                            false,       false,     0, AttackStatus::INVALID_TARGET};
+        return AttackResult{
+            attacker_id,        target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
+            AttackType::NORMAL, "",        0};
     }
 
     AttackType attack_type = AttackType::NORMAL;
@@ -464,16 +787,23 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     AttackStatus status = validate_attack_conditions(attacker, target);
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,      false,       false,
-                            false,       0,         status, attack_type, attack_name};
+        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
+                            0,           status,    attack_type, attack_name, 0};
     }
     status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,      false,       false,
-                            false,       0,         status, attack_type, attack_name};
+        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
+                            0,           status,    attack_type, attack_name, 0};
     }
 
     int base_damage = attacker->calculate_base_damage();
+
+    // Bonificación de ataque por compañeros de clan cercanos (ej. +10% por miembro, rango 5 tiles)
+    int clan_count = get_nearby_clan_members_count(attacker, 5.0f);
+    if (clan_count > 0) {
+        base_damage += static_cast<int>(base_damage * 0.1f * clan_count);
+    }
+
     bool is_critical = GameFormulas::calculate_critical_attack();
 
     if (is_critical) {
@@ -492,8 +822,17 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id, target_id, real_damage,           evaded,      died,
-                        false,       0,         AttackStatus::SUCCESS, attack_type, attack_name};
+    return AttackResult{attacker_id,
+                        target_id,
+                        real_damage,
+                        evaded,
+                        died,
+                        false,
+                        0,
+                        AttackStatus::SUCCESS,
+                        attack_type,
+                        attack_name,
+                        target->get_clan_id()};
 }
 
 AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
@@ -501,35 +840,36 @@ AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!healer || !target) {
-        return AttackResult{healer_id, target_id, 0, false,
-                            false,     false,     0, AttackStatus::INVALID_TARGET};
+        return AttackResult{
+            healer_id,         target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
+            AttackType::MAGIC, "",        0};
     }
 
     AttackType attack_type = AttackType::MAGIC;
     std::string attack_name = healer->get_attack_name();
 
     if (healer->is_dead() || target->is_dead()) {
-        return AttackResult{healer_id, target_id,          0,           false,      false, false,
-                            0,         AttackStatus::DEAD, attack_type, attack_name};
+        return AttackResult{healer_id, target_id,          0,           false,       false, false,
+                            0,         AttackStatus::DEAD, attack_type, attack_name, 0};
     }
 
     if (!is_in_range_for_attack(healer, target)) {
-        return AttackResult{healer_id,   target_id,  0, false,
-                            false,       false,      0, AttackStatus::OUT_OF_RANGE,
-                            attack_type, attack_name};
+        return AttackResult{healer_id,   target_id,   0, false,
+                            false,       false,       0, AttackStatus::OUT_OF_RANGE,
+                            attack_type, attack_name, 0};
     }
 
     AttackStatus status = healer->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{healer_id, target_id, 0,      false,       false,
-                            false,     0,         status, attack_type, attack_name};
+        return AttackResult{healer_id, target_id, 0,           false,       false, false,
+                            0,         status,    attack_type, attack_name, 0};
     }
 
     int potential_healing = healer->calculate_base_healing();
     int actual_healing = target->heal(potential_healing);
     return AttackResult{
-        healer_id,   target_id,  0, false, false, true, actual_healing, AttackStatus::SUCCESS,
-        attack_type, attack_name};
+        healer_id,   target_id,   0, false, false, true, actual_healing, AttackStatus::SUCCESS,
+        attack_type, attack_name, 0};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
@@ -639,9 +979,17 @@ AttackResult World::npc_attack(NPC* npc, Character* target) {
         handle_target_death(npc, target);
     }
 
-    return AttackResult{
-        attacker_id,           target_id,          real_damage, evaded, died, false, 0,
-        AttackStatus::SUCCESS, AttackType::NORMAL, attack_name};
+    return AttackResult{attacker_id,
+                        target_id,
+                        real_damage,
+                        evaded,
+                        died,
+                        false,
+                        0,
+                        AttackStatus::SUCCESS,
+                        AttackType::NORMAL,
+                        attack_name,
+                        target->get_clan_id()};
 }
 
 std::optional<Position> World::find_random_spawn_position(

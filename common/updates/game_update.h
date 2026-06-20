@@ -22,9 +22,12 @@ enum class UpdateType : uint8_t {
     ATTACKED,
     REVIVE,
     INVENTORY,
+    CLAN_RESULT,
+    CLAN_REVIEW,
     CATALOG,
-    CHAT_MSG,    // chat de jugador → jugadores (broadcast con sender_nick)
-    SYSTEM_MSG,  // mensaje del sistema dirigido a 1 jugador (NPCs, errores semánticos)
+    NPC_INTERACT,  // resultado de interacción con NPC (compra/venta/curar/etc.)
+    CHAT_MSG,      // chat de jugador → jugadores (broadcast con sender_nick)
+    SYSTEM_MSG,    // mensaje del sistema dirigido a 1 jugador (NPCs, errores semánticos)
 };
 
 class GameUpdate {

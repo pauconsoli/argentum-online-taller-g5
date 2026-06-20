@@ -2,13 +2,17 @@
 #define NPC_H
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/direction.h"
+#include "common/npc_interact_result.h"
+#include "common/npc_interaction.h"
 #include "common/position.h"
 #include "server/game/character.h"
-#include "common/npc_type.h"
+#include "server/game/npcs/npc_type.h"
 
+class Bank;
 class Player;
 
 enum class NPCAction { STILL, CHASE, ATTACK };
@@ -24,8 +28,6 @@ class NPC: public Character {
     std::string name;
     NPCType npc_type;
     int defense;
-    Direction direction;
-    bool moving;
 
  public:
     NPC(uint32_t id, const std::string& name, NPCType npc_type, int level, int max_hp, int defense,
@@ -50,24 +52,15 @@ class NPC: public Character {
         return 0;
     }
 
-    const std::string& get_name() const;
+    bool can_enter_safe_zones() const override;
+
+    virtual InteractResult interact(NPCInteraction type, const std::string& arg, int amount,
+                                    Player& player, Bank& bank);
+
+    const std::string& get_name() const override;
 
     NPCType get_type() const {
         return npc_type;
-    }
-
-    Direction get_direction() const {
-        return direction;
-    }
-    void set_direction(Direction dir) {
-        direction = dir;
-    }
-
-    bool is_moving() const {
-        return moving;
-    }
-    void set_moving(bool is_moving) {
-        moving = is_moving;
     }
 };
 

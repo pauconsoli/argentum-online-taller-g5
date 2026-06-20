@@ -10,9 +10,11 @@
 #include "common/attack_result.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/death_update.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
 #include "game/game_config.h"
 #include "game/match.h"
+#include "game/player.h"
 #include "server.h"
 #include "world/world.h"
 
@@ -37,9 +39,9 @@ void GameLoopThread::run() {
         while (should_keep_running()) {
 
             server.for_each_match([this, tick_seconds, tick_id](Match& match) {
-                match.tick();
-
                 World& world = match.get_world();
+                world.reset_player_movement();
+                match.tick();
                 auto attack_results = world.update(tick_seconds);
 
                 for (const auto& result : attack_results) {
@@ -51,10 +53,26 @@ void GameLoopThread::run() {
                         std::make_shared<AttackUpdate>(result, result.target_id);
                     match.send_update_to_player(result.target_id, update_for_target);
                     if (result.target_died) {
-                        // la muerte si se notifica a todos
                         auto death_update =
                             std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);
                         match.broadcast_update_to_all(death_update);
+
+                        Player* dead_player = world.get_player(result.target_id);
+                        if (dead_player) {
+                            std::vector<InventorySlotData> items_data;
+                            for (const auto& slot : dead_player->get_inventory().get_slots()) {
+                                if (slot.item) {
+                                    items_data.push_back({slot.item->get_name(),
+                                                          static_cast<uint32_t>(slot.quantity),
+                                                          slot.equipped_slot.has_value()});
+                                } else {
+                                    items_data.push_back({"", 0, false});
+                                }
+                            }
+                            auto inv_update = std::make_shared<InventoryUpdate>(
+                                result.target_id, std::move(items_data), dead_player->get_gold());
+                            match.send_update_to_player(result.target_id, inv_update);
+                        }
                     }
                 }
 
@@ -76,6 +94,9 @@ void GameLoopThread::run() {
                     ps.level = p->get_level();
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
+                    ps.clan_id = p->get_clan_id();
+                    ps.direction = static_cast<uint8_t>(p->get_direction());
+                    ps.is_moving = p->is_moving();
 
                     for (const auto& [slot, item] : p->get_equipment()) {
                         if (item) {

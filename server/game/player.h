@@ -37,6 +37,8 @@ class Player: public Character {
     int intelligence;
     int constitution;
 
+    uint32_t clan_id;
+
     bool meditating;
     float partial_hp_regen;
     float partial_mana_regen;
@@ -70,6 +72,8 @@ class Player: public Character {
 
     void add_experience(uint64_t amount) override;
 
+    bool can_enter_safe_zones() const override;
+
     bool is_healing_attack() const override;
     bool is_ranged_attack() const override;
     bool is_magic_attack() const override;
@@ -95,7 +99,7 @@ class Player: public Character {
     float get_partial_mana() const;
     void decrease_partial_mana(float mana);
 
-    const std::string& get_name() const;
+    const std::string& get_name() const override;
 
     PlayerRace get_race() const;
 
@@ -114,6 +118,10 @@ class Player: public Character {
     int get_intelligence() const;
 
     int get_constitution() const;
+
+    uint32_t get_clan_id() const override;
+
+    void set_clan_id(uint32_t new_clan_id);
 
     Inventory& get_inventory();
 

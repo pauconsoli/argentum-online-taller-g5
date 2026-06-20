@@ -7,11 +7,16 @@
 #include <arpa/inet.h>
 
 #include "common/attack_result.h"
+#include "common/clan/clan_action.h"
+#include "common/clan/clan_result.h"
+#include "common/clan/clan_review_result.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/catalog_update.h"
 #include "common/updates/chat_msg_update.h"
+#include "common/updates/clan_result_update.h"
+#include "common/updates/clan_review_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
@@ -20,8 +25,10 @@
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/moved_update.h"
+#include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
+#include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
 #include "common/updates/system_msg_update.h"
@@ -187,6 +194,13 @@ void ClientProtocol::send_meditate() {
     }
 }
 
+void ClientProtocol::send_resurrect() {
+    uint8_t op = ClientOpcode::RESURRECT;
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_resurrect: server closed connection");
+    }
+}
+
 void ClientProtocol::send_pick_up() {
     uint8_t op = ClientOpcode::PICK_UP;
     if (skt.sendall(&op, 1) == 0) {
@@ -234,6 +248,25 @@ void ClientProtocol::send_interact(uint32_t npc_id, NPCInteraction type, const s
     }
 }
 
+void ClientProtocol::send_clan_action(ClanAction action, const std::string& arg) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::CLAN);
+    put_u8(buf, static_cast<uint8_t>(action));
+    put_string(buf, arg);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_clan_action: server closed connection");
+    }
+}
+
+void ClientProtocol::send_cheat(CheatType cheat_type) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::CHEAT);
+    put_u8(buf, static_cast<uint8_t>(cheat_type));
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_cheat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_disconnect() {
     uint8_t op = ClientOpcode::DISCONNECT;
     if (skt.sendall(&op, 1) == 0) {
@@ -271,6 +304,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_attacked();
         case ServerOpcode::DEATH:
             return recv_death();
+        case ServerOpcode::REVIVE:
+            return recv_revive();
         case ServerOpcode::INVENTORY:
             return recv_inventory();
         case ServerOpcode::SNAPSHOT:
@@ -281,6 +316,12 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_chat_msg();
         case ServerOpcode::SYSTEM_MSG:
             return recv_system_msg();
+        case ServerOpcode::NPC_INTERACT:
+            return recv_npc_interact();
+        case ServerOpcode::CLAN_RESULT:
+            return recv_clan_result();
+        case ServerOpcode::CLAN_REVIEW:
+            return recv_clan_review();
         case ServerOpcode::ERROR:
             return recv_error();
         case ServerOpcode::CATALOG:
@@ -333,7 +374,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     uint32_t pid = recv_u32();
-    return std::make_unique<PlayerLeftUpdate>(pid);
+    return std::make_unique<PlayerLeftUpdate>(pid, "", 0);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
@@ -347,6 +388,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.heal_amount = recv_i32();
     r.type = static_cast<AttackType>(recv_u8());
     r.weapon_or_spell_name = recv_string();
+    r.status = static_cast<AttackStatus>(recv_u8());
     return std::make_unique<AttackUpdate>(r);
 }
 
@@ -354,6 +396,11 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
     uint32_t dead_id = recv_u32();
     uint32_t killer_id = recv_u32();
     return std::make_unique<DeathUpdate>(dead_id, killer_id);
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_revive() {
+    ResurrectStatus status = static_cast<ResurrectStatus>(recv_u8());
+    return std::make_unique<ReviveUpdate>(0, status);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
@@ -419,6 +466,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_snapshot() {
         p.level = recv_u16();
         p.is_ghost = (recv_u8() != 0);
         p.is_meditating = (recv_u8() != 0);
+        p.clan_id = recv_u32();
 
         uint8_t eq_count = recv_u8();
         p.equipment.reserve(eq_count);
@@ -482,6 +530,58 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_system_msg() {
     uint32_t target_player_id = recv_u32();
     std::string text = recv_string();
     return std::make_unique<SystemMsgUpdate>(target_player_id, std::move(text));
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_npc_interact() {
+    NPCInteraction type = static_cast<NPCInteraction>(recv_u8());
+    InteractStatus status = static_cast<InteractStatus>(recv_u8());
+    std::string item_name = recv_string();
+    uint64_t gold_amount = recv_u64();
+    InteractResult result(status, std::move(item_name), gold_amount);
+    return std::make_unique<NpcInteractUpdate>(0, type, std::move(result));
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_clan_result() {
+    uint8_t action_val = recv_u8();
+    uint8_t status_val = recv_u8();
+    std::string clan_name = recv_string();
+    std::string actor_nick = recv_string();
+    uint32_t other_player_id = recv_u32();
+    std::string other_nick = recv_string();
+    ClanAction action = static_cast<ClanAction>(action_val);
+    ClanResult result;
+    result.status = static_cast<ClanActionStatus>(status_val);
+    result.clan_name = std::move(clan_name);
+    result.actor_nick = std::move(actor_nick);
+    result.other_player_id = other_player_id;
+    result.other_nick = std::move(other_nick);
+    return std::make_unique<ClanResultUpdate>(0, action, result);
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_clan_review() {
+    std::string clan_name = recv_string();
+    uint16_t member_count = recv_u16();
+    std::vector<ClanMemberInfo> members;
+    members.reserve(member_count);
+    for (uint16_t i = 0; i < member_count; ++i) {
+        uint32_t pid = recv_u32();
+        std::string nick = recv_string();
+        bool is_founder = recv_u8() != 0;
+        bool is_online = recv_u8() != 0;
+        members.push_back({pid, std::move(nick), is_founder, is_online});
+    }
+    uint16_t pending_count = recv_u16();
+    std::vector<ClanMemberInfo> pending;
+    pending.reserve(pending_count);
+    for (uint16_t i = 0; i < pending_count; ++i) {
+        uint32_t pid = recv_u32();
+        std::string nick = recv_string();
+        bool is_founder = recv_u8() != 0;
+        bool is_online = recv_u8() != 0;
+        pending.push_back({pid, std::move(nick), is_founder, is_online});
+    }
+    return std::make_unique<ClanReviewUpdate>(0, std::move(clan_name), std::move(members),
+                                              std::move(pending));
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_error() {
