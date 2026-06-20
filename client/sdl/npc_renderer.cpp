@@ -1,27 +1,47 @@
 #include "npc_renderer.h"
 
-// Dibuja todos los NPCs con su animación correspondiente; los humanoides también tienen cabeza.
-void NPCRenderer::render_npcs(int tile_w, int tile_h) {
-    // cambia cada 150
+#include <algorithm>
+
+#include <SDL2/SDL.h>
+
+NPCRenderer::NPCRenderer(Renderer* renderer, SpriteManager* sprite_manager, const Camera& camera):
+    renderer_(renderer), sprite_manager_(sprite_manager), camera_(camera) {}
+
+void NPCRenderer::sync_from_snapshot(const std::vector<NPCSnapshot>& npcs) {
+    static const uint8_t kDirToRow[] = {1, 0, 2, 3};
+    for (const auto& ns : npcs) {
+        auto& anim = npc_anim_states_[ns.npc_id];
+        NPCVisualType new_type = npc_visual_type_from_network(ns.npc_type);
+        if (anim.sprite_type != new_type) {
+            anim.sprite_type = new_type;
+            anim.current_frame = 0;
+        }
+        anim.direction = (ns.direction < 4) ? kDirToRow[ns.direction] : 0;
+        anim.is_moving = ns.is_moving;
+    }
+    for (auto it = npc_anim_states_.begin(); it != npc_anim_states_.end();) {
+        bool found = std::any_of(npcs.begin(), npcs.end(),
+                                 [&](const auto& ns) { return ns.npc_id == it->first; });
+        if (!found)
+            it = npc_anim_states_.erase(it);
+        else
+            ++it;
+    }
+}
+
+void NPCRenderer::render(const std::map<uint32_t, NPCSnapshot>& npcs, int tile_w, int tile_h) {
     const Uint32 npc_frame_delay = 150;
-    for (auto& [nid, ns] : npcs_) {
-        // nid es el id del npc, ns es su estado (posicion, tipo, direccion, etc)
-
-        // y anim es el estado de animacion local (frame actual, ultima vez que cambio de frame, etc)
+    for (const auto& [nid, ns] : npcs) {
         auto& anim = npc_anim_states_[nid];
-
-        // si no existe, lo crea
-        SDL_Texture* npc_tex = sprite_manager->get_npc(anim.sprite_type);
+        SDL_Texture* npc_tex = sprite_manager_->get_npc(anim.sprite_type);
         if (!npc_tex)
             continue;
         NPCSpriteInfo info = npc_sprite_info(anim.sprite_type);
         int dir = static_cast<int>(anim.direction);
-
         if (dir > 3)
             dir = 0;
         int max_frames = info.fpd[dir];
 
-        // Avanza la animación sólo si el NPC está en movimiento.
         if (anim.is_moving) {
             Uint32 now = SDL_GetTicks();
             if (now - anim.last_frame_time > npc_frame_delay) {
@@ -33,32 +53,30 @@ void NPCRenderer::render_npcs(int tile_w, int tile_h) {
         }
 
         int frame = anim.current_frame % max_frames;
-        int px = camera.get_screen_x(ns.x * tile_w);
-        int py = camera.get_screen_y(ns.y * tile_h);
+        int px = camera_.get_screen_x(ns.x * tile_w);
+        int py = camera_.get_screen_y(ns.y * tile_h);
         int dw = (info.draw_w > 0) ? info.draw_w : info.fw;
         int dh = (info.draw_h > 0) ? info.draw_h : info.fh;
         int body_x = px + (tile_w - dw) / 2;
         int body_y = py + tile_h - dh;
-        renderer->draw_frame_scaled(npc_tex, frame * info.fw, dir * info.fh, info.fw, info.fh,
-                                    body_x, body_y, dw, dh);
+        renderer_->draw_frame_scaled(npc_tex, frame * info.fw, dir * info.fh, info.fw, info.fh,
+                                     body_x, body_y, dw, dh);
 
-        // NPCs humanoides (banquero, sacerdote, mercader) tienen cabeza separada.
         if (info.head_index > 0) {
             static const int body_row_to_head_row[] = {2, 0, 3, 1};
             static const int head_y_offset[] = {-13, -19, -18, -17};
             constexpr int head_w = 27;
             constexpr int head_h = 64;
-            SDL_Texture* head_tex = sprite_manager->get_head(info.head_index);
+            SDL_Texture* head_tex = sprite_manager_->get_head(info.head_index);
             if (head_tex) {
-                renderer->draw_frame(head_tex, 0, body_row_to_head_row[dir] * head_h, head_w,
-                                     head_h, body_x, body_y + head_y_offset[dir]);
+                renderer_->draw_frame(head_tex, 0, body_row_to_head_row[dir] * head_h, head_w,
+                                      head_h, body_x, body_y + head_y_offset[dir]);
             }
         }
     }
 }
 
-// datos de animacion x png
-static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
+NPCRenderer::NPCSpriteInfo NPCRenderer::npc_sprite_info(NPCVisualType t) {
     switch (t) {
         case NPCVisualType::BANKER:
             return {26, 46, {7, 7, 7, 7}};
@@ -86,13 +104,3 @@ static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
             return {32, 32, {1, 1, 1, 1}};
     }
 }
-
-// dimensiones del frame
-struct NPCSpriteInfo {
-    int fw;
-    int fh;
-    int fpd[4];
-    int draw_w = 0;
-    int draw_h = 0;
-    int head_index = 0;
-};

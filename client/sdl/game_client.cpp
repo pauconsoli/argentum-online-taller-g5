@@ -8,7 +8,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -27,30 +26,6 @@
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
 
-static ItemType get_item_type(const std::string& name) {
-    static const std::unordered_map<std::string, ItemType> table = {
-        {"Espada", ItemType::WEAPON},
-        {"Hacha", ItemType::WEAPON},
-        {"Martillo", ItemType::WEAPON},
-        {"Arco simple", ItemType::WEAPON},
-        {"Arco compuesto", ItemType::WEAPON},
-        {"Vara de fresno", ItemType::STAFF},
-        {"Báculo nudoso", ItemType::STAFF},
-        {"Báculo engarzado", ItemType::STAFF},
-        {"Flauta élfica", ItemType::STAFF},
-        {"Armadura de cuero", ItemType::ARMOR},
-        {"Armadura de placas", ItemType::ARMOR},
-        {"Túnica azul", ItemType::ARMOR},
-        {"Capucha", ItemType::HELMET},
-        {"Casco de hierro", ItemType::HELMET},
-        {"Sombrero mágico", ItemType::HELMET},
-        {"Escudo de tortuga", ItemType::SHIELD},
-        {"Escudo de hierro", ItemType::SHIELD},
-    };
-    auto it = table.find(name);
-    return it != table.end() ? it->second : ItemType::OTHER;
-}
-
 // esto deberia estar en sprite manager??
 static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
@@ -58,21 +33,6 @@ static std::string get_base_asset_dir() {
     }
     return "assets";
 }
-
-// esto deberia estar aca? o donde?
-static uint16_t head_index_for_race(uint8_t race) {
-    switch (race) {
-        case 1:
-            return 101;  // ELF
-        case 2:
-            return 300;  // DWARF
-        case 3:
-            return 400;  // GNOME
-        default:
-            return 1;  // HUMAN (y fallback)
-    }
-}
-
 
 // inicializa video + audio
 // esto deberia ir en audio manager o esta ok aca?
@@ -96,6 +56,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     mini_chat(nullptr),
     sprite_manager(nullptr),
     terrain_renderer_(nullptr),
+    npc_renderer_(nullptr),
     audio_manager(nullptr),
     client(std::make_unique<Client>(host, port)),
     camera(width, height),
@@ -115,12 +76,15 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     my_gold = 0;
     my_xp = 0;
     renderer = new Renderer(window);
+    character_renderer = new CharacterRenderer(renderer);
     std::string base_assets = get_base_asset_dir();
     std::string font_path = base_assets + "/fonts/font.ttf";
     sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
     terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
+    npc_renderer_ = new NPCRenderer(renderer, sprite_manager, camera);
+    player_renderer_ = new PlayerRenderer(character_renderer, sprite_manager, camera);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = std::make_unique<AudioManager>();
@@ -137,6 +101,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     mini_chat(nullptr),
     sprite_manager(nullptr),
     terrain_renderer_(nullptr),
+    npc_renderer_(nullptr),
     audio_manager(nullptr),
     client(std::move(c)),
     camera(width, height),
@@ -164,6 +129,8 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);
     terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
+    npc_renderer_ = new NPCRenderer(renderer, sprite_manager, camera);
+    player_renderer_ = new PlayerRenderer(character_renderer, sprite_manager, camera);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
     audio_manager = std::make_unique<AudioManager>();
@@ -177,6 +144,8 @@ GameClient::~GameClient() {
     delete hud;
     delete mini_chat;
     delete terrain_renderer_;
+    delete npc_renderer_;
+    delete player_renderer_;
     delete sprite_manager;
     audio_manager.reset();
     delete renderer;
@@ -252,8 +221,9 @@ void GameClient::run() {
             }
         }
 
-        render_players(config_.tile_width, config_.tile_height, direction_, current_frame_);
-        render_npcs(config_.tile_width, config_.tile_height);
+        player_renderer_->render(players, my_player_id, direction_, current_frame_,
+                                 inventory_slots_, config_.tile_width, config_.tile_height);
+        npc_renderer_->render(npcs_, config_.tile_width, config_.tile_height);
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
         hud->draw_inventory(sprite_manager, inventory_slots_, selected_slot_);
@@ -275,390 +245,209 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
     auto& update_queue = client->get_received_updates();
     std::unique_ptr<GameUpdate> update;
     while (update_queue.try_pop(update)) {
-
         switch (update->get_type()) {
-
-            case UpdateType::ERROR: {
-                // Filtra errores de movimiento (silenciosos) y traduce el resto al chat.
-                const auto& eu = static_cast<const ErrorUpdate&>(*update);
-                const auto& d = eu.detail;
-                if (d.find("move_player") != std::string::npos ||
-                    d.find("mover") != std::string::npos) {
-                    break;
-                }
-                if (d.find("muertos") != std::string::npos ||
-                    d.find("muerto") != std::string::npos || d.find("ghost") != std::string::npos ||
-                    d.find("fantasma") != std::string::npos) {
-                    mini_chat->add_message("No puedes atacar a un jugador muerto");
-                } else if (d.find("objetivo") != std::string::npos ||
-                           d.find("target") != std::string::npos ||
-                           d.find("attack") != std::string::npos) {
-                    mini_chat->add_message("Debes estar más cerca para atacar");
-                } else {
-                    mini_chat->add_message("Error: " + d);
-                }
+            case UpdateType::ERROR:
+                handle_error_update(static_cast<const ErrorUpdate&>(*update));
                 break;
-            }
-            case UpdateType::SNAPSHOT: {
-                // Reemplaza el estado completo del mundo: jugadores, NPCs e items del suelo.
-                const auto& snap = static_cast<const SnapshotUpdate&>(*update);
-                players.clear();
-                for (const auto& ps : snap.players) {
-                    players[ps.player_id] = ps;
-                    if (ps.player_id == my_player_id) {
-                        player_x = ps.x * tile_w;
-                        player_y = ps.y * tile_h;
-                        my_race = ps.race;
-                        my_klass = ps.klass;
-                        my_hp = ps.hp;
-                        my_mp = ps.mp;
-                        my_max_hp = ps.max_hp;
-                        my_max_mp = ps.max_mp;
-                        my_level = ps.level;
-                        my_gold = ps.gold;
-                        my_xp = ps.xp;
-                        my_is_ghost = ps.is_ghost;
-                    }
-                }
-                ground_items_ = snap.ground_items;
-                npcs_.clear();
-                for (const auto& ns : snap.npcs) npcs_[ns.npc_id] = ns;
-
-                // Actualizar estado de animación desde los datos de red.
-                // La conversión de dirección es obligatoria: el servidor manda
-                // UP=0,DOWN=1,LEFT=2,RIGHT=3 pero el spritesheet tiene filas en orden
-                // south=0,north=1,west=2,east=3.
-                static const uint8_t kDirToRow[] = {1, 0, 2, 3};
-                for (const auto& ns : snap.npcs) {
-                    auto& anim = npc_anim_states_[ns.npc_id];
-                    NPCVisualType new_type = npc_visual_type_from_network(ns.npc_type);
-                    if (anim.sprite_type != new_type) {
-                        if (new_type == NPCVisualType::UNKNOWN)
-                            std::cerr << "[NPC] id=" << ns.npc_id
-                                      << " tipo desconocido=" << ns.npc_type << "\n";
-                        else
-                            std::cerr << "[NPC] id=" << ns.npc_id << " tipo=" << ns.npc_type
-                                      << " dir=" << static_cast<int>(ns.direction)
-                                      << " moving=" << ns.is_moving << "\n";
-                        anim.sprite_type = new_type;
-                        anim.current_frame = 0;
-                    }
-                    anim.direction = (ns.direction < 4) ? kDirToRow[ns.direction] : 0;
-                    anim.is_moving = ns.is_moving;
-                }
-
-                // Limpia estados de animación de NPCs que ya no existen en el snapshot.
-                for (auto it = npc_anim_states_.begin(); it != npc_anim_states_.end();) {
-                    if (npcs_.find(it->first) == npcs_.end())
-                        it = npc_anim_states_.erase(it);
-                    else
-                        ++it;
-                }
+            case UpdateType::SNAPSHOT:
+                handle_snapshot_update(static_cast<const SnapshotUpdate&>(*update), tile_w, tile_h,
+                                       client_map);
                 break;
-            }
-            case UpdateType::PLAYER_LEFT: {
-                // Un jugador se desconectó: lo elimina del mapa local.
-                const auto& pu = static_cast<const PlayerLeftUpdate&>(*update);
-                players.erase(pu.player_id);
+            case UpdateType::PLAYER_LEFT:
+                handle_player_left_update(static_cast<const PlayerLeftUpdate&>(*update));
                 break;
-            }
-            case UpdateType::WORLD_MAP: {
-                // El servidor mandó el mapa completo; lo reemplaza en el cliente.
-                const auto& mu = static_cast<const WorldMapUpdate&>(*update);
-                std::vector<MapCell> map_cells;
-                map_cells.reserve(mu.cells.size());
-                std::transform(
-                    mu.cells.begin(), mu.cells.end(), std::back_inserter(map_cells),
-                    [](const auto& c) {
-                        return MapCell{static_cast<TerrainType>(c.terrain_type), c.blocking};
-                    });
-                client_map = ClientMap(mu.width, mu.height, std::move(map_cells));
+            case UpdateType::WORLD_MAP:
+                handle_world_map_update(static_cast<const WorldMapUpdate&>(*update), client_map);
                 break;
-            }
-            case UpdateType::INVENTORY: {
-                // Actualiza el inventario y el oro del jugador local.
-                const auto& iu = static_cast<const InventoryUpdate&>(*update);
-                inventory_slots_ = iu.get_items();
-                my_gold = iu.get_gold();
+            case UpdateType::INVENTORY:
+                handle_inventory_update(static_cast<const InventoryUpdate&>(*update));
                 break;
-            }
-            case UpdateType::ATTACKED: {
-                // Muestra el resultado del ataque en el chat y reproduce el sonido correcto.
-                const auto& au = static_cast<const AttackUpdate&>(*update);
-                const AttackResult& r = au.get_result();
-                if (r.evaded) {
-                    mini_chat->add_message("Ataque esquivado");
-                } else if (r.attacker_id == my_player_id) {
-                    std::string target_name = "";
-                    auto player_it = players.find(r.target_id);
-                    if (player_it != players.end()) {
-                        target_name = player_it->second.nick;
-                    } else {
-                        auto npc_it = npcs_.find(r.target_id);
-                        if (npc_it != npcs_.end()) {
-                            target_name = npc_it->second.name;
-                        }
-                    }
-
-                    if (r.is_healing) {
-                        mini_chat->add_message(r.weapon_or_spell_name + ": curaste a " +
-                                               target_name + " por " +
-                                               std::to_string(r.heal_amount) + " puntos");
-                    } else if (!r.target_died) {
-                        mini_chat->add_message(r.weapon_or_spell_name + ": causaste " +
-                                               std::to_string(r.damage) + " de daño a " +
-                                               target_name);
-                    }
-                } else if (r.target_id == my_player_id) {
-                    if (r.is_healing) {
-                        std::string healer_name = "";
-                        auto player_it = players.find(r.attacker_id);
-                        if (player_it != players.end()) {
-                            healer_name = player_it->second.nick;
-                        } else {
-                            auto npc_it = npcs_.find(r.attacker_id);
-                            if (npc_it != npcs_.end()) {
-                                healer_name = npc_it->second.name;
-                            }
-                        }
-                        mini_chat->add_message(healer_name + " te curó " +
-                                               std::to_string(r.heal_amount) + " puntos de vida");
-                    } else if (!r.target_died) {
-                        mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
-                                               " de daño");
-                    }
-                }
-
-                switch (r.type) {
-                    case AttackType::NORMAL:
-                        if (!r.evaded && r.damage > 0)
-                            audio_manager->play_sound("melee_hit");
-                        break;
-                    case AttackType::RANGED:
-                        audio_manager->play_sound("ranged_attack");
-                        break;
-                    case AttackType::MAGIC:
-                        if (r.is_healing) {
-                            // heal.wav no existe en assets; curación sin audio por ahora
-                        } else {
-                            std::string lname = r.weapon_or_spell_name;
-                            std::transform(
-                                lname.begin(), lname.end(), lname.begin(),
-                                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-                            if (lname.find("explos") != std::string::npos)
-                                audio_manager->play_sound("explosion");
-                            // magic_attack.wav no existe; otros hechizos sin audio por ahora
-                        }
-                        break;
-                }
+            case UpdateType::ATTACKED:
+                handle_attack_update(static_cast<const AttackUpdate&>(*update));
                 break;
-            }
-            case UpdateType::DEATH: {
-                // Muerte propia: avisa al jugador. Muerte ajena: sonido atenuado por distancia.
-                const auto& du = static_cast<const DeathUpdate&>(*update);
-                if (du.get_dead_id() == my_player_id) {
-                    mini_chat->add_message("Moriste. Dirigite al sacerdote para resucitar");
-                    audio_manager->play_sound("death");
-                } else {
-                    int vol = MIX_MAX_VOLUME;
-                    uint32_t dead_id = du.get_dead_id();
-                    int dead_tx = -1, dead_ty = -1;
-                    auto pit = players.find(dead_id);
-                    if (pit != players.end()) {
-                        const auto& dead_player_snapshot = pit->second;
-                        dead_tx = dead_player_snapshot.x;
-                        dead_ty = dead_player_snapshot.y;
-                        if (du.get_killer_id() == my_player_id) {
-                            mini_chat->add_message("Mataste a " + dead_player_snapshot.nick);
-                        } else {
-                            mini_chat->add_message("Un jugador murio en combate");
-                        }
-                    } else {
-                        auto nit = npcs_.find(dead_id);
-                        if (nit != npcs_.end()) {
-                            const auto& dead_npc_snapshot = nit->second;
-                            dead_tx = dead_npc_snapshot.x;
-                            dead_ty = dead_npc_snapshot.y;
-                            if (du.get_killer_id() == my_player_id) {
-                                mini_chat->add_message("Mataste a " + dead_npc_snapshot.name);
-                            } else {
-                                mini_chat->add_message("Un NPC murió en combate");
-                            }
-                        }
-                    }
-                    if (dead_tx >= 0) {
-                        int dx = dead_tx - player_x / tile_w;
-                        int dy = dead_ty - player_y / tile_h;
-                        float dist = std::sqrt(static_cast<float>(dx * dx + dy * dy));
-                        constexpr float kMaxDist = 20.0f;
-                        vol = (dist >= kMaxDist) ?
-                                  0 :
-                                  static_cast<int>((1.0f - dist / kMaxDist) * MIX_MAX_VOLUME);
-                    }
-                    audio_manager->play_sound("death", vol);
-                }
+            case UpdateType::DEATH:
+                handle_death_update(static_cast<const DeathUpdate&>(*update), tile_w, tile_h);
                 break;
-            }
-            case UpdateType::CHAT_MSG: {
-                // Mensaje de chat recibido del servidor: lo muestra en el mini_chat.
-                // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
-                const auto& message = static_cast<const ChatMsgUpdate&>(*update);
-                mini_chat->add_message(message.sender_nick + ": " + message.text);
+            case UpdateType::CHAT_MSG:
+                handle_chat_msg_update(static_cast<const ChatMsgUpdate&>(*update));
                 break;
-            }
             default:
                 break;
         }
     }
 }
 
+void GameClient::handle_error_update(const ErrorUpdate& eu) {
+    const auto& d = eu.detail;
+    if (d.find("move_player") != std::string::npos || d.find("mover") != std::string::npos)
+        return;
+    if (d.find("muertos") != std::string::npos || d.find("muerto") != std::string::npos ||
+        d.find("ghost") != std::string::npos || d.find("fantasma") != std::string::npos) {
+        mini_chat->add_message("No puedes atacar a un jugador muerto");
+    } else if (d.find("objetivo") != std::string::npos || d.find("target") != std::string::npos ||
+               d.find("attack") != std::string::npos) {
+        mini_chat->add_message("Debes estar más cerca para atacar");
+    } else {
+        mini_chat->add_message("Error: " + d);
+    }
+}
 
-// Dibuja todos los jugadores: cuerpo animado + cabeza + items equipados visibles + nickname.
-void GameClient::render_players(int tile_w, int tile_h, int direction, int current_frame) {
-
-    // Itera sobre todos los jugadores conocidos (pid = id, ps = estado del jugador).
-    for (const auto& [pid, ps] : players) {
-
-        // Convierte la posición en tiles a coordenadas de pantalla relativas a la cámara.
-        int px = camera.get_screen_x(ps.x * tile_w);
-        int py = camera.get_screen_y(ps.y * tile_h);
-
-        // Obtiene la textura del cuerpo según la raza y clase del jugador.
-
-        SDL_Texture* body_texture = sprite_manager->get_body(ps.race, ps.klass);
-        // Obtiene la textura de la cabeza según el índice de sprite que corresponde a su raza.
-        SDL_Texture* head_texture = sprite_manager->get_head(head_index_for_race(ps.race));
-
-        // Solo el jugador local usa la dirección real; los remotos miran hacia abajo (dirección 0).
-        int player_direction = (pid == my_player_id) ? direction : 0;
-
-        // Solo el jugador local avanza frames de animación; los remotos se fijan en frame 0.
-        int player_frame = (pid == my_player_id) ? current_frame : 0;
-
-        // Dibuja cuerpo + cabeza en pantalla; is_ghost afecta la opacidad del render.
-        character_renderer->draw_character(body_texture, head_texture, px, py, player_direction,
-                                           player_frame, ps.is_ghost);
-
-        // Los items equipados y el nickname solo se renderizan para el jugador local.
-        if (pid == my_player_id) {
-            // Recorre todos los slots del inventario buscando items que estén equipados.
-            for (const auto& islot : inventory_slots_) {
-                // Salta slots vacíos o sin item equipado.
-                if (!islot.is_equipped || islot.item_name.empty())
-                    continue;
-
-                // Determina el tipo de item (arma, escudo, casco…) a partir de su nombre.
-                ItemType itype = get_item_type(islot.item_name);
-
-                // Obtiene la textura SDL del sprite del item por nombre.
-                SDL_Texture* itex =
-                    sprite_manager->get_item(SpriteManager::item_key_for_name(islot.item_name));
-                // Si no hay textura cargada para este item, lo omite.
-                if (!itex)
-                    continue;
-                // Superpone el sprite del item equipado sobre el personaje.
-                character_renderer->draw_equipped_item(px, py, itex, itype, tile_w);
-            }
-            // Dibuja el nickname centrado, un poco por encima de la cabeza del jugador.
+void GameClient::handle_snapshot_update(const SnapshotUpdate& snap, int tile_w, int tile_h,
+                                        ClientMap& /*client_map*/) {
+    players.clear();
+    for (const auto& ps : snap.players) {
+        players[ps.player_id] = ps;
+        if (ps.player_id == my_player_id) {
+            player_x = ps.x * tile_w;
+            player_y = ps.y * tile_h;
+            my_race = ps.race;
+            my_klass = ps.klass;
+            my_hp = ps.hp;
+            my_mp = ps.mp;
+            my_max_hp = ps.max_hp;
+            my_max_mp = ps.max_mp;
+            my_level = ps.level;
+            my_gold = ps.gold;
+            my_xp = ps.xp;
+            my_is_ghost = ps.is_ghost;
         }
-        character_renderer->draw_nickname(ps.nick, px, py);
     }
+    ground_items_ = snap.ground_items;
+    npcs_.clear();
+    for (const auto& ns : snap.npcs) npcs_[ns.npc_id] = ns;
+    npc_renderer_->sync_from_snapshot(snap.npcs);
 }
 
-struct NPCSpriteInfo {
-    int fw;
-    int fh;
-    int fpd[4];
-    int draw_w = 0;
-    int draw_h = 0;
-    int head_index = 0;
-};
-
-static NPCSpriteInfo npc_sprite_info(NPCVisualType t) {
-    switch (t) {
-        case NPCVisualType::BANKER:
-            return {26, 46, {7, 7, 7, 7}};
-        case NPCVisualType::PRIEST:
-            return {27, 47, {6, 6, 5, 5}, 0, 0, 3};
-        case NPCVisualType::MERCHANT:
-            return {27, 47, {6, 6, 5, 5}, 0, 0, 30};
-        case NPCVisualType::GOBLIN:
-            return {32, 32, {6, 6, 6, 6}};
-        case NPCVisualType::SKELETON:
-            return {25, 52, {6, 6, 5, 5}};
-        case NPCVisualType::ZOMBIE:
-            return {128, 128, {6, 6, 6, 4}};
-        case NPCVisualType::SPIDER:
-            return {128, 128, {8, 8, 8, 8}};
-        case NPCVisualType::ORC:
-            return {24, 52, {6, 6, 5, 5}};
-        case NPCVisualType::GOLEM_ICE:
-            return {128, 128, {8, 8, 8, 8}, 64, 64};
-        case NPCVisualType::GOLEM_STONE:
-            return {128, 128, {8, 8, 8, 8}, 64, 64};
-        case NPCVisualType::GOLEM_INFERNAL:
-            return {128, 128, {8, 8, 8, 8}, 64, 64};
-        default:
-            return {32, 32, {1, 1, 1, 1}};
-    }
+void GameClient::handle_player_left_update(const PlayerLeftUpdate& pu) {
+    players.erase(pu.player_id);
 }
 
-// Dibuja todos los NPCs con su animación correspondiente; los humanoides también tienen cabeza.
-void GameClient::render_npcs(int tile_w, int tile_h) {
-    // cambia cada 150
-    const Uint32 npc_frame_delay = 150;
-    for (auto& [nid, ns] : npcs_) {
-        // nid es el id del npc, ns es su estado (posicion, tipo, direccion, etc)
+void GameClient::handle_world_map_update(const WorldMapUpdate& mu, ClientMap& client_map) {
+    std::vector<MapCell> map_cells;
+    map_cells.reserve(mu.cells.size());
+    std::transform(mu.cells.begin(), mu.cells.end(), std::back_inserter(map_cells),
+                   [](const auto& c) {
+                       return MapCell{static_cast<TerrainType>(c.terrain_type), c.blocking};
+                   });
+    client_map = ClientMap(mu.width, mu.height, std::move(map_cells));
+}
 
-        // y anim es el estado de animacion local (frame actual, ultima vez que cambio de frame, etc)
-        auto& anim = npc_anim_states_[nid];
+void GameClient::handle_inventory_update(const InventoryUpdate& inventory_updated) {
+    inventory_slots_ = inventory_updated.get_items();
+    my_gold = inventory_updated.get_gold();
+}
 
-        // si no existe, lo crea
-        SDL_Texture* npc_tex = sprite_manager->get_npc(anim.sprite_type);
-        if (!npc_tex)
-            continue;
-        NPCSpriteInfo info = npc_sprite_info(anim.sprite_type);
-        int dir = static_cast<int>(anim.direction);
-
-        if (dir > 3)
-            dir = 0;
-        int max_frames = info.fpd[dir];
-
-        // Avanza la animación sólo si el NPC está en movimiento.
-        if (anim.is_moving) {
-            Uint32 now = SDL_GetTicks();
-            if (now - anim.last_frame_time > npc_frame_delay) {
-                anim.current_frame = (anim.current_frame + 1) % max_frames;
-                anim.last_frame_time = now;
-            }
+void GameClient::handle_attack_update(const AttackUpdate& atack_updated) {
+    const AttackResult& result = atack_updated.get_result();
+    if (result.evaded) {
+        mini_chat->add_message("Ataque esquivado");
+    } else if (result.attacker_id == my_player_id) {
+        std::string target_name;
+        auto player_it = players.find(result.target_id);
+        if (player_it != players.end()) {
+            target_name = player_it->second.nick;
         } else {
-            anim.current_frame = 0;
+            auto npc_it = npcs_.find(result.target_id);
+            if (npc_it != npcs_.end())
+                target_name = npc_it->second.name;
         }
-
-        int frame = anim.current_frame % max_frames;
-        int px = camera.get_screen_x(ns.x * tile_w);
-        int py = camera.get_screen_y(ns.y * tile_h);
-        int dw = (info.draw_w > 0) ? info.draw_w : info.fw;
-        int dh = (info.draw_h > 0) ? info.draw_h : info.fh;
-        int body_x = px + (tile_w - dw) / 2;
-        int body_y = py + tile_h - dh;
-        renderer->draw_frame_scaled(npc_tex, frame * info.fw, dir * info.fh, info.fw, info.fh,
-                                    body_x, body_y, dw, dh);
-
-        // NPCs humanoides (banquero, sacerdote, mercader) tienen cabeza separada.
-        if (info.head_index > 0) {
-            static const int body_row_to_head_row[] = {2, 0, 3, 1};
-            static const int head_y_offset[] = {-13, -19, -18, -17};
-            constexpr int head_w = 27;
-            constexpr int head_h = 64;
-            SDL_Texture* head_tex = sprite_manager->get_head(info.head_index);
-            if (head_tex) {
-                renderer->draw_frame(head_tex, 0, body_row_to_head_row[dir] * head_h, head_w,
-                                     head_h, body_x, body_y + head_y_offset[dir]);
+        if (result.is_healing) {
+            mini_chat->add_message(result.weapon_or_spell_name + ": curaste a " + target_name +
+                                   " por " + std::to_string(result.heal_amount) + " puntos");
+        } else if (!result.target_died) {
+            mini_chat->add_message(result.weapon_or_spell_name + ": causaste " +
+                                   std::to_string(result.damage) + " de daño a " + target_name);
+        }
+    } else if (result.target_id == my_player_id) {
+        if (result.is_healing) {
+            std::string healer_name;
+            auto player_it = players.find(result.attacker_id);
+            if (player_it != players.end()) {
+                healer_name = player_it->second.nick;
+            } else {
+                auto npc_it = npcs_.find(result.attacker_id);
+                if (npc_it != npcs_.end())
+                    healer_name = npc_it->second.name;
             }
+            mini_chat->add_message(healer_name + " te curó " + std::to_string(result.heal_amount) +
+                                   " puntos de vida");
+        } else if (!result.target_died) {
+            mini_chat->add_message("Recibiste " + std::to_string(result.damage) + " de daño");
         }
     }
+    play_attack_sound(result);
 }
+
+void GameClient::play_attack_sound(const AttackResult& result) {
+    switch (result.type) {
+        case AttackType::NORMAL:
+            if (!result.evaded && result.damage > 0)
+                audio_manager->play_sound("melee_hit");
+            break;
+        case AttackType::RANGED:
+            audio_manager->play_sound("ranged_attack");
+            break;
+        case AttackType::MAGIC:
+            if (!result.is_healing) {
+                std::string lname = result.weapon_or_spell_name;
+                std::transform(lname.begin(), lname.end(), lname.begin(),
+                               [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                if (lname.find("explos") != std::string::npos)
+                    audio_manager->play_sound("explosion");
+                // magic_attack.wav no existe; otros hechizos sin audio por ahora
+            }
+            // heal.wav no existe en assets; curacion sin audio por ahora
+            break;
+    }
+}
+
+void GameClient::handle_death_update(const DeathUpdate& death_updated, int tile_w, int tile_h) {
+    if (death_updated.get_dead_id() == my_player_id) {
+        mini_chat->add_message("Moriste. Dirigite al sacerdote para resucitar");
+        audio_manager->play_sound("death");
+        return;
+    }
+
+    int vol = MIX_MAX_VOLUME;
+    uint32_t dead_id = death_updated.get_dead_id();
+    int dead_tx = -1, dead_ty = -1;
+
+    auto pit = players.find(dead_id);
+    if (pit != players.end()) {
+        const auto& snap = pit->second;
+        dead_tx = snap.x;
+        dead_ty = snap.y;
+        if (death_updated.get_killer_id() == my_player_id)
+            mini_chat->add_message("Mataste a " + snap.nick);
+        else
+            mini_chat->add_message("Un jugador murio en combate");
+    } else {
+        auto nit = npcs_.find(dead_id);
+        if (nit != npcs_.end()) {
+            const auto& snap = nit->second;
+            dead_tx = snap.x;
+            dead_ty = snap.y;
+            if (death_updated.get_killer_id() == my_player_id)
+                mini_chat->add_message("Mataste a " + snap.name);
+            else
+                mini_chat->add_message("Un NPC murió en combate");
+        }
+    }
+
+    if (dead_tx >= 0) {
+        int dx = dead_tx - player_x / tile_w;
+        int dy = dead_ty - player_y / tile_h;
+        float dist = std::sqrt(static_cast<float>(dx * dx + dy * dy));
+        constexpr float kMaxDist = 20.0f;
+        vol = (dist >= kMaxDist) ? 0 : static_cast<int>((1.0f - dist / kMaxDist) * MIX_MAX_VOLUME);
+    }
+    audio_manager->play_sound("death", vol);
+}
+
+void GameClient::handle_chat_msg_update(const ChatMsgUpdate& msg) {
+    mini_chat->add_message(msg.sender_nick + ": " + msg.text);
+}
+
 
 // Carga todos los efectos de sonido del juego en el AudioManager.
 void GameClient::load_audio_assets() {

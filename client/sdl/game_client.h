@@ -15,11 +15,19 @@ class ClientMap;
 #include "audio_manager.h"
 #include "camera.h"
 #include "character_renderer.h"
+#include "common/updates/attack_update.h"
+#include "common/updates/chat_msg_update.h"
+#include "common/updates/death_update.h"
+#include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
+#include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/world_map_update.h"
 #include "hud.h"
 #include "input_handler.h"
 #include "mini_chat.h"
+#include "npc_renderer.h"
+#include "player_renderer.h"
 #include "renderer.h"
 #include "sdl_config.h"
 #include "sprite_manager.h"
@@ -35,6 +43,8 @@ class GameClient {
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
     TerrainRenderer* terrain_renderer_;
+    NPCRenderer* npc_renderer_;
+    PlayerRenderer* player_renderer_;
     std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
@@ -58,15 +68,6 @@ class GameClient {
     std::vector<GroundItemSnapshot> ground_items_;
     std::vector<InventorySlotData> inventory_slots_;
     std::map<uint32_t, NPCSnapshot> npcs_;
-
-    struct NPCAnimState {
-        int current_frame = 0;
-        Uint32 last_frame_time = 0;
-        NPCVisualType sprite_type = NPCVisualType::UNKNOWN;
-        uint8_t direction = 0;
-        bool is_moving = false;
-    };
-    std::map<uint32_t, NPCAnimState> npc_anim_states_;
 
     bool chat_active_ = false;
     std::string chat_input_;
@@ -100,8 +101,16 @@ class GameClient {
  private:
     void load_audio_assets();
     void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
-    void render_players(int tile_w, int tile_h, int direction, int current_frame);
-    void render_npcs(int tile_w, int tile_h);
+    void handle_error_update(const ErrorUpdate& eu);
+    void handle_snapshot_update(const SnapshotUpdate& snap, int tile_w, int tile_h,
+                                ClientMap& client_map);
+    void handle_player_left_update(const PlayerLeftUpdate& pu);
+    static void handle_world_map_update(const WorldMapUpdate& mu, ClientMap& client_map);
+    void handle_inventory_update(const InventoryUpdate& iu);
+    void handle_attack_update(const AttackUpdate& au);
+    void handle_death_update(const DeathUpdate& du, int tile_w, int tile_h);
+    void handle_chat_msg_update(const ChatMsgUpdate& msg);
+    void play_attack_sound(const AttackResult& r);
     void process_sdl_events();
     void process_keyword_input();
     void send_chat_message(const std::string& text);
