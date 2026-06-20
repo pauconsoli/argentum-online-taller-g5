@@ -129,6 +129,7 @@ class World {
     bool equip_item(uint32_t player_id, int slot_index);
 
     bool move_character(uint32_t character_id, Direction direction);
+    void reset_player_movement();
 
     bool teleport_player(uint32_t player_id, const Position& dest);
     ResurrectStatus start_resurrection(uint32_t player_id);

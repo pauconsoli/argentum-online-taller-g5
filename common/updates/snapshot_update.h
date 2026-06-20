@@ -26,6 +26,8 @@ struct PlayerSnapshot {
     bool is_meditating;
     uint32_t clan_id;
     std::vector<std::string> equipment;
+    uint8_t direction;
+    bool is_moving;
 };
 
 struct GroundItemSnapshot {

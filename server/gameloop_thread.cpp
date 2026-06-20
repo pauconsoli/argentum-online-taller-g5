@@ -39,9 +39,9 @@ void GameLoopThread::run() {
         while (should_keep_running()) {
 
             server.for_each_match([this, tick_seconds, tick_id](Match& match) {
-                match.tick();
-
                 World& world = match.get_world();
+                world.reset_player_movement();
+                match.tick();
                 auto attack_results = world.update(tick_seconds);
 
                 for (const auto& result : attack_results) {
@@ -95,6 +95,8 @@ void GameLoopThread::run() {
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
                     ps.clan_id = p->get_clan_id();
+                    ps.direction = static_cast<uint8_t>(p->get_direction());
+                    ps.is_moving = p->is_moving();
 
                     for (const auto& [slot, item] : p->get_equipment()) {
                         if (item) {

@@ -4,12 +4,7 @@
 
 NPC::NPC(uint32_t id, const std::string& name, NPCType npc_type, int level, int max_hp, int defense,
          const Position& pos):
-    Character(id, level, max_hp, pos),
-    name(name),
-    npc_type(npc_type),
-    defense(defense),
-    direction(Direction::DOWN),
-    moving(false) {}
+    Character(id, level, max_hp, pos), name(name), npc_type(npc_type), defense(defense) {}
 
 int NPC::get_defense() const {
     return defense;

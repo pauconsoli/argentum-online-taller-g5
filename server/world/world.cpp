@@ -365,7 +365,15 @@ bool World::move_character(uint32_t character_id, Direction direction) {
     occupied[current.y][current.x] = false;
     character->set_position(next);
     occupied[next.y][next.x] = true;
+    character->set_direction(direction);
+    character->set_moving(true);
     return true;
+}
+
+void World::reset_player_movement() {
+    for (auto& [id, player] : players) {
+        player->set_moving(false);
+    }
 }
 
 bool World::teleport_player(uint32_t player_id, const Position& dest) {

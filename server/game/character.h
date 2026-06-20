@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "common/attack_result.h"
+#include "common/direction.h"
 #include "common/position.h"
 #include "server/game/loot.h"
 
@@ -25,6 +26,9 @@ class Character {
     Position position;
 
     bool dead;
+
+    Direction direction;
+    bool moving;
 
  public:
     Character(uint32_t id, int level, int max_hp, const Position& position);
@@ -90,6 +94,20 @@ class Character {
 
     void set_position(const Position& new_position);
     void set_level(int new_level);
+
+    Direction get_direction() const {
+        return direction;
+    }
+    void set_direction(Direction dir) {
+        direction = dir;
+    }
+
+    bool is_moving() const {
+        return moving;
+    }
+    void set_moving(bool is_moving) {
+        moving = is_moving;
+    }
 };
 
 #endif
