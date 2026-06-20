@@ -34,9 +34,9 @@ class GameFormulas {
 
     // CÁLCULOS DE RECUPERACIÓN
 
-    static int calculate_health_recovery(const Player& player, float seconds);
-    static int calculate_time_mana_recovery(const Player& player, float seconds);
-    static int calculate_meditation_mana_recovery(const Player& player, float seconds);
+    static float calculate_health_recovery(const Player& player, float seconds);
+    static float calculate_time_mana_recovery(const Player& player, float seconds);
+    static float calculate_meditation_mana_recovery(const Player& player, float seconds);
 
     // SPAWN
 
@@ -48,8 +48,7 @@ class GameFormulas {
 
     static bool can_attack_by_level(int attacker_level, int target_level);
     static int calculate_damage(const Player& attacker, const Weapon* weapon = nullptr);
-    static int calculate_magic_damage(const Player& attacker, int min_damage, int max_damage);
-    static int calculate_npc_damage(int min_damage, int max_damage);
+    static int calculate_base_damage_in_range(int min_damage, int max_damage);
     static bool calculate_critical_attack();
     static bool calculate_evasion(const Character& target);
     static int calculate_defense(const Player& target);

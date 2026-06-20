@@ -19,6 +19,7 @@ struct AttackResult {
     AttackStatus status = AttackStatus::SUCCESS;
     AttackType type = AttackType::NORMAL;
     std::string weapon_or_spell_name = "";
+    uint32_t target_clan_id = 0;
 };
 
 #endif

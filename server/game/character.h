@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "common/attack_result.h"
+#include "common/direction.h"
 #include "common/position.h"
 #include "server/game/loot.h"
 
@@ -25,6 +26,9 @@ class Character {
     Position position;
 
     bool dead;
+
+    Direction direction;
+    bool moving;
 
  public:
     Character(uint32_t id, int level, int max_hp, const Position& position);
@@ -65,9 +69,13 @@ class Character {
         return AttackStatus::SUCCESS;
     }
 
+    virtual const std::string& get_name() const = 0;
+
+    virtual bool can_enter_safe_zones() const = 0;
+
     void receive_damage(int damage);
 
-    void heal(int amount);
+    int heal(int amount);
 
     bool is_dead() const;
 
@@ -78,10 +86,28 @@ class Character {
     int get_current_hp() const;
     int get_max_hp() const;
 
+    virtual uint32_t get_clan_id() const {
+        return 0;  // por defecto no tienen clan (npcs)
+    }
+
     const Position& get_position() const;
 
     void set_position(const Position& new_position);
     void set_level(int new_level);
+
+    Direction get_direction() const {
+        return direction;
+    }
+    void set_direction(Direction dir) {
+        direction = dir;
+    }
+
+    bool is_moving() const {
+        return moving;
+    }
+    void set_moving(bool is_moving) {
+        moving = is_moving;
+    }
 };
 
 #endif

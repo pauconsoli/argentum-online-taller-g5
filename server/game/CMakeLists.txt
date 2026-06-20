@@ -4,6 +4,7 @@ target_sources(taller_game
     character.cpp
     basic_match.cpp
     player.cpp
+    clan.cpp
     game_config.cpp
     game_formulas.cpp
     inventory.cpp
@@ -27,6 +28,7 @@ target_sources(taller_game
     character.h
     basic_match.h
     player.h
+    clan.h
     game_config.h
     game_formulas.h
     player_class.h

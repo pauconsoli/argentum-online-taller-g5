@@ -28,11 +28,14 @@ class ReceiverThread: public Thread {
     void handle_move();
     void handle_attack();
     void handle_meditate();
+    void handle_resurrect();
     void handle_pick_up();
     void handle_drop_item();
     void handle_equip_item();
     void handle_interact();
+    void handle_clan();
     void handle_chat();
+    void handle_cheat();
     void handle_leave_match();
 
     void send_error(uint8_t code, const std::string& detail);

@@ -10,7 +10,7 @@
 [race.human]
 hp_multiplier = 1.0
 mana_multiplier = 1.0
-recovery_factor = 1.0
+recovery_factor = 0.2
 strength = 10
 agility = 10
 intelligence = 10
@@ -19,7 +19,7 @@ constitution = 10
 [race.elf]
 hp_multiplier = 0.8
 mana_multiplier = 1.4
-recovery_factor = 1.2
+recovery_factor = 0.24
 strength = 7
 agility = 14
 intelligence = 14
@@ -28,7 +28,7 @@ constitution = 7
 [race.dwarf]
 hp_multiplier = 1.3
 mana_multiplier = 0.7
-recovery_factor = 0.9
+recovery_factor = 0.18
 strength = 14
 agility = 6
 intelligence = 8
@@ -37,7 +37,7 @@ constitution = 14
 [race.gnome]
 hp_multiplier = 1.1
 mana_multiplier = 1.3
-recovery_factor = 1.0
+recovery_factor = 0.2
 strength = 8
 agility = 8
 intelligence = 13
@@ -140,17 +140,19 @@ max_level_difference = 10
 
 [clan]
 max_members = 16
-min_level_to_found = 6
+min_level_to_found = 2
+bonus_factor = 0.1     #10%
+bonus_range = 5   #5 tiles
 
 # ---------------------------------
 # NPCs 
 # ---------------------------------
 
-[npc]
-drop_nothing_prob = 0.80
-drop_gold_prob = 0.08
-drop_potion_prob = 0.01
-drop_item_prob = 0.01
+[npc]   #CAMBIE LAS PROB PARA QUE VER QUE SI DROPEAN
+drop_nothing_prob = 0.10
+drop_gold_prob = 0.80
+drop_potion_prob = 0.05
+drop_item_prob = 0.05
 gold_drop_min_factor = 0.01   
 gold_drop_max_factor = 0.20
 population_limit = 15

@@ -1,7 +1,14 @@
 #include "character.h"
 
 Character::Character(uint32_t id, int level, int max_hp, const Position& position):
-    id(id), level(level), current_hp(max_hp), max_hp(max_hp), position(position), dead(false) {}
+    id(id),
+    level(level),
+    current_hp(max_hp),
+    max_hp(max_hp),
+    position(position),
+    dead(false),
+    direction(Direction::DOWN),
+    moving(false) {}
 
 void Character::receive_damage(int damage) {
     if (damage <= 0 || dead) {
@@ -16,16 +23,18 @@ void Character::receive_damage(int damage) {
     }
 }
 
-void Character::heal(int amount) {
+int Character::heal(int amount) {
     if (amount <= 0 || dead) {
-        return;
+        return 0;
     }
 
+    int old_hp = current_hp;
     current_hp += amount;
 
     if (current_hp > max_hp) {
         current_hp = max_hp;
     }
+    return current_hp - old_hp;
 }
 
 bool Character::is_dead() const {

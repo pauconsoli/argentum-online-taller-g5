@@ -50,5 +50,5 @@ target_sources(taller_common
     updates/inventory_update.h
     updates/catalog_update.h
     updates/chat_msg_update.h
-    updates/chat_message_update.h
+    updates/system_msg_update.h
     )

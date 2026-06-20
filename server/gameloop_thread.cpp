@@ -1,15 +1,20 @@
 #include "gameloop_thread.h"
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "common/updates/chat_message_update.h"
+#include "common/attack_result.h"
+#include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
 #include "game/game_config.h"
 #include "game/match.h"
+#include "game/player.h"
 #include "server.h"
 #include "world/world.h"
 
@@ -24,21 +29,50 @@ void GameLoopThread::run() {
             sleep_ms /
             1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
 
+        // OPTIMIZACIÓN DEL GAMELOOP
+        using Clock = std::chrono::steady_clock;
+        using Ms = std::chrono::duration<double, std::milli>;
+        const Ms rate(sleep_ms);
+
+        auto t1 = Clock::now();
+
         while (should_keep_running()) {
 
             server.for_each_match([this, tick_seconds, tick_id](Match& match) {
-                match.tick();
-
                 World& world = match.get_world();
-                world.update(tick_seconds);
+                world.reset_player_movement();
+                match.tick();
+                auto attack_results = world.update(tick_seconds);
 
-                auto events = world.pop_events();
-                for (const auto& ev : events) {
-                    auto msg_update = std::make_shared<ChatMessageUpdate>(ev.target_id, ev.message);
-                    if (ev.target_id == 0) {
-                        match.broadcast_update_to_all(msg_update);
-                    } else {
-                        server.send_update_to_player(ev.target_id, msg_update);
+                for (const auto& result : attack_results) {
+                    // enviar el resultado del ataque solo al atacante y al objetivo
+                    auto update_for_attacker =
+                        std::make_shared<AttackUpdate>(result, result.attacker_id);
+                    match.send_update_to_player(result.attacker_id, update_for_attacker);
+                    auto update_for_target =
+                        std::make_shared<AttackUpdate>(result, result.target_id);
+                    match.send_update_to_player(result.target_id, update_for_target);
+                    if (result.target_died) {
+                        auto death_update =
+                            std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);
+                        match.broadcast_update_to_all(death_update);
+
+                        Player* dead_player = world.get_player(result.target_id);
+                        if (dead_player) {
+                            std::vector<InventorySlotData> items_data;
+                            for (const auto& slot : dead_player->get_inventory().get_slots()) {
+                                if (slot.item) {
+                                    items_data.push_back({slot.item->get_name(),
+                                                          static_cast<uint32_t>(slot.quantity),
+                                                          slot.equipped_slot.has_value()});
+                                } else {
+                                    items_data.push_back({"", 0, false});
+                                }
+                            }
+                            auto inv_update = std::make_shared<InventoryUpdate>(
+                                result.target_id, std::move(items_data), dead_player->get_gold());
+                            match.send_update_to_player(result.target_id, inv_update);
+                        }
                     }
                 }
 
@@ -60,6 +94,9 @@ void GameLoopThread::run() {
                     ps.level = p->get_level();
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
+                    ps.clan_id = p->get_clan_id();
+                    ps.direction = static_cast<uint8_t>(p->get_direction());
+                    ps.is_moving = p->is_moving();
 
                     for (const auto& [slot, item] : p->get_equipment()) {
                         if (item) {
@@ -116,8 +153,26 @@ void GameLoopThread::run() {
 
             tick_id++;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+            // OPTIMIZACIÓN DEL GAMELOOP: calculo lo que tardó el tick y sleep solo el tiempo restante
+            auto t2 = Clock::now();
+            Ms passed = t2 - t1;
+            Ms rest = rate - passed;
+
+            if (rest.count() < 0) {
+                Ms behind = -rest;  // para que sea +
+                Ms skipped_time = Ms(behind.count() - std::fmod(behind.count(), rate.count()));
+                uint32_t skipped_ticks = static_cast<uint32_t>(skipped_time.count() / rate.count());
+
+                t1 += std::chrono::duration_cast<Clock::duration>(skipped_time);
+                tick_id += skipped_ticks;
+
+                rest = rate - Ms(std::fmod(behind.count(), rate.count()));
+            }
+
+            std::this_thread::sleep_for(rest);
+            t1 += std::chrono::duration_cast<Clock::duration>(rate);
         }
+
     } catch (const std::exception& e) {
         std::cerr << "[GAMELOOP] Error: " << e.what() << "\n";
     }

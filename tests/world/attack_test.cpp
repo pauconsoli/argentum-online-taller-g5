@@ -224,7 +224,7 @@ TEST_F(AttackTest, HealingSpellSuccess) {
     attacker->get_inventory().add_item(std::move(flute));
     attacker->equip(*flute_ptr);
 
-    AttackResult result = world.attack(1, 2);
+    AttackResult result = world.heal(1, 2);
 
     EXPECT_TRUE(result.is_healing);
     EXPECT_GT(result.heal_amount, 0);

@@ -24,7 +24,10 @@ Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClas
     agility(agility),
     intelligence(intelligence),
     constitution(constitution),
+    clan_id(0),
     meditating(false),
+    partial_hp_regen(0.0f),
+    partial_mana_regen(0.0f),
     inventory(std::make_unique<Inventory>()) {}
 
 bool Player::can_cast_magic() const {
@@ -99,6 +102,10 @@ void Player::add_experience(uint64_t amount) {
     }
 }
 
+bool Player::can_enter_safe_zones() const {
+    return true;
+}
+
 bool Player::is_healing_attack() const {
     Weapon* weapon = get_equipped_weapon();
     return weapon ? weapon->is_healing() : false;
@@ -116,7 +123,7 @@ bool Player::is_magic_attack() const {
 
 std::string Player::get_attack_name() const {
     Weapon* weapon = get_equipped_weapon();
-    return weapon ? weapon->get_attack_name() : "";
+    return weapon ? weapon->get_attack_name() : "Ataque con puños";
 }
 
 int Player::calculate_base_damage() const {
@@ -178,6 +185,30 @@ bool Player::is_meditating() const {
     return meditating;
 }
 
+void Player::add_partial_hp(float hp) {
+    partial_hp_regen += hp;
+}
+
+float Player::get_partial_hp() const {
+    return partial_hp_regen;
+}
+
+void Player::decrease_partial_hp(float hp) {
+    partial_hp_regen -= hp;
+}
+
+void Player::add_partial_mana(float mana) {
+    partial_mana_regen += mana;
+}
+
+float Player::get_partial_mana() const {
+    return partial_mana_regen;
+}
+
+void Player::decrease_partial_mana(float mana) {
+    partial_mana_regen -= mana;
+}
+
 const std::string& Player::get_name() const {
     return name;
 }
@@ -216,6 +247,14 @@ int Player::get_intelligence() const {
 
 int Player::get_constitution() const {
     return constitution;
+}
+
+uint32_t Player::get_clan_id() const {
+    return clan_id;
+}
+
+void Player::set_clan_id(uint32_t new_clan_id) {
+    clan_id = new_clan_id;
 }
 
 // SOBRECARGA: una por si quiero modificar el inventario, otra solo para lectura
