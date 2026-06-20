@@ -24,7 +24,7 @@ int HostileNPC::get_agility() const {
 }
 
 int HostileNPC::calculate_base_damage() const {
-    return GameFormulas::calculate_npc_damage(min_damage, max_damage);
+    return GameFormulas::calculate_base_damage_in_range(min_damage, max_damage);
 }
 
 NPCBehavior HostileNPC::update(float time, const std::vector<Player*>& nearby_targets) {

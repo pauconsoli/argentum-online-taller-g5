@@ -2,6 +2,7 @@
 #define WORLD_H
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -31,11 +32,6 @@ struct PendingResurrection {
     Position destination;
 };
 
-struct WorldEvent {
-    uint32_t target_id;  // 0 indica un broadcast a todos, >0 es a un jugador especifico
-    std::string message;
-};
-
 class World {
  private:
     WorldMap map;
@@ -53,7 +49,6 @@ class World {
     std::map<Position, GroundItem> ground_items;
 
     std::map<uint32_t, PendingResurrection> pending_resurrections;
-    std::vector<WorldEvent> pending_events;
 
     Position calculate_destination(const Position& current, Direction direction) const;
 
@@ -64,13 +59,22 @@ class World {
     std::optional<Position> find_closest_free_ground(const Position& start) const;
     std::optional<Position> find_closest_unoccupied_position(const Position& start) const;
 
-    AttackStatus validate_attack_conditions(const Character* attacker, const Character* target,
-                                            bool is_healing) const;
+    // funcion para no repetir en las dos anteriores, que la reutilizan
+    std::optional<Position> find_closest_free_position(
+        const Position& start, const std::function<bool(const Position&)>& is_free_condition) const;
+
+    AttackStatus validate_attack_conditions(const Character* attacker,
+                                            const Character* target) const;
     void handle_target_death(Character* attacker, Character* target);
     int handle_successful_attack(Character* attacker, Character* target, int damage);
 
+    void update_players(float tick_seconds);
+    void update_resurrections(float tick_seconds);
+    std::vector<AttackResult> update_npcs(float tick_seconds);
+    void update_spawning(float tick_seconds);
+
     void npc_move_towards(NPC* npc, const Position& target_pos);
-    void npc_attack(NPC* npc, Character* target);
+    AttackResult npc_attack(NPC* npc, Character* target);
     void try_spawn_npc();
     std::optional<Position> find_random_spawn_position(
         const std::vector<std::string>& allowed_zones) const;
@@ -112,6 +116,7 @@ class World {
     bool start_resurrection(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
+    AttackResult heal(uint32_t healer_id, uint32_t target_id);
 
     void add_npc(std::unique_ptr<NPC> npc);
     NPC* get_npc(uint32_t npc_id);
@@ -124,8 +129,7 @@ class World {
                                      const std::string& arg, int amount);
     Bank& get_bank();
 
-    void update(float tick_seconds);
-    std::vector<WorldEvent> pop_events();
+    std::vector<AttackResult> update(float tick_seconds);
 
     // solo lo uso para poner celdas bloqueantes en el mapa en los tests
     void set_cell(const Position& pos, const Cell& cell);

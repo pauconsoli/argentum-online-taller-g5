@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <queue>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "common/updates/attack_update.h"
 #include "server/game/game_config.h"
 #include "server/game/game_formulas.h"
 #include "server/game/items/weapon.h"
@@ -170,65 +173,46 @@ const std::map<Position, GroundItem>& World::get_ground_items() const {
     return ground_items;
 }
 
-// no considera si esta ocupada porque el jugador se para sobre los items del suelo
-std::optional<Position> World::find_closest_free_ground(const Position& start) const {
+std::optional<Position> World::find_closest_free_position(
+    const Position& start, const std::function<bool(const Position&)>& is_free_condition) const {
     std::queue<Position> q;
     std::set<Position> visited;
 
-    q.push(start);
-    visited.insert(start);
+    if (map.is_valid_position(start)) {
+        q.push(start);
+        visited.insert(start);
+    }
 
     while (!q.empty()) {
         Position curr = q.front();
         q.pop();
-        if (map.is_valid_position(curr) && !map.is_position_blocked(curr)) {
-            if (ground_items.find(curr) == ground_items.end()) {
-                return curr;
-            }
+
+        if (!map.is_position_blocked(curr) && is_free_condition(curr)) {
+            return curr;
         }
 
         const Position neighbors[] = {
             {curr.x, curr.y - 1}, {curr.x, curr.y + 1}, {curr.x - 1, curr.y}, {curr.x + 1, curr.y}};
 
         for (const Position& neighbor : neighbors) {
-            if (map.is_valid_position(neighbor) && !map.is_position_blocked(neighbor)) {
-                if (visited.insert(neighbor).second) {
-                    q.push(neighbor);
-                }
+            if (map.is_valid_position(neighbor) && visited.insert(neighbor).second) {
+                q.push(neighbor);
             }
         }
     }
     return std::nullopt;
 }
 
+// no considera si esta ocupada porque el jugador se para sobre los items del suelo
+std::optional<Position> World::find_closest_free_ground(const Position& start) const {
+    return find_closest_free_position(start, [this](const Position& pos) {
+        return ground_items.find(pos) == ground_items.end();
+    });
+}
+
 std::optional<Position> World::find_closest_unoccupied_position(const Position& start) const {
-    std::queue<Position> q;
-    std::set<Position> visited;
-
-    q.push(start);
-    visited.insert(start);
-
-    while (!q.empty()) {
-        Position curr = q.front();
-        q.pop();
-        if (map.is_valid_position(curr) && !map.is_position_blocked(curr)) {
-            if (!is_position_occupied(curr)) {
-                return curr;
-            }
-        }
-
-        const Position neighbors[] = {
-            {curr.x, curr.y - 1}, {curr.x, curr.y + 1}, {curr.x - 1, curr.y}, {curr.x + 1, curr.y}};
-
-        for (const Position& neighbor : neighbors) {
-            if (map.is_valid_position(neighbor) && !map.is_position_blocked(neighbor)) {
-                if (visited.insert(neighbor).second) {
-                    q.push(neighbor);
-                }
-            }
-        }
-    }
-    return std::nullopt;
+    return find_closest_free_position(
+        start, [this](const Position& pos) { return !is_position_occupied(pos); });
 }
 
 void World::drop_loot_in_world(const Position& center, Loot loot) {
@@ -263,25 +247,22 @@ void World::add_ground_item(const Position& pos, GroundItem item) {
     ground_items[free_pos] = std::move(item);
 }
 
-AttackStatus World::validate_attack_conditions(const Character* attacker, const Character* target,
-                                               bool is_healing) const {
+AttackStatus World::validate_attack_conditions(const Character* attacker,
+                                               const Character* target) const {
     if (attacker->is_dead() || target->is_dead()) {
         return AttackStatus::DEAD;
     }
 
-    if (!is_healing) {
-        if (attacker->get_id() == target->get_id()) {
-            return AttackStatus::INVALID_TARGET;
-        }
+    if (attacker->get_id() == target->get_id()) {
+        return AttackStatus::INVALID_TARGET;
+    }
 
-        if (!target->validate_attack_from(attacker->get_level())) {
-            return AttackStatus::INVALID_TARGET;
-        }
+    if (!target->validate_attack_from(attacker->get_level())) {
+        return AttackStatus::INVALID_TARGET;
+    }
 
-        // En zonas seguras (ciudades y pueblos) no se puede atacar ni ser atacado
-        if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
-            return AttackStatus::INVALID_TARGET;
-        }
+    if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
+        return AttackStatus::INVALID_TARGET;
     }
 
     if (!is_in_range_for_attack(attacker, target)) {
@@ -388,7 +369,6 @@ bool World::start_resurrection(uint32_t player_id) {
     int dy = priest_pos.y - player_pos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
 
-    // Tiempo base: 0.1 segundos por cada tile de distancia (configurable si lo pasás a toml luego)
     float wait_time = distance * GameConfig::get_instance().get_resurrect_still_factor();
 
     pending_resurrections[player_id] = {wait_time, priest_pos};
@@ -465,7 +445,6 @@ void World::set_cell(const Position& pos, const Cell& cell) {
 
 // TODO(Pau): clanes
 
-// otro refactor: que el hechizo heal no este incluido acá
 AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* attacker = get_character(attacker_id);
     Character* target = get_character(target_id);
@@ -475,8 +454,6 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
                             false,       false,     0, AttackStatus::INVALID_TARGET};
     }
 
-    bool is_healing = attacker->is_healing_attack();
-
     AttackType attack_type = AttackType::NORMAL;
     if (attacker->is_magic_attack()) {
         attack_type = AttackType::MAGIC;
@@ -485,7 +462,7 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     }
     std::string attack_name = attacker->get_attack_name();
 
-    AttackStatus status = validate_attack_conditions(attacker, target, is_healing);
+    AttackStatus status = validate_attack_conditions(attacker, target);
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0,      false,       false,
                             false,       0,         status, attack_type, attack_name};
@@ -494,14 +471,6 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{attacker_id, target_id, 0,      false,       false,
                             false,       0,         status, attack_type, attack_name};
-    }
-
-    if (is_healing) {
-        int healing = attacker->calculate_base_healing();
-        target->heal(healing);
-        return AttackResult{attacker_id, target_id,  0,       false,
-                            false,       true,       healing, AttackStatus::SUCCESS,
-                            attack_type, attack_name};
     }
 
     int base_damage = attacker->calculate_base_damage();
@@ -525,6 +494,42 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     return AttackResult{attacker_id, target_id, real_damage,           evaded,      died,
                         false,       0,         AttackStatus::SUCCESS, attack_type, attack_name};
+}
+
+AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
+    Character* healer = get_character(healer_id);
+    Character* target = get_character(target_id);
+
+    if (!healer || !target) {
+        return AttackResult{healer_id, target_id, 0, false,
+                            false,     false,     0, AttackStatus::INVALID_TARGET};
+    }
+
+    AttackType attack_type = AttackType::MAGIC;
+    std::string attack_name = healer->get_attack_name();
+
+    if (healer->is_dead() || target->is_dead()) {
+        return AttackResult{healer_id, target_id,          0,           false,      false, false,
+                            0,         AttackStatus::DEAD, attack_type, attack_name};
+    }
+
+    if (!is_in_range_for_attack(healer, target)) {
+        return AttackResult{healer_id,   target_id,  0, false,
+                            false,       false,      0, AttackStatus::OUT_OF_RANGE,
+                            attack_type, attack_name};
+    }
+
+    AttackStatus status = healer->consume_attack_resources();
+    if (status != AttackStatus::SUCCESS) {
+        return AttackResult{healer_id, target_id, 0,      false,       false,
+                            false,     0,         status, attack_type, attack_name};
+    }
+
+    int potential_healing = healer->calculate_base_healing();
+    int actual_healing = target->heal(potential_healing);
+    return AttackResult{
+        healer_id,   target_id,  0, false, false, true, actual_healing, AttackStatus::SUCCESS,
+        attack_type, attack_name};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
@@ -616,22 +621,27 @@ void World::npc_move_towards(NPC* npc, const Position& target_pos) {
     }
 }
 
-void World::npc_attack(NPC* npc, Character* target) {
+AttackResult World::npc_attack(NPC* npc, Character* target) {
+    uint32_t attacker_id = npc->get_id();
+    uint32_t target_id = target->get_id();
+    std::string attack_name = npc->get_attack_name();
+
     int base_damage = npc->calculate_base_damage();
     bool evaded = GameFormulas::calculate_evasion(*target);
 
+    int real_damage = 0;
     if (!evaded) {
-        int real_damage = handle_successful_attack(npc, target, base_damage);
-        pending_events.push_back({target->get_id(), npc->get_name() + " te causó " +
-                                                        std::to_string(real_damage) + " de daño"});
-    } else {
-        pending_events.push_back({target->get_id(), "Esquivaste el ataque de " + npc->get_name()});
+        real_damage = handle_successful_attack(npc, target, base_damage);
     }
 
-    if (target->is_dead()) {
+    bool died = target->is_dead();
+    if (died) {
         handle_target_death(npc, target);
-        pending_events.push_back({target->get_id(), "¡" + npc->get_name() + " te mató!"});
     }
+
+    return AttackResult{
+        attacker_id,           target_id,          real_damage, evaded, died, false, 0,
+        AttackStatus::SUCCESS, AttackType::NORMAL, attack_name};
 }
 
 std::optional<Position> World::find_random_spawn_position(
@@ -684,7 +694,6 @@ void World::try_spawn_npc() {
         auto npc = std::make_unique<HostileNPC>(
             next_npc_id++, tpl->name, tpl->npc_type, tpl->level, tpl->max_hp, tpl->defense,
             tpl->agility, tpl->min_damage, tpl->max_damage, tpl->attack_range, tpl->zones, *pos);
-        pending_events.push_back({0, "¡Un " + npc->get_name() + " apareció en el mundo!"});
         add_npc(std::move(npc));
     }
 }
@@ -711,26 +720,37 @@ void World::spawn_initial_hostile_npcs() {
     for (int i = 0; i < max_npcs; ++i) {
         try_spawn_npc();
     }
-    pending_events.clear();  // limpio los mensajes de aparición iniciales
 }
 
-void World::update(float tick_seconds) {
+void World::update_players(float tick_seconds) {
     for (auto& [id, player] : players) {
         if (player->is_dead())
             continue;
 
         // HP
-        int hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
-        player->heal(hp_regen);
+        float hp_regen = GameFormulas::calculate_health_recovery(*player, tick_seconds);
+        player->add_partial_hp(hp_regen);
+        if (player->get_partial_hp() >= 1.0f) {
+            int heal_amount = static_cast<int>(player->get_partial_hp());
+            player->heal(heal_amount);
+            player->decrease_partial_hp(heal_amount);
+        }
 
         // Mana (meditando o por tiempo)
-        int mana_regen =
+        float mana_regen =
             player->is_meditating() ?
                 GameFormulas::calculate_meditation_mana_recovery(*player, tick_seconds) :
                 GameFormulas::calculate_time_mana_recovery(*player, tick_seconds);
-        player->restore_mana(mana_regen);
+        player->add_partial_mana(mana_regen);
+        if (player->get_partial_mana() >= 1.0f) {
+            int restore_amount = static_cast<int>(player->get_partial_mana());
+            player->restore_mana(restore_amount);
+            player->decrease_partial_mana(restore_amount);
+        }
     }
+}
 
+void World::update_resurrections(float tick_seconds) {
     // procesar resurrecciones pendientes
     for (auto it = pending_resurrections.begin(); it != pending_resurrections.end();) {
         it->second.timer -= tick_seconds;
@@ -739,9 +759,6 @@ void World::update(float tick_seconds) {
             if (teleport_player(pid, it->second.destination)) {
                 if (Player* p = get_player(pid)) {
                     p->resurrect();  // le restaura salud, mana y quita el estado fantasma
-                    pending_events.push_back(
-                        {pid, "¡Resucitaste en " +
-                                  map.get_closest_city(p->get_position())->get_name() + "!"});
                 }
             }
             it = pending_resurrections.erase(it);
@@ -749,7 +766,10 @@ void World::update(float tick_seconds) {
             ++it;
         }
     }
+}
 
+std::vector<AttackResult> World::update_npcs(float tick_seconds) {
+    std::vector<AttackResult> attack_results;
     // acciones de NPCs hostiles
     for (auto it = npcs.begin(); it != npcs.end();) {
         auto& npc = it->second;
@@ -778,7 +798,7 @@ void World::update(float tick_seconds) {
             case NPCAction::ATTACK: {
                 Character* target = get_character(behavior.target_id);
                 if (target)
-                    npc_attack(npc.get(), target);
+                    attack_results.push_back(npc_attack(npc.get(), target));
                 break;
             }
             case NPCAction::STILL:
@@ -786,7 +806,10 @@ void World::update(float tick_seconds) {
         }
         ++it;
     }
+    return attack_results;
+}
 
+void World::update_spawning(float tick_seconds) {
     // spawn de NPCs hostiles
     npc_spawn_timer += tick_seconds;
     if (npc_spawn_timer >= GameConfig::get_instance().get_npc_spawn_time_seconds()) {
@@ -795,8 +818,10 @@ void World::update(float tick_seconds) {
     }
 }
 
-std::vector<WorldEvent> World::pop_events() {
-    std::vector<WorldEvent> events = std::move(pending_events);
-    pending_events.clear();
-    return events;
+std::vector<AttackResult> World::update(float tick_seconds) {
+    update_players(tick_seconds);
+    update_resurrections(tick_seconds);
+    std::vector<AttackResult> attack_results = update_npcs(tick_seconds);
+    update_spawning(tick_seconds);
+    return attack_results;
 }

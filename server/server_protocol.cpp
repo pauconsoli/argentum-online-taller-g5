@@ -20,7 +20,6 @@
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/catalog_update.h"
-#include "common/updates/chat_message_update.h"
 #include "common/updates/chat_msg_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
@@ -34,6 +33,7 @@
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
+#include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -566,7 +566,7 @@ void ServerProtocol::send_chat_msg(const GameUpdate& update) {
 }
 
 void ServerProtocol::send_system_msg(const GameUpdate& update) {
-    const auto& u = static_cast<const ChatMessageUpdate&>(update);
+    const auto& u = static_cast<const SystemMsgUpdate&>(update);
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::SYSTEM_MSG);
     put_u32(buf, u.get_target_player_id());

@@ -87,8 +87,47 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
     }
 }
 
+// Constructor standalone
 GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
-    GameClient(width, height, std::make_unique<Client>(host, port), 1, 1, 0) {}
+    window(nullptr),
+    renderer(nullptr),
+    character_renderer(nullptr),
+    hud(nullptr),
+    mini_chat(nullptr),
+    sprite_manager(nullptr),
+    terrain_renderer_(nullptr),
+    audio_manager(nullptr),
+    client(std::make_unique<Client>(host, port)),
+    camera(width, height),
+    my_player_id(1),  // ID provisorio/dummy para standalone
+    my_race(1),
+    my_klass(1),
+    player_x(400),
+    player_y(300),
+    width(width),
+    height(height),
+    from_handoff(false) {
+    init_sdl_window(window, width, height);
+    my_hp = 100;
+    my_max_hp = 100;
+    my_mp = 100;
+    my_max_mp = 100;
+    my_level = 1;
+    my_gold = 0;
+    my_xp = 0;
+    renderer = new Renderer(window);
+    std::string base_assets = get_base_asset_dir();
+    std::string font_path = base_assets + "/fonts/font.ttf";
+    sprite_manager = new SpriteManager(renderer->get_sdl_renderer());
+    sprite_manager->load_body_textures(base_assets);
+    sprite_manager->load_terrain_textures(base_assets);
+    terrain_renderer_ = new TerrainRenderer(renderer, sprite_manager, camera);
+    hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
+    mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
+    audio_manager = std::make_unique<AudioManager>();
+    load_audio_assets();
+}
+
 
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
                        uint8_t klass, uint32_t player_id):
@@ -351,17 +390,44 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 if (r.evaded) {
                     mini_chat->add_message("Ataque esquivado");
                 } else if (r.attacker_id == my_player_id) {
-                    if (r.target_died)
-                        mini_chat->add_message(npcs_.count(r.target_id) ? "Mataste al NPC" :
-                                                                          "Mataste al jugador");
-                    else
-                        mini_chat->add_message("Causaste " + std::to_string(r.damage) + " de daño");
+                    std::string target_name = "";
+                    auto player_it = players.find(r.target_id);
+                    if (player_it != players.end()) {
+                        target_name = player_it->second.nick;
+                    } else {
+                        auto npc_it = npcs_.find(r.target_id);
+                        if (npc_it != npcs_.end()) {
+                            target_name = npc_it->second.name;
+                        }
+                    }
+
+                    if (r.is_healing) {
+                        mini_chat->add_message(r.weapon_or_spell_name + ": curaste a " +
+                                               target_name + " por " +
+                                               std::to_string(r.heal_amount) + " puntos");
+                    } else if (!r.target_died) {
+                        mini_chat->add_message(r.weapon_or_spell_name + ": causaste " +
+                                               std::to_string(r.damage) + " de daño a " +
+                                               target_name);
+                    }
                 } else if (r.target_id == my_player_id) {
-                    if (r.target_died)
-                        mini_chat->add_message("Moriste");
-                    else
+                    if (r.is_healing) {
+                        std::string healer_name = "";
+                        auto player_it = players.find(r.attacker_id);
+                        if (player_it != players.end()) {
+                            healer_name = player_it->second.nick;
+                        } else {
+                            auto npc_it = npcs_.find(r.attacker_id);
+                            if (npc_it != npcs_.end()) {
+                                healer_name = npc_it->second.name;
+                            }
+                        }
+                        mini_chat->add_message(healer_name + " te curó " +
+                                               std::to_string(r.heal_amount) + " puntos de vida");
+                    } else if (!r.target_died) {
                         mini_chat->add_message("Recibiste " + std::to_string(r.damage) +
                                                " de daño");
+                    }
                 }
 
                 switch (r.type) {
@@ -392,7 +458,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // Muerte propia: avisa al jugador. Muerte ajena: sonido atenuado por distancia.
                 const auto& du = static_cast<const DeathUpdate&>(*update);
                 if (du.get_dead_id() == my_player_id) {
-                    mini_chat->add_message("Moriste. Dirigete al sanador para resucitar.");
+                    mini_chat->add_message("Moriste. Dirigite al sacerdote para resucitar");
                     audio_manager->play_sound("death");
                 } else {
                     int vol = MIX_MAX_VOLUME;
@@ -400,14 +466,25 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                     int dead_tx = -1, dead_ty = -1;
                     auto pit = players.find(dead_id);
                     if (pit != players.end()) {
-                        dead_tx = pit->second.x;
-                        dead_ty = pit->second.y;
-                        mini_chat->add_message("Un jugador murio en combate.");
+                        const auto& dead_player_snapshot = pit->second;
+                        dead_tx = dead_player_snapshot.x;
+                        dead_ty = dead_player_snapshot.y;
+                        if (du.get_killer_id() == my_player_id) {
+                            mini_chat->add_message("Mataste a " + dead_player_snapshot.nick);
+                        } else {
+                            mini_chat->add_message("Un jugador murio en combate");
+                        }
                     } else {
                         auto nit = npcs_.find(dead_id);
                         if (nit != npcs_.end()) {
-                            dead_tx = nit->second.x;
-                            dead_ty = nit->second.y;
+                            const auto& dead_npc_snapshot = nit->second;
+                            dead_tx = dead_npc_snapshot.x;
+                            dead_ty = dead_npc_snapshot.y;
+                            if (du.get_killer_id() == my_player_id) {
+                                mini_chat->add_message("Mataste a " + dead_npc_snapshot.name);
+                            } else {
+                                mini_chat->add_message("Un NPC murió en combate");
+                            }
                         }
                     }
                     if (dead_tx >= 0) {
@@ -425,7 +502,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
             }
             case UpdateType::CHAT_MSG: {
                 // Mensaje de chat recibido del servidor: lo muestra en el mini_chat.
-                // El update es ChatMsgUpdate (sender_nick + text), no ChatMessageUpdate.
+                // El update es ChatMsgUpdate (sender_nick + text), no SystemMsgUpdate.
                 const auto& message = static_cast<const ChatMsgUpdate&>(*update);
                 mini_chat->add_message(message.sender_nick + ": " + message.text);
                 break;

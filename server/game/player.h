@@ -38,6 +38,8 @@ class Player: public Character {
     int constitution;
 
     bool meditating;
+    float partial_hp_regen;
+    float partial_mana_regen;
 
     std::unique_ptr<Inventory> inventory;
 
@@ -85,6 +87,13 @@ class Player: public Character {
     void resurrect();
 
     bool is_meditating() const;
+
+    void add_partial_hp(float hp);
+    float get_partial_hp() const;
+    void decrease_partial_hp(float hp);
+    void add_partial_mana(float mana);
+    float get_partial_mana() const;
+    void decrease_partial_mana(float mana);
 
     const std::string& get_name() const;
 
