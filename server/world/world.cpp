@@ -385,6 +385,15 @@ bool World::teleport_player(uint32_t player_id, const Position& dest) {
     return true;
 }
 
+MeditateStatus World::meditate(uint32_t player_id) {
+    Player* player = get_player(player_id);
+    if (!player || player->is_dead()) {
+        return MeditateStatus::PLAYER_DEAD;
+    }
+    player->start_meditating();
+    return player->is_meditating() ? MeditateStatus::SUCCESS : MeditateStatus::NO_MANA;
+}
+
 bool World::start_resurrection(uint32_t player_id) {
     Player* player = get_player(player_id);
     if (!player || !player->is_dead()) {

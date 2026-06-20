@@ -14,6 +14,7 @@
 #include "common/clan/clan_result.h"
 #include "common/clan/clan_review_result.h"
 #include "common/direction.h"
+#include "common/meditate_status.h"
 #include "common/position.h"
 #include "common/updates/game_update.h"
 #include "server/game/bank.h"
@@ -130,6 +131,7 @@ class World {
 
     bool teleport_player(uint32_t player_id, const Position& dest);
     bool start_resurrection(uint32_t player_id);
+    MeditateStatus meditate(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);
     AttackResult heal(uint32_t healer_id, uint32_t target_id);

@@ -521,24 +521,8 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
     while (update_queue.try_pop(update)) {
         switch (update->get_type()) {
             case UpdateType::ERROR: {
-                // Filtra errores de movimiento (silenciosos) y traduce el resto al chat.
                 const auto& eu = static_cast<const ErrorUpdate&>(*update);
-                const auto& d = eu.detail;
-                if (d.find("move_player") != std::string::npos ||
-                    d.find("mover") != std::string::npos) {
-                    break;
-                }
-                if (d.find("muertos") != std::string::npos ||
-                    d.find("muerto") != std::string::npos || d.find("ghost") != std::string::npos ||
-                    d.find("fantasma") != std::string::npos) {
-                    mini_chat->add_message("No puedes atacar a un jugador muerto");
-                } else if (d.find("objetivo") != std::string::npos ||
-                           d.find("target") != std::string::npos ||
-                           d.find("attack") != std::string::npos) {
-                    mini_chat->add_message("Debes estar más cerca para atacar");
-                } else {
-                    mini_chat->add_message("Error: " + d);
-                }
+                mini_chat->add_message("Error: " + eu.detail);
                 break;
             }
             case UpdateType::SNAPSHOT: {
@@ -628,6 +612,25 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                 // Muestra el resultado del ataque en el chat y reproduce el sonido correcto.
                 const auto& au = static_cast<const AttackUpdate&>(*update);
                 const AttackResult& r = au.get_result();
+                if (r.status != AttackStatus::SUCCESS) {
+                    switch (r.status) {
+                        case AttackStatus::NO_MANA:
+                            mini_chat->add_message("No tenes suficiente mana");
+                            break;
+                        case AttackStatus::OUT_OF_RANGE:
+                            mini_chat->add_message("El objetivo esta fuera de rango");
+                            break;
+                        case AttackStatus::DEAD:
+                            mini_chat->add_message("No puedes atacar a un jugador muerto");
+                            break;
+                        case AttackStatus::INVALID_TARGET:
+                            mini_chat->add_message("Objetivo invalido");
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                }
                 if (r.evaded) {
                     mini_chat->add_message("Ataque esquivado");
                 } else if (r.attacker_id == my_player_id) {

@@ -440,6 +440,7 @@ void ServerProtocol::send_attacked(const GameUpdate& update) {
     put_i32(buf, r.heal_amount);
     put_u8(buf, static_cast<uint8_t>(r.type));
     put_string(buf, r.weapon_or_spell_name);
+    put_u8(buf, static_cast<uint8_t>(r.status));
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_attacked: client closed connection");
     }
