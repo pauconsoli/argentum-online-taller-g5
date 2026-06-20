@@ -21,11 +21,13 @@ class ClientMap;
 #include "input_handler.h"
 #include "mini_chat.h"
 #include "renderer.h"
+#include "sdl_config.h"
 #include "sprite_manager.h"
 #include "terrain_renderer.h"
 
 class GameClient {
  private:
+    SdlConfig config_;
     SDL_Window* window;
     Renderer* renderer;
     CharacterRenderer* character_renderer;
@@ -69,6 +71,7 @@ class GameClient {
     bool chat_active_ = false;
     std::string chat_input_;
     int selected_slot_ = -1;
+    int selected_npc_id_ = 0;
 
     // Run-loop state shared across extracted methods
     bool running_ = false;

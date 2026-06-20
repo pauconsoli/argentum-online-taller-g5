@@ -191,7 +191,7 @@ if(ARGENTUM_CLIENT)
 
 
     # Link the taller_common lib target
-    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf SDL2_mixer spdlog::spdlog)
+    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf SDL2_mixer spdlog::spdlog tomlplusplus::tomlplusplus)
 endif()
 
 # Binario CLI del cliente (sin GUI). Para smoke-testear el server mientras
@@ -231,6 +231,7 @@ if(ARGENTUM_CLIENT_QT)
             client/client.h
             client/client_protocol.cpp
             client/sdl/game_client.cpp
+            client/sdl/sdl_config.cpp
             client/sdl/renderer.cpp
             client/sdl/character_renderer.cpp
             client/sdl/input_handler.cpp
@@ -264,6 +265,7 @@ if(ARGENTUM_CLIENT_QT)
             SDL2_ttf
             SDL2_mixer
             spdlog::spdlog
+            tomlplusplus::tomlplusplus
         )
     else()
         message(WARNING "Qt5 no encontrado. Saltando argentum_client_qt. Instalalo con: sudo apt-get install qtbase5-dev")

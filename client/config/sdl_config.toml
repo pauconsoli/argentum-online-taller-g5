@@ -1,0 +1,15 @@
+[sdl.window]
+width = 800
+height = 600
+fullscreen = false
+
+[sdl.render]
+tile_width = 32
+tile_height = 32
+target_fps = 60
+
+[sdl.animation]
+frame_delay_ms = 100
+
+[sdl.input]
+move_interval_ms = 200

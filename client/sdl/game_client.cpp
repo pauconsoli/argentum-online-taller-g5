@@ -51,12 +51,6 @@ static ItemType get_item_type(const std::string& name) {
     return it != table.end() ? it->second : ItemType::OTHER;
 }
 
-static constexpr int TILE_W = 32;
-static constexpr int TILE_H = 32;
-static constexpr Uint32 FRAME_DELAY = 100;
-static constexpr Uint32 FRAME_TIME_MS = 1000 / 60;
-static constexpr Uint32 MOVE_INTERVAL_MS = 200;
-
 // esto deberia estar en sprite manager??
 static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
@@ -65,7 +59,7 @@ static std::string get_base_asset_dir() {
     return "assets";
 }
 
-// esto deberia estar aca?
+// esto deberia estar aca? o donde?
 static uint16_t head_index_for_race(uint8_t race) {
     switch (race) {
         case 1:
@@ -81,6 +75,7 @@ static uint16_t head_index_for_race(uint8_t race) {
 
 
 // inicializa video + audio
+// esto deberia ir en audio manager o esta ok aca?
 static void init_sdl_window(SDL_Window*& window, int width, int height) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
@@ -92,14 +87,12 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
     }
 }
 
-
-// Constructor standalone: TODO conectar cliente y ejecutar lobby sin Qt
 GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
     GameClient(width, height, std::make_unique<Client>(host, port), 1, 1, 0) {}
 
-//  handoff desde qt
 GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
                        uint8_t klass, uint32_t player_id):
+    config_(SdlConfig::load("client/config/sdl_config.toml")),
     window(nullptr),
     renderer(nullptr),
     hud(nullptr),
@@ -161,6 +154,7 @@ void GameClient::run() {
 
     ClientMap client_map = build_sample_client_map();
 
+    // esto que es? porque se declara asi?
     player_x = -1;
     player_y = -1;
 
@@ -175,11 +169,12 @@ void GameClient::run() {
 
         process_sdl_events();
         process_keyword_input();
-        process_server_updates(TILE_W, TILE_H, client_map);
+        process_server_updates(config_.tile_width, config_.tile_height, client_map);
+
 
         if (moving_) {
             Uint32 now = SDL_GetTicks();
-            if (now - last_frame_time_ > FRAME_DELAY) {
+            if (now - last_frame_time_ > config_.frame_delay_ms) {
                 current_frame_ = (current_frame_ + 1) % total_frames_;
                 last_frame_time_ = now;
             }
@@ -188,17 +183,18 @@ void GameClient::run() {
         }
 
         if (player_x >= 0 && player_y >= 0) {
-            camera.center_on(player_x, player_y, client_map.get_width() * TILE_W,
-                             client_map.get_height() * TILE_H);
+            camera.center_on(player_x, player_y, client_map.get_width() * config_.tile_width,
+                             client_map.get_height() * config_.tile_height);
         }
 
         renderer->clear();
 
-        int start_col = camera.get_x() / TILE_W;
-        int end_col = start_col + width / TILE_W + 1;
-        int start_row = camera.get_y() / TILE_H;
-        int end_row = start_row + height / TILE_H + 1;
-        terrain_renderer_->draw(start_col, end_col, start_row, end_row, TILE_W, TILE_H, client_map);
+        int start_col = camera.get_x() / config_.tile_width;
+        int end_col = start_col + width / config_.tile_width + 1;
+        int start_row = camera.get_y() / config_.tile_height;
+        int end_row = start_row + height / config_.tile_height + 1;
+        terrain_renderer_->draw(start_col, end_col, start_row, end_row, config_.tile_width,
+                                config_.tile_height, client_map);
 
         for (const auto& gi : ground_items_) {
             SDL_Texture* item_tex = nullptr;
@@ -211,14 +207,15 @@ void GameClient::run() {
             if (item_tex == nullptr)
                 item_tex = sprite_manager->get_item("item_espada");
             if (item_tex != nullptr) {
-                int gx = camera.get_screen_x(gi.x * TILE_W);
-                int gy = camera.get_screen_y(gi.y * TILE_H);
-                renderer->draw_frame(item_tex, 0, 0, TILE_W, TILE_H, gx, gy);
+                int gx = camera.get_screen_x(gi.x * config_.tile_width);
+                int gy = camera.get_screen_y(gi.y * config_.tile_height);
+                renderer->draw_frame(item_tex, 0, 0, config_.tile_width, config_.tile_height, gx,
+                                     gy);
             }
         }
 
-        render_players(TILE_W, TILE_H, direction_, current_frame_);
-        render_npcs(TILE_W, TILE_H);
+        render_players(config_.tile_width, config_.tile_height, direction_, current_frame_);
+        render_npcs(config_.tile_width, config_.tile_height);
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
         hud->draw_inventory(sprite_manager, inventory_slots_, selected_slot_);
@@ -229,8 +226,8 @@ void GameClient::run() {
         renderer->present();
 
         Uint32 elapsed = SDL_GetTicks() - frame_start_;
-        if (elapsed < FRAME_TIME_MS) {
-            SDL_Delay(FRAME_TIME_MS - elapsed);
+        if (elapsed < config_.frame_time_ms()) {
+            SDL_Delay(config_.frame_time_ms() - elapsed);
         }
     }
 }
@@ -242,6 +239,7 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
     while (update_queue.try_pop(update)) {
 
         switch (update->get_type()) {
+
             case UpdateType::ERROR: {
                 // Filtra errores de movimiento (silenciosos) y traduce el resto al chat.
                 const auto& eu = static_cast<const ErrorUpdate&>(*update);
@@ -638,6 +636,17 @@ void GameClient::process_sdl_events() {
                                 } else {
                                     mini_chat->add_message("Slot inválido o vacío");
                                 }
+                            } else if (chat_input_ == "/curar" || chat_input_ == "/resucitar") {
+                                if (selected_npc_id_ == 0) {
+                                    mini_chat->add_message("Seleccioná un sacerdote primero");
+                                } else {
+                                    NPCInteraction tipo = (chat_input_ == "/curar") ?
+                                                              NPCInteraction::HEAL :
+                                                              NPCInteraction::RESURRECT;
+                                    client->do_interact(static_cast<uint32_t>(selected_npc_id_),
+                                                        tipo, "", 0);
+                                    mini_chat->add_message(chat_input_);
+                                }
                             } else {
                                 client->do_chat(chat_input_);
                                 mini_chat->add_message(chat_input_);
@@ -667,8 +676,8 @@ void GameClient::process_sdl_events() {
             if (!my_is_ghost) {
                 int world_x = camera.get_x() + event_.button.x;
                 int world_y = camera.get_y() + event_.button.y;
-                int tile_x = world_x / TILE_W;
-                int tile_y = world_y / TILE_H;
+                int tile_x = world_x / config_.tile_width;
+                int tile_y = world_y / config_.tile_height;
                 for (const auto& [pid, ps] : players) {
                     if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
                         client->do_attack(pid);
@@ -677,7 +686,12 @@ void GameClient::process_sdl_events() {
                 }
                 for (const auto& [nid, ns] : npcs_) {
                     if (ns.x == tile_x && ns.y == tile_y) {
-                        client->do_attack(nid);
+                        if (!ns.is_hostile) {
+                            selected_npc_id_ = static_cast<int>(nid);
+                            mini_chat->add_message("Seleccionaste un NPC");
+                        } else {
+                            client->do_attack(nid);
+                        }
                         break;
                     }
                 }
@@ -701,7 +715,7 @@ void GameClient::process_keyword_input() {
     const Uint8* keys = SDL_GetKeyboardState(nullptr);
     moving_ = false;
     if (!chat_active_) {
-        bool can_move = (frame_start_ - last_move_time_ >= MOVE_INTERVAL_MS);
+        bool can_move = (frame_start_ - last_move_time_ >= config_.move_interval_ms);
         if (keys[SDL_SCANCODE_DOWN]) {
             direction_ = 0;
             total_frames_ = 6;
