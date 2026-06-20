@@ -28,6 +28,7 @@
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
+#include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
 #include "common/updates/system_msg_update.h"
@@ -193,6 +194,13 @@ void ClientProtocol::send_meditate() {
     }
 }
 
+void ClientProtocol::send_resurrect() {
+    uint8_t op = ClientOpcode::RESURRECT;
+    if (skt.sendall(&op, 1) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_resurrect: server closed connection");
+    }
+}
+
 void ClientProtocol::send_pick_up() {
     uint8_t op = ClientOpcode::PICK_UP;
     if (skt.sendall(&op, 1) == 0) {
@@ -287,6 +295,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_attacked();
         case ServerOpcode::DEATH:
             return recv_death();
+        case ServerOpcode::REVIVE:
+            return recv_revive();
         case ServerOpcode::INVENTORY:
             return recv_inventory();
         case ServerOpcode::SNAPSHOT:
@@ -377,6 +387,11 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
     uint32_t dead_id = recv_u32();
     uint32_t killer_id = recv_u32();
     return std::make_unique<DeathUpdate>(dead_id, killer_id);
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_revive() {
+    ResurrectStatus status = static_cast<ResurrectStatus>(recv_u8());
+    return std::make_unique<ReviveUpdate>(0, status);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {

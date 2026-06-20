@@ -129,6 +129,11 @@ void Client::do_meditate() {
     protocol.send_meditate();
 }
 
+void Client::do_resurrect() {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_resurrect();
+}
+
 void Client::do_pick_up() {
     std::lock_guard<std::mutex> lk(send_mutex);
     protocol.send_pick_up();

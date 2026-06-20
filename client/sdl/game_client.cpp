@@ -27,6 +27,7 @@
 #include "common/updates/moved_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_left_update.h"
+#include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
@@ -337,6 +338,8 @@ void GameClient::run() {
                                         client->do_clan_action(ClanAction::KICK, nick);
                                 } else if (chat_input_ == "/dejar-clan") {
                                     client->do_clan_action(ClanAction::LEAVE, "");
+                                } else if (chat_input_ == "/resucitar") {
+                                    client->do_resurrect();
                                 } else {
                                     // manejo normal del chat
                                     client->do_chat(chat_input_);
@@ -741,6 +744,21 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
                                   static_cast<int>((1.0f - dist / kMaxDist) * MIX_MAX_VOLUME);
                     }
                     audio_manager->play_sound("death", vol);
+                }
+                break;
+            }
+            case UpdateType::REVIVE: {
+                const auto& ru = static_cast<const ReviveUpdate&>(*update);
+                switch (ru.get_status()) {
+                    case ResurrectStatus::SUCCESS:
+                        mini_chat->add_message("Comenzando la resurrección. Estarás inmovilizado "
+                                               "durante el proceso...");
+                        break;
+                    case ResurrectStatus::NOT_DEAD:
+                        mini_chat->add_message("No estás muerto");
+                        break;
+                    case ResurrectStatus::ALREADY_RESURRECTING:
+                        break;
                 }
                 break;
             }

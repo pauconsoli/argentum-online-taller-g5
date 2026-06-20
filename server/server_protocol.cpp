@@ -17,6 +17,7 @@
 #include "common/commands/meditate_command.h"
 #include "common/commands/move_command.h"
 #include "common/commands/pick_up_item_command.h"
+#include "common/commands/resurrect_command.h"
 #include "common/liberror.h"
 #include "common/protocol_constants.h"
 #include "common/updates/attack_update.h"
@@ -35,6 +36,7 @@
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
 #include "common/updates/player_left_update.h"
+#include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/spawned_update.h"
 #include "common/updates/system_msg_update.h"
@@ -209,6 +211,10 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_meditate_payload(uint32_t pl
     return std::make_unique<MeditateCommand>(player_id);
 }
 
+std::unique_ptr<ClientCommand> ServerProtocol::recv_resurrect_payload(uint32_t player_id) {
+    return std::make_unique<ResurrectCommand>(player_id);
+}
+
 std::unique_ptr<ClientCommand> ServerProtocol::recv_pick_up_payload(uint32_t player_id) {
     return std::make_unique<PickUpItemCommand>(player_id);
 }
@@ -282,6 +288,9 @@ void ServerProtocol::send_update(const GameUpdate& update) {
             break;
         case UpdateType::DEATH:
             send_death(update);
+            break;
+        case UpdateType::REVIVE:
+            send_revive(update);
             break;
         case UpdateType::INVENTORY:
             send_inventory(update);
@@ -454,6 +463,16 @@ void ServerProtocol::send_death(const GameUpdate& update) {
     put_u32(buf, u.get_killer_id());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_death: client closed connection");
+    }
+}
+
+void ServerProtocol::send_revive(const GameUpdate& update) {
+    const auto& u = static_cast<const ReviveUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::REVIVE);
+    put_u8(buf, static_cast<uint8_t>(u.get_status()));
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_revive: client closed connection");
     }
 }
 

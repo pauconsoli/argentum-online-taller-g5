@@ -16,6 +16,7 @@
 #include "common/direction.h"
 #include "common/meditate_status.h"
 #include "common/position.h"
+#include "common/resurrect_status.h"
 #include "common/updates/game_update.h"
 #include "server/game/bank.h"
 #include "server/game/clan.h"
@@ -130,7 +131,7 @@ class World {
     bool move_character(uint32_t character_id, Direction direction);
 
     bool teleport_player(uint32_t player_id, const Position& dest);
-    bool start_resurrection(uint32_t player_id);
+    ResurrectStatus start_resurrection(uint32_t player_id);
     MeditateStatus meditate(uint32_t player_id);
 
     AttackResult attack(uint32_t attacker_id, uint32_t target_id);

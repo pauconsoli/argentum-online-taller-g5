@@ -40,6 +40,7 @@ class Client {
     void do_move(Direction dir);
     void do_attack(uint32_t target_id);
     void do_meditate();
+    void do_resurrect();
     void do_pick_up();
     void do_drop_item(uint8_t slot_index);
     void do_equip_item(uint8_t slot_index);

@@ -68,6 +68,9 @@ void ReceiverThread::run() {
                         case ClientOpcode::MEDITATE:
                             handle_meditate();
                             break;
+                        case ClientOpcode::RESURRECT:
+                            handle_resurrect();
+                            break;
                         case ClientOpcode::PICK_UP:
                             handle_pick_up();
                             break;
@@ -221,6 +224,16 @@ void ReceiverThread::handle_meditate() {
         return;
     }
     auto cmd = protocol.recv_meditate_payload(player_conn.get_player_id());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_resurrect() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd = protocol.recv_resurrect_payload(player_conn.get_player_id());
     server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 

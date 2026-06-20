@@ -394,34 +394,31 @@ MeditateStatus World::meditate(uint32_t player_id) {
     return player->is_meditating() ? MeditateStatus::SUCCESS : MeditateStatus::NO_MANA;
 }
 
-bool World::start_resurrection(uint32_t player_id) {
+ResurrectStatus World::start_resurrection(uint32_t player_id) {
     Player* player = get_player(player_id);
     if (!player || !player->is_dead()) {
-        return false;
+        return ResurrectStatus::NOT_DEAD;
+    }
+
+    if (pending_resurrections.count(player_id)) {
+        return ResurrectStatus::ALREADY_RESURRECTING;
     }
 
     const City* closest_city = map.get_closest_city(player->get_position());
     if (!closest_city) {
-        return false;  // no hay ciudades
-    }
-
-    if (pending_resurrections.count(player_id)) {
-        return false;  // ya está en proceso de resurrección
+        return ResurrectStatus::NOT_DEAD;  // caso interno, no debería ocurrir con un mapa válido
     }
 
     Position priest_pos = closest_city->get_priest_position();
     Position player_pos = player->get_position();
 
-    // calculo distancia entre el jugador y el sacerdote para determinar el tiempo de espera antes
-    // de la resurrección
     int dx = priest_pos.x - player_pos.x;
     int dy = priest_pos.y - player_pos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
-
     float wait_time = distance * GameConfig::get_instance().get_resurrect_still_factor();
 
     pending_resurrections[player_id] = {wait_time, priest_pos};
-    return true;
+    return ResurrectStatus::SUCCESS;
 }
 
 void World::add_npc(std::unique_ptr<NPC> npc) {

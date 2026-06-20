@@ -28,6 +28,7 @@ class ReceiverThread: public Thread {
     void handle_move();
     void handle_attack();
     void handle_meditate();
+    void handle_resurrect();
     void handle_pick_up();
     void handle_drop_item();
     void handle_equip_item();

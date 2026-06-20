@@ -42,6 +42,7 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_moved();
     std::unique_ptr<GameUpdate> recv_attacked();
     std::unique_ptr<GameUpdate> recv_death();
+    std::unique_ptr<GameUpdate> recv_revive();
     std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_chat_msg();
     std::unique_ptr<GameUpdate> recv_system_msg();
@@ -62,6 +63,7 @@ class ClientProtocol {
     void send_move(Direction dir);
     void send_attack(uint32_t target_id);
     void send_meditate();
+    void send_resurrect();
     void send_pick_up();
     void send_drop_item(uint8_t slot_index);
     void send_equip_item(uint8_t slot_index);
