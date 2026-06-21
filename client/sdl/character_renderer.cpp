@@ -55,6 +55,10 @@ void CharacterRenderer::draw_equipped_item(int player_position_x, int player_pos
     }
 }
 
+void CharacterRenderer::draw_shadow(int center_x, int foot_y, int width) {
+    renderer->draw_shadow(center_x, foot_y, width);
+}
+
 void CharacterRenderer::draw_nickname(const std::string& nickname, int px, int py,
                                       SDL_Color color) {
     int nick_center_x = px + BODY_W / 2;

@@ -21,6 +21,11 @@ class PlayerRenderer {
                 uint32_t my_clan_id, int direction, int current_frame,
                 const std::vector<InventorySlotData>& inventory_slots, int tile_w, int tile_h);
 
+    void render_single(uint32_t pid, const PlayerSnapshot& ps, uint32_t my_player_id,
+                       uint32_t my_clan_id, int direction, int current_frame,
+                       const std::vector<InventorySlotData>& inventory_slots, int tile_w,
+                       int tile_h);
+
  private:
     static ItemType get_item_type(const std::string& name);
     static uint16_t head_index_for_race(uint8_t race);

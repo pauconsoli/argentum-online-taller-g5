@@ -30,6 +30,9 @@ class CharacterRenderer {
     void draw_equipped_item(int px, int py, SDL_Texture* itex, ItemType itype, int tile_w);
     void draw_nickname(const std::string& nickname, int px, int py,
                        SDL_Color color = {255, 255, 255, 255});
+    // Forwarding a Renderer::draw_shadow; permite que PlayerRenderer dibuje sombras
+    // sin necesitar un Renderer* propio.
+    void draw_shadow(int center_x, int foot_y, int width);
 };
 
 #endif

@@ -44,42 +44,57 @@ uint16_t PlayerRenderer::head_index_for_race(uint8_t race) {
     }
 }
 
+void PlayerRenderer::render_single(uint32_t pid, const PlayerSnapshot& ps, uint32_t my_player_id,
+                                   uint32_t my_clan_id, int direction, int current_frame,
+                                   const std::vector<InventorySlotData>& inventory_slots,
+                                   int tile_w, int tile_h) {
+    int px = camera_.get_screen_x(ps.x * tile_w);
+    int py = camera_.get_screen_y(ps.y * tile_h);
+
+    int body_x = px + (tile_w - CharacterRenderer::BODY_W) / 2;
+    int body_y = py + tile_h - CharacterRenderer::BODY_H;
+
+    SDL_Texture* body_texture = sprite_manager_->get_body(ps.race, ps.klass);
+    SDL_Texture* head_texture = sprite_manager_->get_head(head_index_for_race(ps.race));
+
+    int player_direction = (pid == my_player_id) ? direction : 0;
+    int player_frame = (pid == my_player_id) ? current_frame : 0;
+
+    // Los fantasmas no proyectan sombra (refuerza visualmente su estado etéreo).
+    if (!ps.is_ghost) {
+        // Centro en px+tile_w/2 (centro del tile): body_x + BODY_W/2 difiere 1px
+        // por truncamiento de enteros (BODY_W=27 es impar), lo que correría la sombra.
+        int shadow_w = static_cast<int>(tile_w * Renderer::SHADOW_WIDTH_RATIO);
+        character_renderer_->draw_shadow(px + tile_w / 2, py + tile_h, shadow_w);
+    }
+
+    character_renderer_->draw_character(body_texture, head_texture, body_x, body_y,
+                                        player_direction, player_frame, ps.is_ghost);
+
+    if (pid == my_player_id) {
+        for (const auto& islot : inventory_slots) {
+            if (!islot.is_equipped || islot.item_name.empty())
+                continue;
+            ItemType itype = get_item_type(islot.item_name);
+            SDL_Texture* itex =
+                sprite_manager_->get_item(SpriteManager::item_key_for_name(islot.item_name));
+            if (!itex)
+                continue;
+            character_renderer_->draw_equipped_item(body_x, body_y, itex, itype, tile_w);
+        }
+    }
+    SDL_Color nick_color = {255, 255, 255, 255};
+    if (my_clan_id != 0 && ps.clan_id == my_clan_id && pid != my_player_id)
+        nick_color = {120, 255, 120, 255};
+    character_renderer_->draw_nickname(ps.nick, body_x, body_y, nick_color);
+}
+
 void PlayerRenderer::render(const std::map<uint32_t, PlayerSnapshot>& players,
                             uint32_t my_player_id, uint32_t my_clan_id, int direction,
                             int current_frame,
                             const std::vector<InventorySlotData>& inventory_slots, int tile_w,
                             int tile_h) {
-    for (const auto& [pid, ps] : players) {
-        int px = camera_.get_screen_x(ps.x * tile_w);
-        int py = camera_.get_screen_y(ps.y * tile_h);
-
-        int body_x = px + (tile_w - CharacterRenderer::BODY_W) / 2;
-        int body_y = py + tile_h - CharacterRenderer::BODY_H;
-
-        SDL_Texture* body_texture = sprite_manager_->get_body(ps.race, ps.klass);
-        SDL_Texture* head_texture = sprite_manager_->get_head(head_index_for_race(ps.race));
-
-        int player_direction = (pid == my_player_id) ? direction : 0;
-        int player_frame = (pid == my_player_id) ? current_frame : 0;
-
-        character_renderer_->draw_character(body_texture, head_texture, body_x, body_y,
-                                            player_direction, player_frame, ps.is_ghost);
-
-        if (pid == my_player_id) {
-            for (const auto& islot : inventory_slots) {
-                if (!islot.is_equipped || islot.item_name.empty())
-                    continue;
-                ItemType itype = get_item_type(islot.item_name);
-                SDL_Texture* itex =
-                    sprite_manager_->get_item(SpriteManager::item_key_for_name(islot.item_name));
-                if (!itex)
-                    continue;
-                character_renderer_->draw_equipped_item(body_x, body_y, itex, itype, tile_w);
-            }
-        }
-        SDL_Color nick_color = {255, 255, 255, 255};
-        if (my_clan_id != 0 && ps.clan_id == my_clan_id && pid != my_player_id)
-            nick_color = {120, 255, 120, 255};
-        character_renderer_->draw_nickname(ps.nick, body_x, body_y, nick_color);
-    }
+    for (const auto& [pid, ps] : players)
+        render_single(pid, ps, my_player_id, my_clan_id, direction, current_frame, inventory_slots,
+                      tile_w, tile_h);
 }

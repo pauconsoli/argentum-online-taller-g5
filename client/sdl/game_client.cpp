@@ -21,6 +21,7 @@ static std::string get_base_asset_dir() {
     return "assets";
 }
 
+
 // Constructor standalone
 GameClient::GameClient(int width, int height, bool fullscreen, const std::string& host,
                        const std::string& port):

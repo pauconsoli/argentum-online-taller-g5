@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "renderer.h"
+
 Hud::Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height, int win_width):
     sdl_renderer(renderer), font(nullptr), window_height(win_height), window_width(win_width) {
     if (TTF_Init() < 0) {
@@ -126,6 +128,18 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
                     int ox = cell_x + (CELL - ICON) / 2;
                     int oy = cell_y + (CELL - ICON) / 2;
                     SDL_Rect dst = {ox, oy, ICON, ICON};
+                    // Contorno negro fino: misma técnica que Renderer::draw_frame_scaled_outlined
+                    static const int dirs[8][2] = {{-1, 0},  {1, 0},  {0, -1}, {0, 1},
+                                                   {-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+                    SDL_SetTextureColorMod(icon, 0, 0, 0);
+                    SDL_SetTextureAlphaMod(icon, Renderer::OUTLINE_ALPHA);
+                    for (const auto& d : dirs) {
+                        SDL_Rect off = {ox + d[0] * Renderer::OUTLINE_THICKNESS,
+                                        oy + d[1] * Renderer::OUTLINE_THICKNESS, ICON, ICON};
+                        SDL_RenderCopy(sdl_renderer, icon, nullptr, &off);
+                    }
+                    SDL_SetTextureAlphaMod(icon, 255);
+                    SDL_SetTextureColorMod(icon, 255, 255, 255);
                     SDL_RenderCopy(sdl_renderer, icon, nullptr, &dst);
                 }
                 uint32_t qty = slots[slot].quantity;
