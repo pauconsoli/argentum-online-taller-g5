@@ -161,11 +161,17 @@ void Server::leave_match(PlayerConnection& conn) {
     if (it == matches.end()) {
         return;
     }
-    it->second->remove_player(&conn);
+    Match* match = it->second.get();
+    World& world = match->get_world();
+    Player* player = world.get_player(conn.get_player_id());
 
-    // Avisar a todos en la partida que este jugador se desconectó
-    auto update = std::make_shared<PlayerLeftUpdate>(conn.get_player_id());
-    it->second->broadcast_update_to_all(update);
+    if (player) {
+        auto update = std::make_shared<PlayerLeftUpdate>(player->get_id(), player->get_name(),
+                                                         player->get_clan_id());
+        match->broadcast_update_to_all(update);
+    }
+
+    it->second->remove_player(&conn);
 }
 
 void Server::push_command_to_match(uint32_t match_id, std::unique_ptr<ClientCommand> cmd) {
