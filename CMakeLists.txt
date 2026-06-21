@@ -231,6 +231,8 @@ if(ARGENTUM_CLIENT_QT)
             client/client.h
             client/client_protocol.cpp
             client/sdl/game_client.cpp
+            client/sdl/sdl_game_state.cpp
+            client/sdl/server_update_handler.cpp
             client/sdl/sdl_config.cpp
             client/sdl/renderer.cpp
             client/sdl/character_renderer.cpp
@@ -246,6 +248,7 @@ if(ARGENTUM_CLIENT_QT)
             client/sdl/terrain_renderer.cpp
             client/sdl/npc_renderer.cpp
             client/sdl/player_renderer.cpp
+            client/sdl/world_renderer.cpp
         )
 
         add_dependencies(argentum_client_qt taller_common SDL2pp::SDL2pp)

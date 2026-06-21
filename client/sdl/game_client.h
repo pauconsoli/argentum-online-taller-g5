@@ -2,12 +2,11 @@
 #define GAME_CLIENT_H
 
 class ClientMap;
+class WorldRenderer;
 
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <SDL2/SDL.h>
 
@@ -16,18 +15,6 @@ class ClientMap;
 #include "camera.h"
 #include "character_renderer.h"
 #include "clan_panel.h"
-#include "common/updates/attack_update.h"
-#include "common/updates/catalog_update.h"
-#include "common/updates/chat_msg_update.h"
-#include "common/updates/clan_result_update.h"
-#include "common/updates/clan_review_update.h"
-#include "common/updates/death_update.h"
-#include "common/updates/error_update.h"
-#include "common/updates/inventory_update.h"
-#include "common/updates/player_left_update.h"
-#include "common/updates/snapshot_update.h"
-#include "common/updates/system_msg_update.h"
-#include "common/updates/world_map_update.h"
 #include "help_menu.h"
 #include "hud.h"
 #include "input_handler.h"
@@ -36,64 +23,60 @@ class ClientMap;
 #include "player_renderer.h"
 #include "renderer.h"
 #include "sdl_config.h"
+#include "sdl_game_state.h"
+#include "server_update_handler.h"
 #include "sprite_manager.h"
 #include "terrain_renderer.h"
 
-class GameClient {
+class GameClient: public Notifier {
  private:
-    SdlConfig config_;
-    SDL_Window* window;
-    Renderer* renderer;
-    CharacterRenderer* character_renderer;
-    HelpMenu* help_menu;
-    ClanPanel* clan_panel_;
-    Hud* hud;
-    MiniChat* mini_chat;
-    SpriteManager* sprite_manager;
-    TerrainRenderer* terrain_renderer_;
-    NPCRenderer* npc_renderer_;
-    PlayerRenderer* player_renderer_;
+    // Deleter que cierra ventana y termina SDL juntos.
+    // Declarado antes que renderer para que renderer se destruya primero
+    // (orden de destrucción = inverso al de declaración).
+    struct SdlWindowDeleter {
+        void operator()(SDL_Window* w) const noexcept {
+            SDL_DestroyWindow(w);
+            SDL_Quit();
+        }
+    };
+
+    SdlConfig config;
+    std::unique_ptr<SDL_Window, SdlWindowDeleter> window;
+    std::unique_ptr<Renderer> renderer;
+    std::unique_ptr<CharacterRenderer> character_renderer;
+    std::unique_ptr<HelpMenu> help_menu;
+    std::unique_ptr<ClanPanel> clan_panel;
+    std::unique_ptr<Hud> hud;
+    std::unique_ptr<MiniChat> mini_chat;
+    std::unique_ptr<SpriteManager> sprite_manager;
+    std::unique_ptr<TerrainRenderer> terrain_renderer;
+    std::unique_ptr<NPCRenderer> npc_renderer;
+    std::unique_ptr<PlayerRenderer> player_renderer;
     std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
     InputHandler input_handler;
     Camera camera;
-    uint32_t my_player_id;
-    uint8_t my_race;
-    uint8_t my_klass;
-    int player_x;
-    int player_y;
     int width;
     int height;
-    int my_hp;
-    int my_max_hp;
-    int my_mp;
-    int my_max_mp;
-    int my_level;
-    uint64_t my_gold;
-    uint64_t my_xp;
-    bool my_is_ghost = false;
-    uint32_t my_clan_id = 0;
-    std::map<uint32_t, PlayerSnapshot> players;
-    std::vector<GroundItemSnapshot> ground_items_;
-    std::vector<InventorySlotData> inventory_slots_;
-    std::map<uint32_t, NPCSnapshot> npcs_;
 
-    bool chat_active_ = false;
-    bool music_paused_ = false;
-    std::string chat_input_;
-    int selected_slot_ = -1;
-    int selected_npc_id_ = 0;
+    GameState state;
+    ServerUpdateHandler update_handler;
+    std::unique_ptr<WorldRenderer> world_renderer;
+
+    bool chat_active = false;
+    bool music_paused = false;
+    std::string chat_input;
 
     // Run-loop state shared across extracted methods
-    bool running_ = false;
-    SDL_Event event_{};
-    Uint32 frame_start_ = 0;
-    bool moving_ = false;
-    int direction_ = 0;
-    int current_frame_ = 0;
-    int total_frames_ = 6;
-    Uint32 last_frame_time_ = 0;
-    Uint32 last_move_time_ = 0;
+    bool running = false;
+    SDL_Event event{};
+    Uint32 frame_start = 0;
+    bool moving = false;
+    int direction = 0;
+    int current_frame = 0;
+    int total_frames = 6;
+    Uint32 last_frame_time = 0;
+    Uint32 last_move_time = 0;
 
  public:
     // Constructor standalone: crea y arranca su propio Client (binario argentum_client).
@@ -102,30 +85,19 @@ class GameClient {
     // Constructor de handoff Qt→SDL: recibe Client ya conectado y con lobby completado.
     GameClient(int width, int height, bool fullscreen, std::unique_ptr<Client> client, uint8_t race,
                uint8_t klass, uint32_t player_id);
-    ~GameClient();
+    ~GameClient() override;
 
     GameClient(const GameClient&) = delete;
     GameClient& operator=(const GameClient&) = delete;
 
     void run();
+    void message(const std::string& text) override;
+    void play(const std::string& sound, int vol = -1) override;
+    void show_clan_review(const ClanReviewUpdate& cru) override;
 
  private:
+    void init_subsystems(bool fullscreen, bool load_font);
     void load_audio_assets();
-    void process_server_updates(int tile_w, int tile_h, ClientMap& client_map);
-    void handle_error_update(const ErrorUpdate& eu);
-    void handle_snapshot_update(const SnapshotUpdate& snap, int tile_w, int tile_h,
-                                ClientMap& client_map);
-    void handle_player_left_update(const PlayerLeftUpdate& pu);
-    static void handle_world_map_update(const WorldMapUpdate& mu, ClientMap& client_map);
-    void handle_catalog_update(const CatalogUpdate& cat);
-    void handle_inventory_update(const InventoryUpdate& iu);
-    void handle_attack_update(const AttackUpdate& au);
-    void handle_death_update(const DeathUpdate& du, int tile_w, int tile_h);
-    void handle_chat_msg_update(const ChatMsgUpdate& msg);
-    void handle_clan_result_update(const ClanResultUpdate& cu);
-    void handle_clan_review_update(const ClanReviewUpdate& cru);
-    void handle_system_msg_update(const SystemMsgUpdate& su);
-    void play_attack_sound(const AttackResult& r);
     void process_sdl_events();
     void handle_chat_event(const SDL_Event& e);
     void handle_chat_submit();
