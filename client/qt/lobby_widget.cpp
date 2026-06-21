@@ -13,6 +13,8 @@
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
 
+#include "help_dialog.h"
+
 LobbyWidget::LobbyWidget(QWidget* parent):
         QWidget(parent),
         table(new QTableWidget(0, 4, this)),
@@ -42,10 +44,22 @@ LobbyWidget::LobbyWidget(QWidget* parent):
     logout_button->setStyleSheet(
             "QPushButton { background-color: #4a2418; border: 2px solid #8a3a1f; }"
             "QPushButton:hover { background-color: #6b3424; }");
+
+    auto* help_button = new QPushButton(tr("Ayuda"), this);
+    help_button->setStyleSheet(
+            "QPushButton { background-color: #4a3422; border: 2px solid #8a5a2b; color: #f0c870; }"
+            "QPushButton:hover { background-color: #6b4a30; }");
+    connect(help_button, &QPushButton::clicked, this, [this]() {
+        HelpDialog dlg(this);
+        dlg.exec();
+    });
+
     header->addWidget(logo);
     header->addSpacing(12);
     header->addWidget(title);
     header->addStretch();
+    header->addWidget(help_button);
+    header->addSpacing(8);
     header->addWidget(logout_button);
 
     table->setHorizontalHeaderLabels({tr("ID"), tr("Nombre"), tr("Jugadores"), tr("Max")});

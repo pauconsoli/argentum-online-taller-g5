@@ -3,12 +3,15 @@
 #include <QFont>
 #include <QFormLayout>
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPixmap>
 #include <QPushButton>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+#include "help_dialog.h"
 
 ConnectionWidget::ConnectionWidget(QWidget* parent):
     QWidget(parent),
@@ -87,7 +90,31 @@ ConnectionWidget::ConnectionWidget(QWidget* parent):
     connect(options_toggle, &QToolButton::toggled, this,
             &ConnectionWidget::on_toggle_advanced_options);
 
+    // Botón de ayuda (?) arriba a la derecha.
+    auto* help_button = new QPushButton(tr("?"), this);
+    help_button->setFixedSize(36, 36);
+    help_button->setToolTip(tr("¿Cómo se juega?"));
+    help_button->setStyleSheet(
+        "QPushButton {"
+        "  background-color: #4a3422;"
+        "  color: #f0c870;"
+        "  border: 2px solid #8a5a2b;"
+        "  border-radius: 18px;"
+        "  font-weight: bold;"
+        "  font-size: 18px;"
+        "}"
+        "QPushButton:hover { background-color: #6b4a30; }");
+    connect(help_button, &QPushButton::clicked, this, [this]() {
+        HelpDialog dlg(this);
+        dlg.exec();
+    });
+
+    auto* top_row = new QHBoxLayout;
+    top_row->addStretch();
+    top_row->addWidget(help_button);
+
     auto* root = new QVBoxLayout(this);
+    root->addLayout(top_row);
     root->addStretch(2);
     root->addWidget(logo);
     root->addWidget(subtitle);
