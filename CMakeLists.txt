@@ -238,6 +238,8 @@ if(ARGENTUM_CLIENT_QT)
             client/sdl/camera.cpp
             client/sdl/hud.cpp
             client/sdl/mini_chat.cpp
+            client/sdl/help_menu.cpp
+            client/sdl/clan_panel.cpp
             client/sdl/sprite_manager.cpp
             client/sdl/client_map.cpp
             client/sdl/audio_manager.cpp

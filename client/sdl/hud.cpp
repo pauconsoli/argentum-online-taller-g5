@@ -176,6 +176,30 @@ int Hud::get_slot_at(int screen_x, int screen_y) const {
     return row * COLS + col;
 }
 
+void Hud::draw_music_button(bool paused) {
+    constexpr int BTN_W = 140;
+    constexpr int BTN_H = 24;
+    constexpr int MARGIN = 5;
+    const int btn_x = window_width - BTN_W - MARGIN;
+    const int btn_y = window_height - BTN_H - MARGIN;
+
+    SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 160);
+    SDL_Rect bg = {btn_x, btn_y, BTN_W, BTN_H};
+    SDL_RenderFillRect(sdl_renderer, &bg);
+
+    SDL_Color color = paused ? SDL_Color{180, 60, 60, 255} : SDL_Color{60, 200, 100, 255};
+    std::string label = paused ? "[M] Musica: OFF" : "[M] Musica: ON";
+    draw_text(label, btn_x + 5, btn_y + 4, color);
+}
+
+SDL_Rect Hud::get_music_button_rect() const {
+    constexpr int BTN_W = 140;
+    constexpr int BTN_H = 24;
+    constexpr int MARGIN = 5;
+    return {window_width - BTN_W - MARGIN, window_height - BTN_H - MARGIN, BTN_W, BTN_H};
+}
+
 void Hud::draw(int hp, int max_hp, int mana, int max_mana, int level, uint64_t gold, uint64_t xp) {
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color yellow = {255, 220, 60, 255};

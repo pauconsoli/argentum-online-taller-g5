@@ -15,14 +15,20 @@ class ClientMap;
 #include "audio_manager.h"
 #include "camera.h"
 #include "character_renderer.h"
+#include "clan_panel.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/catalog_update.h"
 #include "common/updates/chat_msg_update.h"
+#include "common/updates/clan_result_update.h"
+#include "common/updates/clan_review_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
+#include "help_menu.h"
 #include "hud.h"
 #include "input_handler.h"
 #include "mini_chat.h"
@@ -39,6 +45,8 @@ class GameClient {
     SDL_Window* window;
     Renderer* renderer;
     CharacterRenderer* character_renderer;
+    HelpMenu* help_menu;
+    ClanPanel* clan_panel_;
     Hud* hud;
     MiniChat* mini_chat;
     SpriteManager* sprite_manager;
@@ -64,12 +72,14 @@ class GameClient {
     uint64_t my_gold;
     uint64_t my_xp;
     bool my_is_ghost = false;
+    uint32_t my_clan_id = 0;
     std::map<uint32_t, PlayerSnapshot> players;
     std::vector<GroundItemSnapshot> ground_items_;
     std::vector<InventorySlotData> inventory_slots_;
     std::map<uint32_t, NPCSnapshot> npcs_;
 
     bool chat_active_ = false;
+    bool music_paused_ = false;
     std::string chat_input_;
     int selected_slot_ = -1;
     int selected_npc_id_ = 0;
@@ -87,10 +97,11 @@ class GameClient {
 
  public:
     // Constructor standalone: crea y arranca su propio Client (binario argentum_client).
-    GameClient(int width, int height, const std::string& host, const std::string& port);
+    GameClient(int width, int height, bool fullscreen, const std::string& host,
+               const std::string& port);
     // Constructor de handoff Qt→SDL: recibe Client ya conectado y con lobby completado.
-    GameClient(int width, int height, std::unique_ptr<Client> client, uint8_t race, uint8_t klass,
-               uint32_t player_id);
+    GameClient(int width, int height, bool fullscreen, std::unique_ptr<Client> client, uint8_t race,
+               uint8_t klass, uint32_t player_id);
     ~GameClient();
 
     GameClient(const GameClient&) = delete;
@@ -106,12 +117,26 @@ class GameClient {
                                 ClientMap& client_map);
     void handle_player_left_update(const PlayerLeftUpdate& pu);
     static void handle_world_map_update(const WorldMapUpdate& mu, ClientMap& client_map);
+    void handle_catalog_update(const CatalogUpdate& cat);
     void handle_inventory_update(const InventoryUpdate& iu);
     void handle_attack_update(const AttackUpdate& au);
     void handle_death_update(const DeathUpdate& du, int tile_w, int tile_h);
     void handle_chat_msg_update(const ChatMsgUpdate& msg);
+    void handle_clan_result_update(const ClanResultUpdate& cu);
+    void handle_clan_review_update(const ClanReviewUpdate& cru);
+    void handle_system_msg_update(const SystemMsgUpdate& su);
     void play_attack_sound(const AttackResult& r);
     void process_sdl_events();
+    void handle_chat_event(const SDL_Event& e);
+    void handle_chat_submit();
+    void dispatch_chat_command(const std::string& input);
+    void handle_drop_command(const std::string& input);
+    void handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount,
+                            const std::string& display);
+    void handle_left_click(int screen_x, int screen_y);
+    bool try_attack_at_tile(int tile_x, int tile_y);
+    void try_equip_at(int screen_x, int screen_y);
+    void handle_right_click(int screen_x, int screen_y);
     void process_keyword_input();
     void send_chat_message(const std::string& text);
     void toggle_chat();

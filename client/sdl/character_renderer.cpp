@@ -55,11 +55,11 @@ void CharacterRenderer::draw_equipped_item(int player_position_x, int player_pos
     }
 }
 
-void CharacterRenderer::draw_nickname(const std::string& nickname, int px, int py) {
+void CharacterRenderer::draw_nickname(const std::string& nickname, int px, int py,
+                                      SDL_Color color) {
     int nick_center_x = px + BODY_W / 2;
     int nick_y = py + BODY_H + 3;
     SDL_Color shadow = {0, 0, 0, 200};
-    SDL_Color white = {255, 255, 255, 255};
     renderer->draw_label(nickname, nick_center_x + 1, nick_y + 1, shadow);
-    renderer->draw_label(nickname, nick_center_x, nick_y, white);
+    renderer->draw_label(nickname, nick_center_x, nick_y, color);
 }

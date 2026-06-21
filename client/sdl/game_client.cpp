@@ -1,3 +1,5 @@
+// VERSION ACTUAL SIN CAMBIOS DE PAU
+
 #include "game_client.h"
 
 #include <algorithm>
@@ -12,8 +14,14 @@
 #include <vector>
 
 #include "client_map.h"
+#include "common/cheat_type.h"
+#include "common/clan/clan_action.h"
+#include "common/clan/clan_action_status.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/catalog_update.h"
 #include "common/updates/chat_msg_update.h"
+#include "common/updates/clan_result_update.h"
+#include "common/updates/clan_review_update.h"
 #include "common/updates/death_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
@@ -22,6 +30,7 @@
 #include "common/updates/moved_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
+#include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
 #include "server/game/player_class.h"
 #include "server/game/player_race.h"
@@ -36,11 +45,14 @@ static std::string get_base_asset_dir() {
 
 // inicializa video + audio
 // esto deberia ir en audio manager o esta ok aca?
-static void init_sdl_window(SDL_Window*& window, int width, int height) {
+static void init_sdl_window(SDL_Window*& window, int width, int height, bool fullscreen) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
+    Uint32 flags = SDL_WINDOW_SHOWN;
+    if (fullscreen)
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     window = SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+                              SDL_WINDOWPOS_CENTERED, width, height, flags);
     if (!window) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
@@ -48,10 +60,13 @@ static void init_sdl_window(SDL_Window*& window, int width, int height) {
 }
 
 // Constructor standalone
-GameClient::GameClient(int width, int height, const std::string& host, const std::string& port):
+GameClient::GameClient(int width, int height, bool fullscreen, const std::string& host,
+                       const std::string& port):
     window(nullptr),
     renderer(nullptr),
     character_renderer(nullptr),
+    help_menu(nullptr),
+    clan_panel_(nullptr),
     hud(nullptr),
     mini_chat(nullptr),
     sprite_manager(nullptr),
@@ -67,7 +82,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     player_y(300),
     width(width),
     height(height) {
-    init_sdl_window(window, width, height);
+    init_sdl_window(window, width, height, fullscreen);
     my_hp = 100;
     my_max_hp = 100;
     my_mp = 100;
@@ -76,6 +91,7 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     my_gold = 0;
     my_xp = 0;
     renderer = new Renderer(window);
+    SDL_RenderSetLogicalSize(renderer->get_sdl_renderer(), width, height);
     character_renderer = new CharacterRenderer(renderer);
     std::string base_assets = get_base_asset_dir();
     std::string font_path = base_assets + "/fonts/font.ttf";
@@ -87,16 +103,20 @@ GameClient::GameClient(int width, int height, const std::string& host, const std
     player_renderer_ = new PlayerRenderer(character_renderer, sprite_manager, camera);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
+    help_menu = new HelpMenu(renderer->get_sdl_renderer(), font_path, width, height);
+    clan_panel_ = new ClanPanel(renderer->get_sdl_renderer(), font_path, width, height);
     audio_manager = std::make_unique<AudioManager>();
     load_audio_assets();
 }
 
 
-GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t race,
-                       uint8_t klass, uint32_t player_id):
+GameClient::GameClient(int width, int height, bool fullscreen, std::unique_ptr<Client> c,
+                       uint8_t race, uint8_t klass, uint32_t player_id):
     config_(SdlConfig::load("client/config/sdl_config.toml")),
     window(nullptr),
     renderer(nullptr),
+    help_menu(nullptr),
+    clan_panel_(nullptr),
     hud(nullptr),
     mini_chat(nullptr),
     sprite_manager(nullptr),
@@ -112,7 +132,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     player_y(300),
     width(width),
     height(height) {
-    init_sdl_window(window, width, height);
+    init_sdl_window(window, width, height, fullscreen);
     my_hp = 100;
     my_max_hp = 100;
     my_mp = 100;
@@ -121,6 +141,7 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     my_gold = 0;
     my_xp = 0;
     renderer = new Renderer(window);
+    SDL_RenderSetLogicalSize(renderer->get_sdl_renderer(), width, height);
     character_renderer = new CharacterRenderer(renderer);
     std::string base_assets = get_base_asset_dir();
     std::string font_path = base_assets + "/fonts/font.ttf";
@@ -133,6 +154,8 @@ GameClient::GameClient(int width, int height, std::unique_ptr<Client> c, uint8_t
     player_renderer_ = new PlayerRenderer(character_renderer, sprite_manager, camera);
     hud = new Hud(renderer->get_sdl_renderer(), font_path, height, width);
     mini_chat = new MiniChat(renderer->get_sdl_renderer(), font_path, width);
+    help_menu = new HelpMenu(renderer->get_sdl_renderer(), font_path, width, height);
+    clan_panel_ = new ClanPanel(renderer->get_sdl_renderer(), font_path, width, height);
     audio_manager = std::make_unique<AudioManager>();
     load_audio_assets();
 }
@@ -141,6 +164,8 @@ GameClient::~GameClient() {
     client->stop();
     client->join();
     delete character_renderer;
+    delete help_menu;
+    delete clan_panel_;
     delete hud;
     delete mini_chat;
     delete terrain_renderer_;
@@ -221,16 +246,19 @@ void GameClient::run() {
             }
         }
 
-        player_renderer_->render(players, my_player_id, direction_, current_frame_,
+        player_renderer_->render(players, my_player_id, my_clan_id, direction_, current_frame_,
                                  inventory_slots_, config_.tile_width, config_.tile_height);
         npc_renderer_->render(npcs_, config_.tile_width, config_.tile_height);
 
         hud->draw(my_hp, my_max_hp, my_mp, my_max_mp, my_level, my_gold, my_xp);
         hud->draw_inventory(sprite_manager, inventory_slots_, selected_slot_);
+        hud->draw_music_button(music_paused_);
 
         mini_chat->draw();
         if (chat_active_)
             mini_chat->draw_input(chat_input_, height - 30);
+        help_menu->draw();
+        clan_panel_->draw();
         renderer->present();
 
         Uint32 elapsed = SDL_GetTicks() - frame_start_;
@@ -271,6 +299,18 @@ void GameClient::process_server_updates(int tile_w, int tile_h, ClientMap& clien
             case UpdateType::CHAT_MSG:
                 handle_chat_msg_update(static_cast<const ChatMsgUpdate&>(*update));
                 break;
+            case UpdateType::CATALOG:
+                handle_catalog_update(static_cast<const CatalogUpdate&>(*update));
+                break;
+            case UpdateType::CLAN_RESULT:
+                handle_clan_result_update(static_cast<const ClanResultUpdate&>(*update));
+                break;
+            case UpdateType::CLAN_REVIEW:
+                handle_clan_review_update(static_cast<const ClanReviewUpdate&>(*update));
+                break;
+            case UpdateType::SYSTEM_MSG:
+                handle_system_msg_update(static_cast<const SystemMsgUpdate&>(*update));
+                break;
             default:
                 break;
         }
@@ -281,19 +321,17 @@ void GameClient::handle_error_update(const ErrorUpdate& eu) {
     const auto& d = eu.detail;
     if (d.find("move_player") != std::string::npos || d.find("mover") != std::string::npos)
         return;
-    if (d.find("muertos") != std::string::npos || d.find("muerto") != std::string::npos ||
-        d.find("ghost") != std::string::npos || d.find("fantasma") != std::string::npos) {
-        mini_chat->add_message("No puedes atacar a un jugador muerto");
-    } else if (d.find("objetivo") != std::string::npos || d.find("target") != std::string::npos ||
-               d.find("attack") != std::string::npos) {
-        mini_chat->add_message("Debes estar más cerca para atacar");
-    } else {
-        mini_chat->add_message("Error: " + d);
-    }
+    mini_chat->add_message(d);
 }
 
 void GameClient::handle_snapshot_update(const SnapshotUpdate& snap, int tile_w, int tile_h,
                                         ClientMap& /*client_map*/) {
+    // DEBUG TEMPORAL - BORRAR
+    std::cerr << "[SNAP] my_player_id=" << my_player_id << "\n";
+    for (const auto& ps : snap.players)
+        std::cerr << "[SNAP]   ps.player_id=" << ps.player_id
+                  << (ps.player_id == my_player_id ? " <-- MATCH" : "") << "\n";
+
     players.clear();
     for (const auto& ps : snap.players) {
         players[ps.player_id] = ps;
@@ -310,6 +348,7 @@ void GameClient::handle_snapshot_update(const SnapshotUpdate& snap, int tile_w, 
             my_gold = ps.gold;
             my_xp = ps.xp;
             my_is_ghost = ps.is_ghost;
+            my_clan_id = ps.clan_id;
         }
     }
     ground_items_ = snap.ground_items;
@@ -320,6 +359,8 @@ void GameClient::handle_snapshot_update(const SnapshotUpdate& snap, int tile_w, 
 
 void GameClient::handle_player_left_update(const PlayerLeftUpdate& pu) {
     players.erase(pu.player_id);
+    if (pu.clan_id != 0 && pu.clan_id == my_clan_id)
+        mini_chat->add_message("[Clan] " + pu.nick + " se ha desconectado.");
 }
 
 void GameClient::handle_world_map_update(const WorldMapUpdate& mu, ClientMap& client_map) {
@@ -374,6 +415,23 @@ void GameClient::handle_attack_update(const AttackUpdate& atack_updated) {
         } else if (!result.target_died) {
             mini_chat->add_message("Recibiste " + std::to_string(result.damage) + " de daño");
         }
+    } else if (result.damage > 0 && result.target_clan_id != 0 &&
+               result.target_clan_id == my_clan_id) {
+        std::string victim_name = "un compañero";
+        auto vit = players.find(result.target_id);
+        if (vit != players.end())
+            victim_name = vit->second.nick;
+        std::string attacker_name = "Alguien";
+        auto ait = players.find(result.attacker_id);
+        if (ait != players.end()) {
+            attacker_name = ait->second.nick;
+        } else {
+            auto nit = npcs_.find(result.attacker_id);
+            if (nit != npcs_.end())
+                attacker_name = nit->second.name;
+        }
+        mini_chat->add_message("[Clan] ¡" + victim_name + " está siendo atacado por " +
+                               attacker_name + "!");
     }
     play_attack_sound(result);
 }
@@ -448,6 +506,133 @@ void GameClient::handle_chat_msg_update(const ChatMsgUpdate& msg) {
     mini_chat->add_message(msg.sender_nick + ": " + msg.text);
 }
 
+void GameClient::handle_catalog_update(const CatalogUpdate& cat) {
+    const auto& items = cat.get_catalog();
+    if (items.empty()) {
+        mini_chat->add_message("No hay items disponibles");
+        return;
+    }
+    mini_chat->add_message("--- Catálogo ---");
+    for (const auto& name : items) mini_chat->add_message(name);
+    if (cat.get_gold_in_bank() > 0)
+        mini_chat->add_message("Oro en banco: " + std::to_string(cat.get_gold_in_bank()));
+}
+
+void GameClient::handle_system_msg_update(const SystemMsgUpdate& su) {
+    mini_chat->add_message(su.get_message());
+}
+
+void GameClient::handle_clan_review_update(const ClanReviewUpdate& cru) {
+    clan_panel_->set_data(cru);
+}
+
+void GameClient::handle_clan_result_update(const ClanResultUpdate& cu) {
+    const ClanResult r = cu.get_result();
+    const ClanAction action = cu.get_action();
+
+    if (r.status != ClanActionStatus::SUCCESS) {
+        switch (r.status) {
+            case ClanActionStatus::LEVEL_TOO_LOW:
+                mini_chat->add_message("[Clan] Necesitás nivel 6 o más para fundar un clan.");
+                break;
+            case ClanActionStatus::ALREADY_IN_CLAN:
+                mini_chat->add_message("[Clan] Ya pertenecés a un clan.");
+                break;
+            case ClanActionStatus::NAME_TAKEN:
+                mini_chat->add_message("[Clan] Ya existe un clan con ese nombre.");
+                break;
+            case ClanActionStatus::NAME_EMPTY:
+                mini_chat->add_message("[Clan] El nombre del clan no puede estar vacío.");
+                break;
+            case ClanActionStatus::CLAN_NOT_FOUND:
+                mini_chat->add_message("[Clan] No existe ese clan.");
+                break;
+            case ClanActionStatus::NOT_FOUNDER:
+                mini_chat->add_message("[Clan] Solo el fundador puede hacer eso.");
+                break;
+            case ClanActionStatus::NOT_IN_CLAN:
+                mini_chat->add_message("[Clan] No pertenecés a ningún clan.");
+                break;
+            case ClanActionStatus::NOT_PENDING:
+                mini_chat->add_message("[Clan] Ese jugador no tiene una solicitud pendiente.");
+                break;
+            case ClanActionStatus::CLAN_FULL:
+                mini_chat->add_message("[Clan] El clan está lleno (máximo 16 miembros).");
+                break;
+            case ClanActionStatus::TARGET_OFFLINE:
+                mini_chat->add_message("[Clan] Ese jugador no está conectado.");
+                break;
+            case ClanActionStatus::TARGET_IS_SELF:
+                mini_chat->add_message("[Clan] No podés aplicar eso a vos mismo.");
+                break;
+            case ClanActionStatus::FOUNDER_CANNOT_LEAVE:
+                mini_chat->add_message("[Clan] El fundador no puede abandonar el clan.");
+                break;
+            case ClanActionStatus::INTERNAL_ERROR:
+            default:
+                mini_chat->add_message("[Clan] Error interno del servidor.");
+                break;
+        }
+        return;
+    }
+
+    // r.other_player_id == my_player_id → soy el destinatario de la acción (me aceptaron, etc.)
+    const bool i_am_target = (r.other_player_id != 0 && r.other_player_id == my_player_id);
+
+    switch (action) {
+        case ClanAction::FOUND:
+            mini_chat->add_message("[Clan] Fundaste el clan '" + r.clan_name + "'.");
+            break;
+        case ClanAction::JOIN_REQUEST:
+            if (i_am_target) {
+                mini_chat->add_message(
+                    "[Clan] " + r.actor_nick +
+                    " quiere unirse a tu clan. Usá /clan-aceptar o /clan-rechazar.");
+            } else {
+                mini_chat->add_message("[Clan] Tu solicitud para unirte a '" + r.clan_name +
+                                       "' fue enviada.");
+            }
+            break;
+        case ClanAction::ACCEPT:
+            if (i_am_target) {
+                mini_chat->add_message("[Clan] Fuiste aceptado en el clan '" + r.clan_name + "'.");
+            } else {
+                mini_chat->add_message("[Clan] Aceptaste a " + r.other_nick + " en el clan.");
+            }
+            break;
+        case ClanAction::REJECT:
+            if (i_am_target) {
+                mini_chat->add_message("[Clan] Tu solicitud al clan '" + r.clan_name +
+                                       "' fue rechazada.");
+            } else {
+                mini_chat->add_message("[Clan] Rechazaste la solicitud de " + r.other_nick + ".");
+            }
+            break;
+        case ClanAction::BAN:
+            if (i_am_target) {
+                mini_chat->add_message("[Clan] Fuiste baneado del clan '" + r.clan_name + "'.");
+            } else {
+                mini_chat->add_message("[Clan] Baneaste a " + r.other_nick + " del clan.");
+            }
+            break;
+        case ClanAction::KICK:
+            if (i_am_target) {
+                mini_chat->add_message("[Clan] Fuiste expulsado del clan '" + r.clan_name + "'.");
+            } else {
+                mini_chat->add_message("[Clan] Expulsaste a " + r.other_nick + " del clan.");
+            }
+            break;
+        case ClanAction::LEAVE:
+            mini_chat->add_message("[Clan] Abandonaste el clan.");
+            break;
+        case ClanAction::REVIEW:
+            // REVIEW exitoso llega como CLAN_REVIEW, no como CLAN_RESULT
+            break;
+        default:
+            break;
+    }
+}
+
 
 // Carga todos los efectos de sonido del juego en el AudioManager.
 void GameClient::load_audio_assets() {
@@ -466,128 +651,337 @@ void GameClient::process_sdl_events() {
         if (!input_handler.handle_quit(event_))
             running_ = false;
 
+        if (clan_panel_->is_visible() &&
+            ((event_.type == SDL_KEYDOWN && event_.key.keysym.sym == SDLK_ESCAPE) ||
+             (event_.type == SDL_MOUSEBUTTONDOWN))) {
+            clan_panel_->hide();
+            continue;
+        }
         if (chat_active_) {
-            if (event_.type == SDL_TEXTINPUT) {
-                chat_input_ += event_.text.text;
-            } else if (event_.type == SDL_KEYDOWN) {
-                switch (event_.key.keysym.sym) {
-                    case SDLK_RETURN:
-                    case SDLK_RETURN2:
-                        if (!chat_input_.empty()) {
-                            if (chat_input_.rfind("/tomar", 0) == 0) {
-                                client->do_pick_up();
-                                mini_chat->add_message("/tomar");
-                            } else if (chat_input_.rfind("/tirar", 0) == 0) {
-                                std::string rest = chat_input_.substr(6);
-                                size_t pos = rest.find_first_not_of(' ');
-                                int slot = -1;
-                                if (pos != std::string::npos) {
-                                    try {
-                                        slot = std::stoi(rest.substr(pos));
-                                    } catch (...) {
-                                        slot = -1;
-                                    }
-                                } else {
-                                    slot = selected_slot_;
-                                }
-                                if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
-                                    !inventory_slots_[slot].item_name.empty()) {
-                                    client->do_drop_item(static_cast<uint8_t>(slot));
-                                    mini_chat->add_message("Tiraste el item");
-                                    selected_slot_ = -1;
-                                } else if (pos == std::string::npos && selected_slot_ < 0) {
-                                    mini_chat->add_message(
-                                        "Seleccioná un item con click derecho primero");
-                                } else {
-                                    mini_chat->add_message("Slot inválido o vacío");
-                                }
-                            } else if (chat_input_ == "/curar" || chat_input_ == "/resucitar") {
-                                if (selected_npc_id_ == 0) {
-                                    mini_chat->add_message("Seleccioná un sacerdote primero");
-                                } else {
-                                    NPCInteraction tipo = (chat_input_ == "/curar") ?
-                                                              NPCInteraction::HEAL :
-                                                              NPCInteraction::RESURRECT;
-                                    client->do_interact(static_cast<uint32_t>(selected_npc_id_),
-                                                        tipo, "", 0);
-                                    mini_chat->add_message(chat_input_);
-                                }
-                            } else {
-                                client->do_chat(chat_input_);
-                                mini_chat->add_message(chat_input_);
-                            }
-                        }
-                        chat_input_.clear();
-                        chat_active_ = false;
-                        SDL_StopTextInput();
-                        break;
-                    case SDLK_BACKSPACE:
-                        if (!chat_input_.empty())
-                            chat_input_.pop_back();
-                        break;
-                    case SDLK_ESCAPE:
-                        chat_input_.clear();
-                        chat_active_ = false;
-                        SDL_StopTextInput();
-                        break;
-                    default:
-                        break;
-                }
-            }
-        } else if (event_.type == SDL_KEYDOWN && event_.key.keysym.sym == SDLK_RETURN) {
+            handle_chat_event(event_);
+            continue;
+        }
+        if (event_.type == SDL_KEYDOWN && event_.key.keysym.sym == SDLK_RETURN) {
             chat_active_ = true;
             SDL_StartTextInput();
-        } else if (event_.type == SDL_MOUSEBUTTONDOWN && event_.button.button == SDL_BUTTON_LEFT) {
-            if (!my_is_ghost) {
-                int world_x = camera.get_x() + event_.button.x;
-                int world_y = camera.get_y() + event_.button.y;
-                int tile_x = world_x / config_.tile_width;
-                int tile_y = world_y / config_.tile_height;
-                for (const auto& [pid, ps] : players) {
-                    if (pid != my_player_id && ps.x == tile_x && ps.y == tile_y) {
-                        client->do_attack(pid);
-                        break;
-                    }
-                }
-                for (const auto& [nid, ns] : npcs_) {
-                    if (ns.x == tile_x && ns.y == tile_y) {
-                        if (!ns.is_hostile) {
-                            selected_npc_id_ = static_cast<int>(nid);
-                            NPCVisualType npc_city = npc_visual_type_from_network(ns.npc_type);
-                            switch (npc_city) {
-                                case NPCVisualType::PRIEST:
-                                    mini_chat->add_message("Seleccionaste al sacerdote");
-                                    break;
-                                case NPCVisualType::MERCHANT:
-                                    mini_chat->add_message("Seleccionaste al mercader");
-                                    break;
-                                case NPCVisualType::BANKER:
-                                    mini_chat->add_message("Seleccionaste al banquero");
-                                    break;
-                                default:
-                                    mini_chat->add_message("Seleccionaste a un NPC");
-                                    break;
-                            }
-                        } else {
-                            client->do_attack(nid);
-                        }
-                        break;
-                    }
-                }
-                int slot = hud->get_slot_at(event_.button.x, event_.button.y);
-                if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
-                    !inventory_slots_[slot].item_name.empty()) {
-                    client->do_equip_item(static_cast<uint8_t>(slot));
-                }
+            continue;
+        } else if (event_.type == SDL_KEYDOWN && event_.key.keysym.sym == SDLK_h) {
+            help_menu->toggle();
+            continue;
+        } else if (event_.type == SDL_KEYDOWN && event_.key.keysym.sym == SDLK_m) {
+            audio_manager->toggle_music();
+            music_paused_ = audio_manager->is_music_paused();
+            continue;
+        } else if (event_.type == SDL_KEYDOWN && (event_.key.keysym.mod & KMOD_CTRL) &&
+                   event_.key.repeat == 0) {
+            // cheats: Ctrl + numero, para probar sin NPCs
+            switch (event_.key.keysym.sym) {
+                case SDLK_1:
+                    client->do_cheat(CheatType::HEAL_FULL);
+                    mini_chat->add_message("vida al maximo");
+                    break;
+                case SDLK_2:
+                    client->do_cheat(CheatType::RESTORE_MANA);
+                    mini_chat->add_message("mana al maximo");
+                    break;
+                case SDLK_3:
+                    client->do_cheat(CheatType::DIE);
+                    mini_chat->add_message("te suicidaste");
+                    break;
+                case SDLK_4:
+                    client->do_cheat(CheatType::LEVEL_UP);
+                    mini_chat->add_message("subiste un nivel");
+                    break;
+                case SDLK_5:
+                    client->do_cheat(CheatType::GIVE_GOLD);
+                    mini_chat->add_message("oro recibido");
+                    break;
+                default:
+                    break;
             }
-        } else if (event_.type == SDL_MOUSEBUTTONDOWN && event_.button.button == SDL_BUTTON_RIGHT) {
-            int slot = hud->get_slot_at(event_.button.x, event_.button.y);
-            if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
-                !inventory_slots_[slot].item_name.empty()) {
-                selected_slot_ = slot;
-            }
+            continue;
         }
+        if (event_.type == SDL_MOUSEBUTTONDOWN && event_.button.button == SDL_BUTTON_LEFT) {
+            handle_left_click(event_.button.x, event_.button.y);
+            continue;
+        }
+        if (event_.type == SDL_MOUSEBUTTONDOWN && event_.button.button == SDL_BUTTON_RIGHT)
+            handle_right_click(event_.button.x, event_.button.y);
     }
+}
+
+void GameClient::handle_chat_event(const SDL_Event& e) {
+    if (e.type == SDL_TEXTINPUT) {
+        chat_input_ += e.text.text;
+        return;
+    }
+    if (e.type != SDL_KEYDOWN)
+        return;
+    switch (e.key.keysym.sym) {
+        case SDLK_RETURN:
+        case SDLK_RETURN2:
+            handle_chat_submit();
+            break;
+        case SDLK_BACKSPACE:
+            if (!chat_input_.empty())
+                chat_input_.pop_back();
+            break;
+        case SDLK_ESCAPE:
+            chat_input_.clear();
+            chat_active_ = false;
+            SDL_StopTextInput();
+            break;
+        default:
+            break;
+    }
+}
+
+void GameClient::handle_chat_submit() {
+    if (!chat_input_.empty())
+        dispatch_chat_command(chat_input_);
+    chat_input_.clear();
+    chat_active_ = false;
+    SDL_StopTextInput();
+}
+
+void GameClient::dispatch_chat_command(const std::string& input) {
+    if (input == "/meditar") {
+        client->do_meditate();
+        return;
+    }
+    if (input.rfind("/tomar", 0) == 0) {
+        client->do_pick_up();
+        mini_chat->add_message("/tomar");
+        return;
+    }
+    if (input.rfind("/tirar", 0) == 0) {
+        handle_drop_command(input);
+        return;
+    }
+    if (input == "/curar") {
+        handle_npc_command(NPCInteraction::HEAL, "", 0, input);
+        return;
+    }
+    if (input == "/resucitar") {
+        if (my_is_ghost)
+            client->do_resurrect();
+        else
+            handle_npc_command(NPCInteraction::RESURRECT, "", 0, input);
+        return;
+    }
+    if (input == "/listar") {
+        handle_npc_command(NPCInteraction::LIST, "", 0, input);
+        return;
+    }
+    if (input.rfind("/comprar ", 0) == 0) {
+        handle_npc_command(NPCInteraction::BUY, input.substr(9), 0, input);
+        return;
+    }
+    if (input.rfind("/vender ", 0) == 0) {
+        handle_npc_command(NPCInteraction::SELL, input.substr(8), 0, input);
+        return;
+    }
+    if (input.rfind("/depositar ", 0) == 0) {
+        std::string rest = input.substr(11);
+        if (rest.rfind("oro", 0) == 0 && (rest.size() == 3 || rest[3] == ' ')) {
+            std::string num_str = rest.size() > 4 ? rest.substr(4) : "";
+            try {
+                handle_npc_command(NPCInteraction::DEPOSIT_GOLD, "", std::stoi(num_str), input);
+            } catch (...) {
+                mini_chat->add_message("Cantidad inválida");
+            }
+        } else {
+            handle_npc_command(NPCInteraction::DEPOSIT_ITEM, rest, 0, input);
+        }
+        return;
+    }
+    if (input.rfind("/retirar ", 0) == 0) {
+        std::string rest = input.substr(9);
+        if (rest.rfind("oro", 0) == 0 && (rest.size() == 3 || rest[3] == ' ')) {
+            std::string num_str = rest.size() > 4 ? rest.substr(4) : "";
+            try {
+                handle_npc_command(NPCInteraction::WITHDRAW_GOLD, "", std::stoi(num_str), input);
+            } catch (...) {
+                mini_chat->add_message("Cantidad inválida");
+            }
+        } else {
+            handle_npc_command(NPCInteraction::WITHDRAW_ITEM, rest, 0, input);
+        }
+        return;
+    }
+    if (input.rfind("/fundar-clan ", 0) == 0) {
+        std::string arg = input.substr(13);
+        if (arg.empty()) {
+            mini_chat->add_message("Uso: /fundar-clan <nombre>");
+            return;
+        }
+        client->do_clan_action(ClanAction::FOUND, arg);
+        return;
+    }
+    if (input.rfind("/unirse ", 0) == 0) {
+        std::string arg = input.substr(8);
+        if (arg.empty()) {
+            mini_chat->add_message("Uso: /unirse <nombre-del-clan>");
+            return;
+        }
+        client->do_clan_action(ClanAction::JOIN_REQUEST, arg);
+        return;
+    }
+    if (input == "/revisar-clan") {
+        client->do_clan_action(ClanAction::REVIEW, "");
+        return;
+    }
+    if (input.rfind("/clan-aceptar ", 0) == 0) {
+        std::string arg = input.substr(14);
+        if (arg.empty()) {
+            mini_chat->add_message("Uso: /clan-aceptar <nick>");
+            return;
+        }
+        client->do_clan_action(ClanAction::ACCEPT, arg);
+        return;
+    }
+    if (input.rfind("/clan-rechazar ", 0) == 0) {
+        std::string arg = input.substr(15);
+        if (arg.empty()) {
+            mini_chat->add_message("Uso: /clan-rechazar <nick>");
+            return;
+        }
+        client->do_clan_action(ClanAction::REJECT, arg);
+        return;
+    }
+    if (input.rfind("/clan-ban ", 0) == 0) {
+        std::string arg = input.substr(10);
+        if (arg.empty()) {
+            mini_chat->add_message("Uso: /clan-ban <nick>");
+            return;
+        }
+        client->do_clan_action(ClanAction::BAN, arg);
+        return;
+    }
+    if (input.rfind("/clan-kick ", 0) == 0) {
+        std::string arg = input.substr(11);
+        if (arg.empty()) {
+            mini_chat->add_message("Uso: /clan-kick <nick>");
+            return;
+        }
+        client->do_clan_action(ClanAction::KICK, arg);
+        return;
+    }
+    if (input == "/dejar-clan") {
+        client->do_clan_action(ClanAction::LEAVE, "");
+        return;
+    }
+    if (!input.empty() && input[0] == '/') {
+        mini_chat->add_message("Comando desconocido");
+        return;
+    }
+    client->do_chat(input);
+    mini_chat->add_message(input);
+}
+
+void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount,
+                                    const std::string& display) {
+    if (selected_npc_id_ == 0) {
+        mini_chat->add_message("Seleccioná un NPC primero");
+        return;
+    }
+    client->do_interact(static_cast<uint32_t>(selected_npc_id_), type, arg, amount);
+    mini_chat->add_message(display);
+}
+
+void GameClient::handle_drop_command(const std::string& input) {
+    std::string rest = input.substr(6);
+    size_t pos = rest.find_first_not_of(' ');
+    int slot = -1;
+    if (pos != std::string::npos) {
+        try {
+            slot = std::stoi(rest.substr(pos));
+        } catch (...) {
+            slot = -1;
+        }
+    } else {
+        slot = selected_slot_;
+    }
+    if (slot >= 0 && slot < static_cast<int>(inventory_slots_.size()) &&
+        !inventory_slots_[slot].item_name.empty()) {
+        client->do_drop_item(static_cast<uint8_t>(slot));
+        mini_chat->add_message("Tiraste el item");
+        selected_slot_ = -1;
+        return;
+    }
+    if (pos == std::string::npos && selected_slot_ < 0) {
+        mini_chat->add_message("Seleccioná un item con click derecho primero");
+        return;
+    }
+    mini_chat->add_message("Slot inválido o vacío");
+}
+
+void GameClient::handle_left_click(int screen_x, int screen_y) {
+    SDL_Rect music_btn = hud->get_music_button_rect();
+    if (screen_x >= music_btn.x && screen_x < music_btn.x + music_btn.w &&
+        screen_y >= music_btn.y && screen_y < music_btn.y + music_btn.h) {
+        audio_manager->toggle_music();
+        music_paused_ = audio_manager->is_music_paused();
+        return;
+    }
+    if (my_is_ghost)
+        return;
+    int tile_x = (camera.get_x() + screen_x) / config_.tile_width;
+    int tile_y = (camera.get_y() + screen_y) / config_.tile_height;
+    try_attack_at_tile(tile_x, tile_y);
+    try_equip_at(screen_x, screen_y);
+}
+
+bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
+    for (const auto& [pid, ps] : players) {
+        if (pid == my_player_id || ps.x != tile_x || ps.y != tile_y)
+            continue;
+        client->do_attack(pid);
+        return true;
+    }
+    for (const auto& [nid, ns] : npcs_) {
+        if (ns.x != tile_x || ns.y != tile_y)
+            continue;
+        if (ns.is_hostile) {
+            client->do_attack(nid);
+            return true;
+        }
+        selected_npc_id_ = static_cast<int>(nid);
+        switch (npc_visual_type_from_network(ns.npc_type)) {
+            case NPCVisualType::PRIEST:
+                mini_chat->add_message("Seleccionaste al sacerdote");
+                break;
+            case NPCVisualType::MERCHANT:
+                mini_chat->add_message("Seleccionaste al mercader");
+                break;
+            case NPCVisualType::BANKER:
+                mini_chat->add_message("Seleccionaste al banquero");
+                break;
+            default:
+                mini_chat->add_message("Seleccionaste a un NPC");
+                break;
+        }
+        return true;
+    }
+    return false;
+}
+
+void GameClient::try_equip_at(int screen_x, int screen_y) {
+    int slot = hud->get_slot_at(screen_x, screen_y);
+    if (slot < 0 || slot >= static_cast<int>(inventory_slots_.size()))
+        return;
+    if (inventory_slots_[slot].item_name.empty())
+        return;
+    client->do_equip_item(static_cast<uint8_t>(slot));
+}
+
+void GameClient::handle_right_click(int screen_x, int screen_y) {
+    int slot = hud->get_slot_at(screen_x, screen_y);
+    if (slot < 0 || slot >= static_cast<int>(inventory_slots_.size()))
+        return;
+    if (inventory_slots_[slot].item_name.empty())
+        return;
+    selected_slot_ = slot;
 }
 
 void GameClient::process_keyword_input() {
@@ -627,33 +1021,6 @@ void GameClient::process_keyword_input() {
                 client->do_move(Direction::RIGHT);
                 last_move_time_ = frame_start_;
             }
-        }
-    }
-}
-
-// NUEVAS
-void GameClient::send_chat_message(const std::string& text) {
-    if (text.empty())
-        return;
-    client->do_chat(text);
-}
-
-void GameClient::toggle_chat() {
-    chat_active_ = !chat_active_;
-    if (!chat_active_) {
-        chat_input_.clear();
-    }
-}
-
-void GameClient::process_chat_input(const SDL_Event& event) {
-    if (event.type == SDL_TEXTINPUT) {
-        chat_input_ += event.text.text;
-    } else if (event.type == SDL_KEYDOWN) {
-        if (event.key.keysym.sym == SDLK_BACKSPACE && !chat_input_.empty()) {
-            chat_input_.pop_back();
-        } else if (event.key.keysym.sym == SDLK_RETURN && !chat_input_.empty()) {
-            send_chat_message(chat_input_);
-            chat_input_.clear();
         }
     }
 }

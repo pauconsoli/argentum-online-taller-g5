@@ -11,6 +11,8 @@ target_sources(argentum_client
     sdl/camera.cpp
     sdl/hud.cpp
     sdl/mini_chat.cpp
+    sdl/help_menu.cpp
+    sdl/clan_panel.cpp
     sdl/sprite_manager.cpp
     sdl/client_map.cpp
     sdl/audio_manager.cpp
@@ -26,6 +28,8 @@ target_sources(argentum_client
     sdl/camera.h
     sdl/hud.h
     sdl/mini_chat.h
+    sdl/help_menu.h
+    sdl/clan_panel.h
     sdl/sprite_manager.h
     sdl/client_map.h
     sdl/audio_manager.h

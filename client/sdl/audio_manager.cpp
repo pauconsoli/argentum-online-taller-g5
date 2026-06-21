@@ -63,6 +63,18 @@ void AudioManager::stop_music() {
     Mix_HaltMusic();
 }
 
+void AudioManager::toggle_music() {
+    if (Mix_PausedMusic()) {
+        Mix_ResumeMusic();
+    } else {
+        Mix_PauseMusic();
+    }
+}
+
+bool AudioManager::is_music_paused() {
+    return Mix_PausedMusic() != 0;
+}
+
 void AudioManager::load_sound(const std::string& name, const std::string& path) {
     Mix_Chunk* chunk = Mix_LoadWAV(path.c_str());
     if (chunk == nullptr) {

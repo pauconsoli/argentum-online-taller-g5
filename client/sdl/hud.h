@@ -31,7 +31,9 @@ class Hud {
     void draw(int hp, int max_hp, int mana, int max_mana, int level, uint64_t gold, uint64_t xp);
     void draw_inventory(SpriteManager* sprites, const std::vector<InventorySlotData>& slots,
                         int selected_slot = -1);
+    void draw_music_button(bool paused);
     int get_slot_at(int screen_x, int screen_y) const;
+    SDL_Rect get_music_button_rect() const;
 };
 
 #endif

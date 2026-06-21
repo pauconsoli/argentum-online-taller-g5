@@ -18,7 +18,7 @@ class PlayerRenderer {
                    const Camera& camera);
 
     void render(const std::map<uint32_t, PlayerSnapshot>& players, uint32_t my_player_id,
-                int direction, int current_frame,
+                uint32_t my_clan_id, int direction, int current_frame,
                 const std::vector<InventorySlotData>& inventory_slots, int tile_w, int tile_h);
 
  private:

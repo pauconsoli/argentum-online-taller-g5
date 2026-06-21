@@ -17,6 +17,8 @@ class AudioManager {
 
     void play_background_music(const std::string& path, int volume);
     static void stop_music();
+    static void toggle_music();
+    static bool is_music_paused();
 
     void load_sound(const std::string& name, const std::string& path);
     void play_sound(const std::string& name, int volume = MIX_MAX_VOLUME);
