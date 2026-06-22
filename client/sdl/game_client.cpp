@@ -22,7 +22,6 @@ static std::string get_base_asset_dir() {
 }
 
 
-// Constructor standalone
 GameClient::GameClient(int width, int height, bool fullscreen, const std::string& host,
                        const std::string& port):
     client(std::make_unique<Client>(host, port)),
@@ -49,10 +48,6 @@ GameClient::GameClient(int width, int height, bool fullscreen, std::unique_ptr<C
 GameClient::~GameClient() {
     client->stop();
     client->join();
-    // El resto del cleanup ocurre automáticamente por destrucción de unique_ptrs
-    // en orden inverso de declaración: renderers → sprite_manager → HUD/chat →
-    // character_renderer → audio_manager → renderer → window (SDL_DestroyWindow
-    // + SDL_Quit via SdlWindowDeleter).
 }
 
 void GameClient::message(const std::string& text) {
@@ -61,6 +56,7 @@ void GameClient::message(const std::string& text) {
 
 void GameClient::play(const std::string& sound, int vol) {
     if (vol < 0)
+        // ppor que vol < 0?
         audio_manager->play_sound(sound);
     else
         audio_manager->play_sound(sound, vol);
@@ -91,7 +87,11 @@ void GameClient::init_subsystems(bool fullscreen, bool load_font) {
         renderer->load_font(font_path, 12);
     sprite_manager = std::make_unique<SpriteManager>(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
-    sprite_manager->load_terrain_textures(base_assets);
+    sprite_manager->load_terrain_textures(base_assets);  // también carga items y overlays fijos
+    sprite_manager->load_head_textures();                // 6 cabezas usadas por el cliente
+    sprite_manager->load_npc_textures();                 // 11 tipos de NPC
+    sprite_manager->load_grh_index("Recursos");  // no-op si Recursos/init/graficos.ini no existe
+    sprite_manager->load_grh_sheets();           // no-op si grh_index vacío
     terrain_renderer =
         std::make_unique<TerrainRenderer>(renderer.get(), sprite_manager.get(), camera);
     npc_renderer = std::make_unique<NPCRenderer>(renderer.get(), sprite_manager.get(), camera);
@@ -127,6 +127,7 @@ void GameClient::run() {
 
     while (running) {
         frame_start = SDL_GetTicks();
+
 
         process_sdl_events();
         process_keyword_input();

@@ -10,9 +10,10 @@
 class TerrainRenderer {
  public:
     TerrainRenderer(Renderer* renderer, SpriteManager* sprite_manager, const Camera& camera);
+    ~TerrainRenderer();
 
     void draw(int start_col, int end_col, int start_row, int end_row, int tile_w, int tile_h,
-              const ClientMap& client_map);
+              const ClientMap& client_map, int screen_w, int screen_h);
 
     void draw_tree(int col, int row, int tile_w, int tile_h);
 
@@ -20,6 +21,12 @@ class TerrainRenderer {
     Renderer* renderer_;
     SpriteManager* sprite_manager_;
     const Camera& camera_;
+
+    SDL_Texture* terrain_cache_ = nullptr;
+    int cache_col_ = -9999;
+    int cache_row_ = -9999;
+    int cache_w_ = 0;
+    int cache_h_ = 0;
 
     void draw_base_tiles(int start_col, int end_col, int start_row, int end_row, int tile_w,
                          int tile_h, const ClientMap& client_map);

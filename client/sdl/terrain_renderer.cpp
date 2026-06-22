@@ -1,20 +1,49 @@
 #include "terrain_renderer.h"
 
-#include <string>
+#include <cstdio>
 
 TerrainRenderer::TerrainRenderer(Renderer* renderer, SpriteManager* sprite_manager,
                                  const Camera& camera):
     renderer_(renderer), sprite_manager_(sprite_manager), camera_(camera) {}
 
+TerrainRenderer::~TerrainRenderer() {
+    if (terrain_cache_)
+        SDL_DestroyTexture(terrain_cache_);
+}
+
 // Punto de entrada del renderizado de terreno.
-// Hace dos pasadas sobre la región visible:
-//   1. Dibuja el tile base de cada celda (el color/textura plano del terreno).
-//   2. Dibuja los overlays de transición encima (bordes y esquinas entre terrenos distintos).
-// Separar las pasadas garantiza que ningún overlay tape el base tile de una celda adyacente.
+// Hace dos pasadas sobre la región visible, pero solo cuando la cámara cruzó un tile boundary.
+// Si la posición en tiles no cambió, salta ambas pasadas y blitea la textura cacheada.
 void TerrainRenderer::draw(int start_col, int end_col, int start_row, int end_row, int tile_w,
-                           int tile_h, const ClientMap& client_map) {
-    draw_base_tiles(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
-    draw_terrain_transitions(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
+                           int tile_h, const ClientMap& client_map, int screen_w, int screen_h) {
+    SDL_Renderer* sdl_r = renderer_->get_sdl_renderer();
+
+    bool size_changed = (cache_w_ != screen_w || cache_h_ != screen_h);
+    bool pos_changed = (cache_col_ != start_col || cache_row_ != start_row);
+
+    if (terrain_cache_ == nullptr || size_changed || pos_changed) {
+        if (terrain_cache_ == nullptr || size_changed) {
+            if (terrain_cache_)
+                SDL_DestroyTexture(terrain_cache_);
+            terrain_cache_ = SDL_CreateTexture(sdl_r, SDL_PIXELFORMAT_RGBA8888,
+                                               SDL_TEXTUREACCESS_TARGET, screen_w, screen_h);
+        }
+
+        SDL_SetRenderTarget(sdl_r, terrain_cache_);
+        SDL_SetRenderDrawColor(sdl_r, 0, 0, 0, 255);
+        SDL_RenderClear(sdl_r);
+        draw_base_tiles(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
+        draw_terrain_transitions(start_col, end_col, start_row, end_row, tile_w, tile_h,
+                                 client_map);
+        SDL_SetRenderTarget(sdl_r, nullptr);
+
+        cache_col_ = start_col;
+        cache_row_ = start_row;
+        cache_w_ = screen_w;
+        cache_h_ = screen_h;
+    }
+
+    SDL_RenderCopy(sdl_r, terrain_cache_, nullptr, nullptr);
 }
 
 // Pasada 1: recorre cada celda visible y pinta su tile base.
@@ -130,10 +159,12 @@ void TerrainRenderer::draw_transition(int col, int row, int tile_w, int tile_h, 
     // Se usan dos PNGs base con rotación clockwise para cubrir las 8 direcciones:
     //   edge:   vecino en borde norte → 0°=N, 90°=E, 180°=S, 270°=W
     //   corner: vecino en esquina NW  → 0°=NW, 90°=NE, 180°=SE, 270°=SW
-    std::string key_edge = std::string(nombre_base) + "_edge";
-    std::string key_corner = std::string(nombre_base) + "_corner";
-    SDL_Texture* edge_tex = sprite_manager_->get_transition_overlay(key_edge.c_str());
-    SDL_Texture* corner_tex = sprite_manager_->get_transition_overlay(key_corner.c_str());
+    char key_edge[64];
+    char key_corner[64];
+    std::snprintf(key_edge, sizeof(key_edge), "%s_edge", nombre_base);
+    std::snprintf(key_corner, sizeof(key_corner), "%s_corner", nombre_base);
+    SDL_Texture* edge_tex = sprite_manager_->get_transition_overlay(key_edge);
+    SDL_Texture* corner_tex = sprite_manager_->get_transition_overlay(key_corner);
 
     auto draw_edge = [&](double angulo) {
         if (edge_tex)

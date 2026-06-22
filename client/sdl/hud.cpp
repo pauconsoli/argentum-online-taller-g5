@@ -18,28 +18,43 @@ Hud::Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height, i
 }
 
 Hud::~Hud() {
+    for (auto& c : text_caches_)
+        if (c.texture)
+            SDL_DestroyTexture(c.texture);
     TTF_CloseFont(font);
     TTF_Quit();
 }
 
-void Hud::draw_text(const std::string& text, int x, int y, SDL_Color color) {
-    SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
-    if (surface == nullptr)
-        return;
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(sdl_renderer, surface);
-    SDL_FreeSurface(surface);
-    if (texture == nullptr)
-        return;
-
-    int w, h;
-    SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
-    SDL_Rect dst = {x, y, w, h};
-    SDL_RenderCopy(sdl_renderer, texture, nullptr, &dst);
-    SDL_DestroyTexture(texture);
+SDL_Texture* Hud::ensure_cached(int slot, const std::string& text, SDL_Color color) {
+    TextCache& c = text_caches_[slot];
+    bool stale = !c.texture || c.last_text != text || c.last_color.r != color.r ||
+                 c.last_color.g != color.g || c.last_color.b != color.b ||
+                 c.last_color.a != color.a;
+    if (stale) {
+        if (c.texture)
+            SDL_DestroyTexture(c.texture);
+        SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
+        c.texture = surface ? SDL_CreateTextureFromSurface(sdl_renderer, surface) : nullptr;
+        c.last_text = text;
+        c.last_color = color;
+        if (surface)
+            SDL_FreeSurface(surface);
+    }
+    return c.texture;
 }
 
-void Hud::draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Color color) {
+void Hud::draw_cached_text(int slot, const std::string& text, int x, int y, SDL_Color color) {
+    SDL_Texture* tex = ensure_cached(slot, text, color);
+    if (!tex)
+        return;
+    int w, h;
+    SDL_QueryTexture(tex, nullptr, nullptr, &w, &h);
+    SDL_Rect dst = {x, y, w, h};
+    SDL_RenderCopy(sdl_renderer, tex, nullptr, &dst);
+}
+
+void Hud::draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Color color,
+                   int text_slot) {
     SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_BLEND);
 
     SDL_SetRenderDrawColor(sdl_renderer, 45, 45, 45, 210);
@@ -54,12 +69,14 @@ void Hud::draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Col
     }
 
     std::string label = std::to_string(current) + "/" + std::to_string(max_val);
-    int tw = 0, th = 0;
-    TTF_SizeText(font, label.c_str(), &tw, &th);
-    int text_x = x + (w - tw) / 2;
-    int text_y = y + (h - th) / 2;
     SDL_Color white = {255, 255, 255, 255};
-    draw_text(label, text_x, text_y, white);
+    SDL_Texture* tex = ensure_cached(text_slot, label, white);
+    if (tex) {
+        int tw, th;
+        SDL_QueryTexture(tex, nullptr, nullptr, &tw, &th);
+        SDL_Rect dst = {x + (w - tw) / 2, y + (h - th) / 2, tw, th};
+        SDL_RenderCopy(sdl_renderer, tex, nullptr, &dst);
+    }
 }
 
 void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlotData>& slots,
@@ -87,7 +104,7 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
     SDL_RenderFillRect(sdl_renderer, &panel);
 
     SDL_Color white = {255, 255, 255, 255};
-    draw_text("Inventario", panel_x + PAD, panel_y + PAD / 2, white);
+    draw_cached_text(TCACHE_INV_TITLE, "Inventario", panel_x + PAD, panel_y + PAD / 2, white);
 
     const int grid_x = panel_x + PAD;
     const int grid_y = panel_y + PAD + TITLE_H;
@@ -145,10 +162,15 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
                 uint32_t qty = slots[slot].quantity;
                 if (qty > 1) {
                     std::string qty_str = std::to_string(qty);
-                    int tw = 0, th = 0;
-                    TTF_SizeUTF8(font, qty_str.c_str(), &tw, &th);
                     SDL_Color yellow = {255, 220, 0, 255};
-                    draw_text(qty_str, cell_x + CELL - tw - 2, cell_y + CELL - th, yellow);
+                    SDL_Texture* qty_tex =
+                        ensure_cached(TCACHE_INV_QTY_BASE + slot, qty_str, yellow);
+                    if (qty_tex) {
+                        int tw, th;
+                        SDL_QueryTexture(qty_tex, nullptr, nullptr, &tw, &th);
+                        SDL_Rect dst = {cell_x + CELL - tw - 2, cell_y + CELL - th, tw, th};
+                        SDL_RenderCopy(sdl_renderer, qty_tex, nullptr, &dst);
+                    }
                 }
             }
         }
@@ -204,7 +226,7 @@ void Hud::draw_music_button(bool paused) {
 
     SDL_Color color = paused ? SDL_Color{180, 60, 60, 255} : SDL_Color{60, 200, 100, 255};
     std::string label = paused ? "[M] Musica: OFF" : "[M] Musica: ON";
-    draw_text(label, btn_x + 5, btn_y + 4, color);
+    draw_cached_text(TCACHE_MUSIC_BTN, label, btn_x + 5, btn_y + 4, color);
 }
 
 SDL_Rect Hud::get_music_button_rect() const {
@@ -245,23 +267,25 @@ void Hud::draw(int hp, int max_hp, int mana, int max_mana, int level, uint64_t g
     int cy = panel_y + PAD;
 
     // — Nivel —
-    draw_text("Nivel: " + std::to_string(level), panel_x + PAD, cy, white);
+    draw_cached_text(TCACHE_NIVEL, "Nivel: " + std::to_string(level), panel_x + PAD, cy, white);
     cy += 20 + ROW_GAP;
 
     // — Vida —
-    draw_text("HP", panel_x + PAD, cy + 1, red);
-    draw_bar(panel_x + PAD + LABEL_W, cy, panel_w - PAD * 2 - LABEL_W, BAR_H, hp, max_hp, red);
+    draw_cached_text(TCACHE_HP_LABEL, "HP", panel_x + PAD, cy + 1, red);
+    draw_bar(panel_x + PAD + LABEL_W, cy, panel_w - PAD * 2 - LABEL_W, BAR_H, hp, max_hp, red,
+             TCACHE_HP_BAR);
     cy += BAR_H + ROW_GAP;
 
     // — Maná —
-    draw_text("MP", panel_x + PAD, cy + 1, blue);
-    draw_bar(panel_x + PAD + LABEL_W, cy, panel_w - PAD * 2 - LABEL_W, BAR_H, mana, max_mana, blue);
+    draw_cached_text(TCACHE_MP_LABEL, "MP", panel_x + PAD, cy + 1, blue);
+    draw_bar(panel_x + PAD + LABEL_W, cy, panel_w - PAD * 2 - LABEL_W, BAR_H, mana, max_mana, blue,
+             TCACHE_MP_BAR);
     cy += BAR_H + ROW_GAP;
 
     // — Oro —
-    draw_text("Oro:  " + std::to_string(gold), panel_x + PAD, cy, yellow);
+    draw_cached_text(TCACHE_ORO, "Oro:  " + std::to_string(gold), panel_x + PAD, cy, yellow);
     cy += 18 + ROW_GAP;
 
     // — Experiencia —
-    draw_text("Exp:  " + std::to_string(xp), panel_x + PAD, cy, gray);
+    draw_cached_text(TCACHE_EXP, "Exp:  " + std::to_string(xp), panel_x + PAD, cy, gray);
 }

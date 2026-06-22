@@ -35,10 +35,10 @@ class SpriteManager {
     static std::string body_key(uint8_t race, uint8_t klass);
     static std::string head_key(uint16_t head_index);
 
-    SDL_Texture* load_lazy(const std::string& key, const std::string& path);
-    // Igual que load_lazy pero cachea nullptr al primer intento fallido.
-    // Usar solo para assets opcionales (overlays de transición).
-    SDL_Texture* load_optional_lazy(const std::string& key, const std::string& path);
+    // Intenta cargar el PNG; retorna nullptr si falla, sin cachear el fallo (reintenta cada llamada).
+    SDL_Texture* try_load(const std::string& key, const std::string& path);
+    // Igual que try_load pero cachea nullptr al primer intento fallido (no reintenta nunca más).
+    SDL_Texture* try_load_cached(const std::string& key, const std::string& path);
 
  public:
     explicit SpriteManager(SDL_Renderer* renderer);
@@ -81,10 +81,20 @@ class SpriteManager {
     // Fallback: "item_espada" si el nombre no está en la tabla.
     static std::string item_key_for_name(const std::string& name);
 
+    // Precarga las cabezas usadas por el cliente (una por raza + dos NPCs con cabeza).
+    // Requiere que assets_dir esté seteado (llamar después de load_terrain_textures).
+    void load_head_textures();
+
+    // Precarga todos los sprites de NPC conocidos.
+    // Requiere que assets_dir esté seteado (llamar después de load_terrain_textures).
+    void load_npc_textures();
+
     // Lee Recursos/init/graficos.ini y llena grh_index (solo entradas frames==1).
     void load_grh_index(const std::string& recursos_dir);
-    // Carga lazy Recursos/Graficos/<file_num>.png con color-key blanco.
-    // Cachea nullptr si el archivo no existe (no reintenta en frames siguientes).
+    // Precarga todos los spritesheets referenciados en grh_index.
+    // No-op si load_grh_index no fue llamado antes o si Recursos/Graficos no existe.
+    void load_grh_sheets();
+    // Retorna el spritesheet cacheado para file_num, o nullptr si el PNG no existe.
     SDL_Texture* get_grh_sheet(int file_num);
 };
 

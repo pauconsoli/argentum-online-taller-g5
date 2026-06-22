@@ -1,6 +1,7 @@
 #ifndef HUD_H
 #define HUD_H
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -18,8 +19,33 @@ class Hud {
     int window_height;
     int window_width;
 
-    void draw_text(const std::string& text, int x, int y, SDL_Color color);
-    void draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Color color);
+    struct TextCache {
+        SDL_Texture* texture = nullptr;
+        std::string last_text;
+        SDL_Color last_color = {0, 0, 0, 0};
+    };
+
+    static constexpr int INV_SLOTS = 20;
+    enum : int {
+        TCACHE_NIVEL,
+        TCACHE_HP_LABEL,
+        TCACHE_HP_BAR,
+        TCACHE_MP_LABEL,
+        TCACHE_MP_BAR,
+        TCACHE_ORO,
+        TCACHE_EXP,
+        TCACHE_INV_TITLE,
+        TCACHE_MUSIC_BTN,
+        TCACHE_INV_QTY_BASE,
+        TCACHE_COUNT = TCACHE_INV_QTY_BASE + INV_SLOTS
+    };
+    std::array<TextCache, TCACHE_COUNT> text_caches_{};
+
+    // Garantiza que el slot tenga una textura actualizada. Devuelve la textura (puede ser nullptr).
+    SDL_Texture* ensure_cached(int slot, const std::string& text, SDL_Color color);
+    void draw_cached_text(int slot, const std::string& text, int x, int y, SDL_Color color);
+    void draw_bar(int x, int y, int w, int h, int current, int max_val, SDL_Color color,
+                  int text_slot);
 
  public:
     Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height, int win_width);

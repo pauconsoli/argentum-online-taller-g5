@@ -13,9 +13,9 @@ struct SdlConfig {
     int tile_width = 32;
     int tile_height = 32;
 
-    Uint32 target_fps = 60;
+    Uint32 target_fps = 30;
     Uint32 frame_delay_ms = 100;
-    Uint32 move_interval_ms = 200;
+    Uint32 move_interval_ms = 100;
 
     Uint32 frame_time_ms() const {
         return 1000 / target_fps;

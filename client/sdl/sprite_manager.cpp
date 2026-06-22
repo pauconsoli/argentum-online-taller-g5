@@ -99,12 +99,34 @@ void SpriteManager::load_terrain_textures(const std::string& dir) {
     load("terrain_city_floor_diagonal", terrain_dir + "city_floor_diagonal.png");
     load("terrain_city_wall_stone", terrain_dir + "city_wall_stone.png");
     load("tree", terrain_dir + "tree.png");
-    // Pociones, flauta y oro cargadas eagerly: tienen clave de nombre en lugar de numérica.
+    // Overlays de terreno con clave fija (opcionales: el PNG puede no existir todavía).
+    try_load_cached("terrain_overlay_dungeon_entrance_1",
+                    terrain_dir + "terrain_overlay_dungeon_entrance_1.png");
+    try_load_cached("terrain_overlay_dungeon_entrance_2",
+                    terrain_dir + "terrain_overlay_dungeon_entrance_2.png");
+    try_load_cached("terrain_overlay_city_wall_2", terrain_dir + "terrain_overlay_city_wall_2.png");
+    // Todos los items con clave de nombre conocida (precarga eager completa).
     const std::string items_dir = assets_dir + sep + "sprites/items/";
-    load_lazy("item_pocion_vida", items_dir + "item_pocion_vida.png");
-    load_lazy("item_pocion_mana", items_dir + "item_pocion_mana.png");
-    load_lazy("item_flauta_elfica", items_dir + "item_flauta_elfica.png");
-    load_lazy("item_oro", items_dir + "item_oro.png");
+    try_load_cached("item_pocion_vida", items_dir + "item_pocion_vida.png");
+    try_load_cached("item_pocion_mana", items_dir + "item_pocion_mana.png");
+    try_load_cached("item_flauta_elfica", items_dir + "item_flauta_elfica.png");
+    try_load_cached("item_oro", items_dir + "item_oro.png");
+    try_load_cached("item_espada", items_dir + "item_espada.png");
+    try_load_cached("item_hacha", items_dir + "item_hacha.png");
+    try_load_cached("item_martillo", items_dir + "item_martillo.png");
+    try_load_cached("item_vara_fresno", items_dir + "item_vara_fresno.png");
+    try_load_cached("item_baculo_nudoso", items_dir + "item_baculo_nudoso.png");
+    try_load_cached("item_baculo_engarzado", items_dir + "item_baculo_engarzado.png");
+    try_load_cached("item_arco_simple", items_dir + "item_arco_simple.png");
+    try_load_cached("item_arco_compuesto", items_dir + "item_arco_compuesto.png");
+    try_load_cached("item_armadura_cuero", items_dir + "item_armadura_cuero.png");
+    try_load_cached("item_armadura_placas", items_dir + "item_armadura_placas.png");
+    try_load_cached("item_tunica_azul", items_dir + "item_tunica_azul.png");
+    try_load_cached("item_capucha", items_dir + "item_capucha.png");
+    try_load_cached("item_casco_hierro", items_dir + "item_casco_hierro.png");
+    try_load_cached("item_escudo_tortuga", items_dir + "item_escudo_tortuga.png");
+    try_load_cached("item_escudo_hierro", items_dir + "item_escudo_hierro.png");
+    try_load_cached("item_sombrero_magico", items_dir + "item_sombrero_magico.png");
 }
 
 SDL_Texture* SpriteManager::get_terrain(TerrainType t) const {
@@ -131,7 +153,7 @@ SDL_Texture* SpriteManager::get_terrain_overlay(TerrainType t) {
     // Archivo esperado: assets/sprites/terrain/<key>.png (e.g. terrain_overlay_city_wall_1.png)
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
     std::string path = assets_dir + sep + "sprites/terrain/" + key + ".png";
-    return load_lazy(key, path);  // nullptr si el archivo todavía no existe
+    return try_load(key, path);  // nullptr si el archivo todavía no existe
 }
 
 SDL_Texture* SpriteManager::get_tree() const {
@@ -165,7 +187,7 @@ std::string SpriteManager::head_key(uint16_t head_index) {
     return "head_" + std::to_string(head_index);
 }
 
-SDL_Texture* SpriteManager::load_lazy(const std::string& key, const std::string& path) {
+SDL_Texture* SpriteManager::try_load(const std::string& key, const std::string& path) {
     auto it = textures.find(key);
     if (it != textures.end()) {
         return it->second;
@@ -188,12 +210,12 @@ SDL_Texture* SpriteManager::load_lazy(const std::string& key, const std::string&
     return texture;
 }
 
-SDL_Texture* SpriteManager::load_optional_lazy(const std::string& key, const std::string& path) {
+SDL_Texture* SpriteManager::try_load_cached(const std::string& key, const std::string& path) {
     auto it = textures.find(key);
     if (it != textures.end()) {
         return it->second;  // puede ser nullptr si se intentó y el PNG no existía
     }
-    SDL_Texture* tex = load_lazy(key, path);
+    SDL_Texture* tex = try_load(key, path);
     if (!tex) {
         textures[key] = nullptr;  // cachear la ausencia; los overlays opcionales no se reintentarán
     }
@@ -204,13 +226,13 @@ SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
     if (head_index == 0)
         head_index = 1;
     std::string key = head_key(head_index);
-    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "sprites/characters/heads/" + key + ".png";
-    SDL_Texture* tex = load_lazy(key, path);
-    if (tex == nullptr) {
-        tex = load_lazy(head_key(1), assets_dir + sep + "sprites/characters/heads/head_1.png");
-    }
-    return tex;
+    // Busca en cache; debería estar precargado por load_head_textures.
+    auto it = textures.find(key);
+    if (it != textures.end())
+        return it->second;
+    // Fallback: cabeza no precargada → devolver head_1 si está disponible.
+    auto it2 = textures.find(head_key(1));
+    return (it2 != textures.end()) ? it2->second : nullptr;
 }
 
 std::string SpriteManager::item_key_for_name(const std::string& name) {
@@ -240,20 +262,28 @@ std::string SpriteManager::item_key_for_name(const std::string& name) {
 }
 
 SDL_Texture* SpriteManager::get_item(const std::string& key) {
+    // Busca en cache; debería estar precargado por load_terrain_textures.
+    auto it = textures.find(key);
+    if (it != textures.end())
+        return it->second;
+    // Fallback: item no precargado (e.g. key desconocida), intento tolerante con cacheo de fallo.
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "sprites/items/" + key + ".png";
-    return load_lazy(key, path);
+    return try_load_cached(key, assets_dir + sep + "sprites/items/" + key + ".png");
 }
 
 SDL_Texture* SpriteManager::get_gold() {
-    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    return load_lazy("item_oro", assets_dir + sep + "sprites/items/item_oro.png");
+    // Precargado en load_terrain_textures; búsqueda directa en cache.
+    auto it = textures.find("item_oro");
+    return (it != textures.end()) ? it->second : nullptr;
 }
 
 SDL_Texture* SpriteManager::get_transition_overlay(const char* key) {
+    auto it = textures.find(key);
+    if (it != textures.end())
+        return it->second;
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
     std::string path = assets_dir + sep + "sprites/terrain/" + key + ".png";
-    return load_optional_lazy(key, path);
+    return try_load_cached(key, path);
 }
 
 void SpriteManager::load_grh_index(const std::string& res_dir) {
@@ -306,6 +336,40 @@ SDL_Texture* SpriteManager::get_grh_sheet(int file_num) {
     return tex;
 }
 
+void SpriteManager::load_head_textures() {
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    const std::string heads_dir = assets_dir + sep + "sprites/characters/heads/";
+    // Solo las cabezas realmente usadas: una por raza de jugador y las dos de NPCs con cabeza.
+    static const uint16_t used_heads[] = {1, 3, 30, 101, 300, 400};
+    for (uint16_t idx : used_heads) {
+        std::string key = head_key(idx);
+        try_load_cached(key, heads_dir + key + ".png");
+    }
+}
+
+void SpriteManager::load_npc_textures() {
+    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
+    const std::string npcs_dir = assets_dir + sep + "sprites/npcs/";
+    // Debe coincidir exactamente con los filenames del switch de get_npc.
+    static const char* npc_files[] = {
+        "npc_banker.png",    "npc_priest.png",      "npc_merchant.png",       "npc_goblin.png",
+        "npc_skeleton.png",  "npc_zombie.png",      "npc_spider.png",         "npc_orc.png",
+        "npc_golem_ice.png", "npc_golem_stone.png", "npc_golem_infernal.png",
+    };
+    for (const char* filename : npc_files) {
+        std::string key = std::string("npc_") + filename;
+        try_load_cached(key, npcs_dir + filename);
+    }
+}
+
+void SpriteManager::load_grh_sheets() {
+    // Precarga todos los spritesheets únicos del índice.
+    // Es un no-op si load_grh_index no fue llamado o si Recursos/Graficos no existe.
+    for (auto& [grh_id, entry] : grh_index) {
+        get_grh_sheet(entry.file_num);  // cachea el resultado en grh_sheets
+    }
+}
+
 SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
     const char* filename = nullptr;
     switch (type) {
@@ -346,7 +410,7 @@ SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
             return nullptr;
     }
     std::string key = std::string("npc_") + filename;
-    const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
-    std::string path = assets_dir + sep + "sprites/npcs/" + filename;
-    return load_lazy(key, path);
+    // Busca en cache; debería estar precargado por load_npc_textures.
+    auto it = textures.find(key);
+    return (it != textures.end()) ? it->second : nullptr;
 }

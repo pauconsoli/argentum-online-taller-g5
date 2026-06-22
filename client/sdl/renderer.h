@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include <string>
+#include <unordered_map>
 
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
@@ -11,6 +12,7 @@ class Renderer {
  private:
     SDL_Renderer* sdl_renderer;
     TTF_Font* font = nullptr;
+    std::unordered_map<std::string, SDL_Texture*> label_cache;
 
  public:
     // --- Constantes de sombra (ajustar a ojo) ---
