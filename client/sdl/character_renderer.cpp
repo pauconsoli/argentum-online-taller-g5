@@ -6,7 +6,7 @@ void CharacterRenderer::draw_character(SDL_Texture* body_tex, SDL_Texture* head_
                                        int player_position_x, int player_position_y, int direction,
                                        int frame, bool is_ghost) {
     static const int head_offset_x[] = {0, 0, 0, 0};
-    static const int head_offset_y[] = {-8, -15, -15, -15};
+    static const int head_offset_y[] = {-22, -22, -22, -22};
     static const int head_dir_to_row[] = {2, 0, 3, 1};
 
     uint8_t alpha = is_ghost ? 128 : 255;

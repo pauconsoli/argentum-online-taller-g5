@@ -98,7 +98,7 @@ void NPCRenderer::render_single(uint32_t nid, [[maybe_unused]] const NPCSnapshot
 
     if (info.head_index > 0) {
         static const int body_row_to_head_row[] = {2, 0, 3, 1};
-        static const int head_y_offset[] = {-13, -19, -18, -17};
+        static const int head_y_offset[] = {-20, -19, -18, -17};
         constexpr int head_w = 27;
         constexpr int head_h = 64;
         SDL_Texture* head_tex = sprite_manager_->get_head(info.head_index);

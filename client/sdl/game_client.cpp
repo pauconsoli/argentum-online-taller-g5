@@ -278,6 +278,7 @@ static std::string arg_of(const std::string& input, const std::string& prefix) {
 void GameClient::dispatch_chat_command(const std::string& input) {
     if (input == "/meditar") {
         client->do_meditate();
+        client->do_chat("Te encuentras en estado de meditacion");
         return;
     }
     if (starts_with(input, "/tomar")) {
@@ -289,7 +290,7 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         return;
     }
     if (input == "/curar") {
-        handle_npc_command(NPCInteraction::HEAL, "", 0, input);
+        handle_npc_command(NPCInteraction::HEAL, "", 0);
         return;
     }
     if (input == "/resucitar") {
@@ -300,20 +301,20 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         if (state.is_ghost() && state.selected_npc_id() == 0) {
             client->do_resurrect();
         } else {
-            handle_npc_command(NPCInteraction::RESURRECT, "", 0, input);
+            handle_npc_command(NPCInteraction::RESURRECT, "", 0);
         }
         return;
     }
     if (input == "/listar") {
-        handle_npc_command(NPCInteraction::LIST, "", 0, input);
+        handle_npc_command(NPCInteraction::LIST, "", 0);
         return;
     }
     if (starts_with(input, "/comprar ")) {
-        handle_npc_command(NPCInteraction::BUY, arg_of(input, "/comprar "), 0, input);
+        handle_npc_command(NPCInteraction::BUY, arg_of(input, "/comprar "), 0);
         return;
     }
     if (starts_with(input, "/vender ")) {
-        handle_npc_command(NPCInteraction::SELL, arg_of(input, "/vender "), 0, input);
+        handle_npc_command(NPCInteraction::SELL, arg_of(input, "/vender "), 0);
         return;
     }
     if (starts_with(input, "/depositar ")) {
@@ -321,12 +322,12 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         if (starts_with(rest, "oro") && (rest.size() == 3 || rest[3] == ' ')) {
             std::string num_str = rest.size() > 4 ? arg_of(rest, "oro ") : "";
             try {
-                handle_npc_command(NPCInteraction::DEPOSIT_GOLD, "", std::stoi(num_str), input);
+                handle_npc_command(NPCInteraction::DEPOSIT_GOLD, "", std::stoi(num_str));
             } catch (...) {
                 mini_chat->add_message("Cantidad inválida");
             }
         } else {
-            handle_npc_command(NPCInteraction::DEPOSIT_ITEM, rest, 0, input);
+            handle_npc_command(NPCInteraction::DEPOSIT_ITEM, rest, 0);
         }
         return;
     }
@@ -335,12 +336,12 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         if (starts_with(rest, "oro") && (rest.size() == 3 || rest[3] == ' ')) {
             std::string num_str = rest.size() > 4 ? arg_of(rest, "oro ") : "";
             try {
-                handle_npc_command(NPCInteraction::WITHDRAW_GOLD, "", std::stoi(num_str), input);
+                handle_npc_command(NPCInteraction::WITHDRAW_GOLD, "", std::stoi(num_str));
             } catch (...) {
                 mini_chat->add_message("Cantidad inválida");
             }
         } else {
-            handle_npc_command(NPCInteraction::WITHDRAW_ITEM, rest, 0, input);
+            handle_npc_command(NPCInteraction::WITHDRAW_ITEM, rest, 0);
         }
         return;
     }
@@ -414,8 +415,7 @@ void GameClient::dispatch_chat_command(const std::string& input) {
     mini_chat->add_message(input);
 }
 
-void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount,
-                                    const std::string& display) {
+void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount) {
     if (state.selected_npc_id() == 0) {
         mini_chat->add_message("Seleccioná un NPC primero");
         return;

@@ -68,11 +68,13 @@ const char* SpriteManager::terrain_key(TerrainType t) {
         case TerrainType::DUNGEON_WALL_2:
             return "terrain_dungeon_wall_2";
         case TerrainType::CITY_FLOOR_1:
+            return "terrain_city_floor_diagonal";
         case TerrainType::CITY_WALL_1:
-            return "terrain_city_floor_1";
+            return "terrain_city_wall_stone";
         case TerrainType::CITY_FLOOR_2:
+            return "terrain_city_floor_cobble";
         case TerrainType::CITY_WALL_2:
-            return "terrain_city_floor_2";
+            return "terrain_city_floor_cobble";
     }
     return "terrain_grass";
 }
@@ -93,6 +95,9 @@ void SpriteManager::load_terrain_textures(const std::string& dir) {
     load("terrain_wood", terrain_dir + "wood.png");
     load("terrain_city_floor_1", terrain_dir + "city_floor_1.png");
     load("terrain_city_floor_2", terrain_dir + "city_floor_2.png");
+    load("terrain_city_floor_cobble", terrain_dir + "city_floor_cobble.png");
+    load("terrain_city_floor_diagonal", terrain_dir + "city_floor_diagonal.png");
+    load("terrain_city_wall_stone", terrain_dir + "city_wall_stone.png");
     load("tree", terrain_dir + "tree.png");
     // Pociones, flauta y oro cargadas eagerly: tienen clave de nombre en lugar de numérica.
     const std::string items_dir = assets_dir + sep + "sprites/items/";
@@ -112,8 +117,6 @@ const char* SpriteManager::terrain_overlay_key(TerrainType t) {
             return "terrain_overlay_dungeon_entrance_1";
         case TerrainType::DUNGEON_ENTRANCE_2:
             return "terrain_overlay_dungeon_entrance_2";
-        case TerrainType::CITY_WALL_1:
-            return "terrain_overlay_city_wall_1";
         case TerrainType::CITY_WALL_2:
             return "terrain_overlay_city_wall_2";
         default:
