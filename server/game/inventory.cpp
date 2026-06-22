@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "common/string_utils.h"
+#include "inventory.h"
 #include "server/game/game_config.h"
 #include "server/game/items/item.h"
 
@@ -119,7 +120,7 @@ bool Inventory::use_consumable(int item_index, Player& player) {
 }
 
 std::unique_ptr<Item> Inventory::remove_item(
-    Item& item) {  // SACSAR UNO SOLO por ej si voy usando pociones
+    const Item& item) {  // SACSAR UNO SOLO por ej si voy usando pociones
     int index = find_item_by_ref(item);
     if (index == -1)
         return nullptr;
@@ -136,14 +137,24 @@ std::unique_ptr<Item> Inventory::remove_item(
     return owned;
 }
 
-std::unique_ptr<Item> Inventory::remove_item_by_name(const std::string& name) {
+int Inventory::find_item_by_name(const std::string& name) const {
     const std::string name_norm = normalize_name(name);
     for (int i = 0; i < static_cast<int>(i_slots.size()); i++) {
-        if (i_slots[i].item && normalize_name(i_slots[i].item->get_name()) == name_norm) {
-            return remove_item(*i_slots[i].item);
-        }
+        if (i_slots[i].item && normalize_name(i_slots[i].item->get_name()) == name_norm)
+            return i;
     }
-    return nullptr;  // no estaba en el inventario
+    return -1;
+}
+
+bool Inventory::has_item_by_name(const std::string& name) const {
+    return find_item_by_name(name) != -1;
+}
+
+std::unique_ptr<Item> Inventory::remove_item_by_name(const std::string& name) {
+    int index = find_item_by_name(name);
+    if (index == -1)
+        return nullptr;
+    return remove_item(*i_slots[index].item);
 }
 
 bool Inventory::is_full() const {

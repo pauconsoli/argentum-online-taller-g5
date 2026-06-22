@@ -109,3 +109,8 @@ uint64_t ItemRegistry::get_price(const std::string& name) const {
     }
     return it->second.price;
 }
+
+std::string ItemRegistry::get_display_name(const std::string& name) const {
+    auto it = templates.find(normalize_name(name));
+    return (it != templates.end()) ? it->second.name : name;
+}

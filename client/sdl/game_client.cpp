@@ -294,7 +294,7 @@ void GameClient::dispatch_chat_command(const std::string& input) {
     }
     if (input == "/resucitar") {
         if (!state.is_ghost()) {
-            mini_chat->add_message("No es posible resucitar. Su jugador se encuentra vivo");
+            mini_chat->add_message("No es posible resucitar. Estás vivo");
             return;
         }
         if (state.is_ghost() && state.selected_npc_id() == 0) {

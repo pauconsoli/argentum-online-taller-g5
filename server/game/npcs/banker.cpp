@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "server/game/bank.h"
+#include "server/game/items/item_registry.h"
 #include "server/game/player.h"
 
 Banker::Banker(uint32_t id, NPCType npc_type, const Position& pos):
@@ -31,9 +32,13 @@ InteractResult Banker::on_deposit_item(const std::string& item_name, Player& pla
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }
 
+    if (!player.get_inventory().has_item_by_name(item_name)) {
+        return InteractResult{InteractStatus::ITEM_NOT_FOUND};
+    }
     auto item = player.get_inventory().remove_item_by_name(item_name);
     if (!item) {
-        return InteractResult{InteractStatus::ITEM_NOT_FOUND};
+        // stackable: slot decrementado pero no vaciado y crear instancia para el banco
+        item = ItemRegistry::get_instance().create_item(item_name);
     }
 
     const std::string real_name = item->get_name();
