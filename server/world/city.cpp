@@ -21,6 +21,10 @@ const std::string& City::get_name() const {
     return name;
 }
 
+ZoneType City::get_type() const {
+    return ZoneType::CITY;
+}
+
 Position City::get_priest_position() const {
     return priest_position;
 }

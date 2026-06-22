@@ -10,7 +10,7 @@
 
 HostileNPC::HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, int level,
                        int max_hp, int defense, int agility, int min_damage, int max_damage,
-                       int attack_range, const std::vector<std::string>& allowed_zones,
+                       int attack_range, const std::vector<ZoneType>& allowed_zones,
                        const Position& pos):
     NPC(id, name, npc_type, level, max_hp, defense, pos),
     agility(agility),
@@ -21,6 +21,11 @@ HostileNPC::HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, i
 
 int HostileNPC::get_agility() const {
     return agility;
+}
+
+bool HostileNPC::can_enter_zone_type(ZoneType zone_type) const {
+    return std::any_of(allowed_zones.begin(), allowed_zones.end(),
+                       [zone_type](ZoneType allowed) { return allowed == zone_type; });
 }
 
 int HostileNPC::calculate_base_damage() const {

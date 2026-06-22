@@ -90,7 +90,7 @@ class World {
     AttackResult npc_attack(NPC* npc, Character* target);
     void try_spawn_npc();
     std::optional<Position> find_random_spawn_position(
-        const std::vector<std::string>& allowed_zones) const;
+        const std::vector<ZoneType>& allowed_zones) const;
 
     void spawn_city_npcs();
     void spawn_initial_hostile_npcs();

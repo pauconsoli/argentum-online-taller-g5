@@ -13,6 +13,7 @@
 #include "common/direction.h"
 #include "common/position.h"
 #include "server/game/loot.h"
+#include "server/world/zone_type.h"
 
 class Character {
  protected:
@@ -72,6 +73,10 @@ class Character {
     virtual const std::string& get_name() const = 0;
 
     virtual bool can_enter_safe_zones() const = 0;
+
+    virtual bool can_enter_zone_type(ZoneType /*zone_type*/) const {
+        return true;
+    }
 
     void receive_damage(int damage);
 

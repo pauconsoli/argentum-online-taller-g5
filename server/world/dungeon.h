@@ -19,13 +19,9 @@ class Dungeon: public Zone {
     bool can_spawn() const override;
 
     const std::string& get_name() const override;
+    ZoneType get_type() const override;
 
     int get_entrance_x() const;
     int get_entrance_y() const;
 };
 #endif
-
-// TODO(Pau): agregar NPCs de dungeon, que tengan nivel mínimo para spawnear ahí
-// (más fuertes que los normales)
-
-// No incluyo el tesoro porque lo considero un item en el suelo en una pos del dungeon

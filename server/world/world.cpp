@@ -20,7 +20,6 @@
 #include "server/game/npcs/merchant.h"
 #include "server/game/npcs/npc_registry.h"
 #include "server/game/npcs/priest.h"
-#include "server/world/dungeon.h"
 
 World::World(int width, int height):
     map(width, height), occupied(height, std::vector<bool>(width, false)) {
@@ -354,6 +353,10 @@ bool World::move_character(uint32_t character_id, Direction direction) {
     }
 
     if (map.is_safe(next) && !character->can_enter_safe_zones()) {
+        return false;
+    }
+
+    if (!character->can_enter_zone_type(map.get_zone_type(next))) {
         return false;
     }
 
@@ -997,7 +1000,7 @@ AttackResult World::npc_attack(NPC* npc, Character* target) {
 }
 
 std::optional<Position> World::find_random_spawn_position(
-    const std::vector<std::string>& allowed_zones) const {
+    const std::vector<ZoneType>& allowed_zones) const {
     static constexpr int MAX_ATTEMPTS =
         50;  // para evitar loops infinitos si el mapa está muy lleno o no hay zonas válidas
 
@@ -1006,21 +1009,13 @@ std::optional<Position> World::find_random_spawn_position(
         int y = GameFormulas::get_random_int(0, map.get_height() - 1);
         Position pos{x, y};
 
-        // descartar posiciones inválidas
         if (map.is_position_blocked(pos) || is_position_occupied(pos) || map.is_safe(pos))
             continue;
 
-        const Zone* zone = map.get_zone(pos);
-        bool is_dungeon = (dynamic_cast<const Dungeon*>(zone) != nullptr);
-
-        // all no incluye dungeons (ni zonas seguras obviamente)
-        // dungeon es solo mazmorras
-        for (const std::string& z : allowed_zones) {
-            if (z == "all" && !is_dungeon)
-                return pos;
-            if (z == "dungeon" && is_dungeon)
-                return pos;
-        }
+        ZoneType pos_type = map.get_zone_type(pos);
+        if (std::any_of(allowed_zones.begin(), allowed_zones.end(),
+                        [pos_type](ZoneType z) { return z == pos_type; }))
+            return pos;
     }
     return std::nullopt;
 }

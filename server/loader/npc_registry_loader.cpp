@@ -8,6 +8,7 @@
 
 #include "common/npc_type.h"
 #include "server/game/npcs/npc_registry.h"
+#include "server/world/zone_type.h"
 
 static NPCType parse_npc_type(const std::string& id) {
     if (id == "goblin")
@@ -58,7 +59,7 @@ void NPCRegistryLoader::load(const std::string& config_path) {
         if (zones_array) {
             for (auto& zone_val : *zones_array) {
                 if (auto zone_str = zone_val.value<std::string>()) {
-                    tpl.zones.push_back(*zone_str);
+                    tpl.zones.push_back(parse_zone_type(*zone_str));
                 }
             }
         }

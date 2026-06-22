@@ -12,11 +12,12 @@
 #include "server/game/npcs/merchant.h"
 #include "server/game/npcs/priest.h"
 #include "server/game/player.h"
+#include "server/world/zone_type.h"
 
 class NPCTest: public ::testing::Test {
  protected:
     Position pos{10, 10};
-    std::vector<std::string> zones{"all"};
+    std::vector<ZoneType> zones{ZoneType::ALL};
 
     HostileNPC goblin{1, "Goblin", NPCType::GOBLIN, 3, 40, 2, 10, 3, 8, 5, zones, pos};
 

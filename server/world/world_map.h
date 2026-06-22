@@ -13,6 +13,7 @@
 #include "common/position.h"
 #include "dungeon.h"
 #include "zone.h"
+#include "zone_type.h"
 
 class WorldMap {
  private:
@@ -49,6 +50,8 @@ class WorldMap {
     const std::vector<Dungeon*>& get_dungeons() const;
 
     bool is_safe(const Position& pos) const;
+
+    ZoneType get_zone_type(const Position& pos) const;
 
     int get_width() const;
     int get_height() const;

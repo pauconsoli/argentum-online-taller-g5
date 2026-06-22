@@ -106,6 +106,13 @@ bool WorldMap::is_safe(const Position& pos) const {
     return zone != nullptr && zone->is_safe();
 }
 
+ZoneType WorldMap::get_zone_type(const Position& pos) const {
+    const Zone* zone = get_zone(pos);
+    if (!zone)
+        return ZoneType::ALL;
+    return zone->get_type();
+}
+
 int WorldMap::get_width() const {
     return width;
 }

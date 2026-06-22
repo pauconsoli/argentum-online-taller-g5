@@ -17,6 +17,10 @@ const std::string& Dungeon::get_name() const {
     return name;
 }
 
+ZoneType Dungeon::get_type() const {
+    return ZoneType::DUNGEON;
+}
+
 int Dungeon::get_entrance_x() const {
     return entrance_x;
 }
