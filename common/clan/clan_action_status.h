@@ -18,6 +18,7 @@ enum class ClanActionStatus : uint8_t {
     TARGET_OFFLINE,
     TARGET_IS_SELF,
     FOUNDER_CANNOT_LEAVE,
+    PLAYER_BANNED,
     INTERNAL_ERROR,
 };
 

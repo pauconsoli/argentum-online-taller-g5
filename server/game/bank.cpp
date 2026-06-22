@@ -1,8 +1,8 @@
 #include "server/game/bank.h"
 
-#include <algorithm>
-#include <cctype>
 #include <utility>
+
+#include "common/string_utils.h"
 
 BankSafe& Bank::get_or_create_safe(uint32_t player_id) {
     return safes[player_id];  // map crea la entrada si no existe
@@ -35,21 +35,16 @@ bool Bank::deposit_item(uint32_t player_id, std::unique_ptr<Item> item) {
     return true;
 }
 
-static std::string to_lower(const std::string& s) {
-    std::string r = s;
-    std::transform(r.begin(), r.end(), r.begin(), [](unsigned char c) { return std::tolower(c); });
-    return r;
-}
-
 std::unique_ptr<Item> Bank::withdraw_item(uint32_t player_id, const std::string& item_name) {
     auto it = safes.find(player_id);
     if (it == safes.end())
         return nullptr;
 
-    const std::string name_lower = to_lower(item_name);
+    const std::string name_norm = normalize_name(item_name);
     auto& items = it->second.items;
-    auto found = std::find_if(items.begin(), items.end(),
-                              [&](const auto& i) { return to_lower(i->get_name()) == name_lower; });
+    auto found = std::find_if(items.begin(), items.end(), [&](const auto& i) {
+        return normalize_name(i->get_name()) == name_norm;
+    });
     if (found == items.end())
         return nullptr;
 

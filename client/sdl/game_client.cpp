@@ -296,7 +296,7 @@ void GameClient::dispatch_chat_command(const std::string& input) {
     }
     if (input == "/resucitar") {
         if (!state.is_ghost()) {
-            mini_chat->add_message("No es posible resucitar. Su jugador se encuentra vivo");
+            mini_chat->add_message("No es posible resucitar. Estás vivo");
             return;
         }
         if (state.is_ghost() && state.selected_npc_id() == 0) {
@@ -412,8 +412,16 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         mini_chat->add_message("Comando desconocido");
         return;
     }
+    if (!input.empty() && input[0] == '@') {
+        size_t space_pos = input.find(' ');
+        if (space_pos != std::string::npos && space_pos > 1) {
+            std::string target_nick = input.substr(1, space_pos - 1);
+            std::string msg = input.substr(space_pos + 1);
+            client->do_private_chat(target_nick, msg);
+            return;
+        }
+    }
     client->do_chat(input);
-    mini_chat->add_message(input);
 }
 
 void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount) {
@@ -459,26 +467,28 @@ void GameClient::handle_left_click(int screen_x, int screen_y) {
         music_paused = audio_manager->is_music_paused();
         return;
     }
-    if (state.is_ghost())
-        return;
     int tile_x = (camera.get_x() + screen_x) / config.tile_width;
     int tile_y = (camera.get_y() + screen_y) / config.tile_height;
     try_attack_at_tile(tile_x, tile_y);
-    try_equip_at(screen_x, screen_y);
+    if (!state.is_ghost())
+        try_equip_at(screen_x, screen_y);
 }
 
 bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
-    for (const auto& [pid, ps] : state.players()) {
-        if (pid == state.player_id() || ps.x != tile_x || ps.y != tile_y)
-            continue;
-        client->do_attack(pid);
-        return true;
+    if (!state.is_ghost()) {
+        for (const auto& [pid, ps] : state.players()) {
+            if (pid == state.player_id() || ps.x != tile_x || ps.y != tile_y)
+                continue;
+            client->do_attack(pid);
+            return true;
+        }
     }
     for (const auto& [nid, ns] : state.npcs()) {
         if (ns.x != tile_x || ns.y != tile_y)
             continue;
         if (ns.is_hostile) {
-            client->do_attack(nid);
+            if (!state.is_ghost())
+                client->do_attack(nid);
             return true;
         }
         state.select_npc(nid);
@@ -487,7 +497,7 @@ bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
                 mini_chat->add_message("Seleccionaste al sacerdote");
                 break;
             case NPCVisualType::MERCHANT:
-                mini_chat->add_message("Seleccionaste al mercader");
+                mini_chat->add_message("Seleccionaste al comerciante");
                 break;
             case NPCVisualType::BANKER:
                 mini_chat->add_message("Seleccionaste al banquero");

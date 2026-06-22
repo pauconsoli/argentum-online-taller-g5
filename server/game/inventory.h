@@ -30,6 +30,7 @@ class Inventory {
     bool use_consumable(int item_index, Player& player);
 
  public:
+    int find_item_by_name(const std::string& name) const;
     Inventory();
     ~Inventory() = default;
 
@@ -46,8 +47,9 @@ class Inventory {
 
     bool unequip(EquipmentSlot slot);
 
-    std::unique_ptr<Item> remove_item(Item& item);
+    std::unique_ptr<Item> remove_item(const Item& item);
     std::unique_ptr<Item> remove_item_by_name(const std::string& name);
+    bool has_item_by_name(const std::string& name) const;
 
     bool is_full() const;
     size_t get_size() const;

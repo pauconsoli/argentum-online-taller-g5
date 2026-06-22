@@ -13,10 +13,15 @@ class CatalogUpdate: public GameUpdate {
     uint32_t player_id;
     std::vector<std::string> catalog;
     uint64_t gold_in_bank;
+    bool vault;
 
  public:
-    CatalogUpdate(uint32_t player_id, std::vector<std::string> catalog, uint64_t gold_in_bank = 0):
-        player_id(player_id), catalog(std::move(catalog)), gold_in_bank(gold_in_bank) {}
+    CatalogUpdate(uint32_t player_id, std::vector<std::string> catalog, uint64_t gold_in_bank = 0,
+                  bool vault = false):
+        player_id(player_id),
+        catalog(std::move(catalog)),
+        gold_in_bank(gold_in_bank),
+        vault(vault) {}
 
     UpdateType get_type() const override {
         return UpdateType::CATALOG;
@@ -32,6 +37,10 @@ class CatalogUpdate: public GameUpdate {
 
     uint64_t get_gold_in_bank() const {
         return gold_in_bank;
+    }
+
+    bool is_vault() const {
+        return vault;
     }
 };
 

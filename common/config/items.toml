@@ -152,14 +152,14 @@ mana_cost = 10
 price = 100
 
 [items.health_potion]
-name = "Pocion de vida"
+name = "Poción de vida"
 type = "consumable"
 consumable_type = "health"
 restore = 50
 price = 30
 
 [items.mana_potion]
-name = "Pocion de mana"
+name = "Poción de maná"
 type = "consumable"
 consumable_type = "mana"
 restore = 50

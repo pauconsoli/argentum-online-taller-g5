@@ -12,6 +12,7 @@
 #include "common/updates/death_update.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
+#include "game/clan.h"
 #include "game/game_config.h"
 #include "game/match.h"
 #include "game/player.h"
@@ -45,13 +46,26 @@ void GameLoopThread::run() {
                 auto attack_results = world.update(tick_seconds);
 
                 for (const auto& result : attack_results) {
-                    // enviar el resultado del ataque solo al atacante y al objetivo
                     auto update_for_attacker =
                         std::make_shared<AttackUpdate>(result, result.attacker_id);
                     match.send_update_to_player(result.attacker_id, update_for_attacker);
                     auto update_for_target =
                         std::make_shared<AttackUpdate>(result, result.target_id);
                     match.send_update_to_player(result.target_id, update_for_target);
+
+                    if (result.damage > 0 && result.target_clan_id != 0) {
+                        Clan* target_clan = world.get_clan(result.target_clan_id);
+                        if (target_clan) {
+                            for (uint32_t member_id : target_clan->get_members()) {
+                                if (member_id != result.attacker_id &&
+                                    member_id != result.target_id) {
+                                    auto update_for_member =
+                                        std::make_shared<AttackUpdate>(result, member_id);
+                                    match.send_update_to_player(member_id, update_for_member);
+                                }
+                            }
+                        }
+                    }
                     if (result.target_died) {
                         auto death_update =
                             std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);

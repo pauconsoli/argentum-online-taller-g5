@@ -254,8 +254,8 @@ std::string SpriteManager::item_key_for_name(const std::string& name) {
         {"Escudo de hierro", "item_escudo_hierro"},
         {"Sombrero mágico", "item_sombrero_magico"},
         {"Flauta élfica", "item_flauta_elfica"},
-        {"Pocion de vida", "item_pocion_vida"},
-        {"Pocion de mana", "item_pocion_mana"},
+        {"Poción de vida", "item_pocion_vida"},
+        {"Poción de maná", "item_pocion_mana"},
     };
     auto it = table.find(name);
     return it != table.end() ? it->second : "item_espada";

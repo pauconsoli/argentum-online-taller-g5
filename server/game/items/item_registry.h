@@ -53,6 +53,7 @@ class ItemRegistry {
     bool is_weapon(const std::string& name) const;
     bool is_defensive(const std::string& name) const;
     uint64_t get_price(const std::string& name) const;
+    std::string get_display_name(const std::string& name) const;
 
     const std::vector<std::string>& get_potion_keys() const {
         return potion_keys;

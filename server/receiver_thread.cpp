@@ -95,6 +95,9 @@ void ReceiverThread::run() {
                         case ClientOpcode::CHAT:
                             handle_chat();
                             break;
+                        case ClientOpcode::PRIVATE_CHAT:
+                            handle_private_chat();
+                            break;
                         case ClientOpcode::CHEAT:
                             handle_cheat();
                             break;
@@ -293,6 +296,18 @@ void ReceiverThread::handle_chat() {
         return;
     }
     auto cmd = protocol.recv_chat_payload(player_conn.get_player_id(), player_conn.get_nick());
+    server_ops.push_command_to_match(match_id, std::move(cmd));
+}
+
+void ReceiverThread::handle_private_chat() {
+    uint32_t match_id = player_conn.get_current_match_id();
+    if (match_id == 0) {
+        protocol.recv_private_chat_payload(player_conn.get_player_id(), player_conn.get_nick());
+        send_error(ProtocolError::COMMAND_NOT_ALLOWED, "no estás en match");
+        return;
+    }
+    auto cmd =
+        protocol.recv_private_chat_payload(player_conn.get_player_id(), player_conn.get_nick());
     server_ops.push_command_to_match(match_id, std::move(cmd));
 }
 

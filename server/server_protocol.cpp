@@ -253,6 +253,13 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_chat_payload(uint32_t player
     return std::make_unique<ChatCommand>(player_id, nick, std::move(text));
 }
 
+std::unique_ptr<ClientCommand> ServerProtocol::recv_private_chat_payload(uint32_t player_id,
+                                                                         const std::string& nick) {
+    std::string target_nick = recv_string();
+    std::string text = recv_string();
+    return std::make_unique<ChatCommand>(player_id, nick, std::move(text), std::move(target_nick));
+}
+
 std::unique_ptr<ClientCommand> ServerProtocol::recv_cheat_payload(uint32_t player_id) {
     uint8_t type_raw = recv_u8();
     CheatType cheat_type = static_cast<CheatType>(type_raw);
@@ -404,6 +411,8 @@ void ServerProtocol::send_player_left(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::PLAYER_LEFT);
     put_u32(buf, u.player_id);
+    put_string(buf, u.nick);
+    put_u32(buf, u.clan_id);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_player_left: client closed connection");
     }
@@ -458,6 +467,7 @@ void ServerProtocol::send_attacked(const GameUpdate& update) {
     put_u8(buf, static_cast<uint8_t>(r.type));
     put_string(buf, r.weapon_or_spell_name);
     put_u8(buf, static_cast<uint8_t>(r.status));
+    put_u32(buf, r.target_clan_id);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_attacked: client closed connection");
     }
@@ -518,6 +528,7 @@ void ServerProtocol::send_catalog(const GameUpdate& update) {
         put_string(buf, item_name);
     }
     put_u64(buf, u.get_gold_in_bank());
+    put_u8(buf, u.is_vault() ? 1 : 0);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_catalog: client closed connection");
     }

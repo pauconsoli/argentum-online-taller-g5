@@ -516,9 +516,11 @@ InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPC
     if (!player || !npc)
         return InteractResult{InteractStatus::INVALID_TARGET};
 
-    // el jugador tiene que estar en la ciudad (zona segura)
+    // el jugador tiene que estar en la ciudad (zona segura),
+    // excepto si está muerto y quiere ser resucitado por el sacerdote
     const Position& pp = player->get_position();
-    if (!map.is_safe(pp))
+    bool resurrect_as_ghost = player->is_dead() && type == NPCInteraction::RESURRECT;
+    if (!map.is_safe(pp) && !resurrect_as_ghost)
         return InteractResult{InteractStatus::OUT_OF_RANGE};
 
     return npc->interact(type, arg, amount, *player, bank);
@@ -614,6 +616,9 @@ ClanResult World::request_join_clan(uint32_t player_id, const std::string& clan_
     Clan* clan = get_clan_by_name(clan_name);
     if (!clan) {
         return ClanResult(ClanActionStatus::CLAN_NOT_FOUND, clan_name);
+    }
+    if (clan->is_banned(player_id)) {
+        return ClanResult(ClanActionStatus::PLAYER_BANNED, clan->get_name(), player->get_name());
     }
     if (!clan->request_join(player_id)) {
         ClanActionStatus status =

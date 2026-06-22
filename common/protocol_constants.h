@@ -22,6 +22,7 @@ constexpr uint8_t RESURRECT = 0x18;
 constexpr uint8_t CHEAT = 0x19;
 
 constexpr uint8_t CHAT = 0x20;
+constexpr uint8_t PRIVATE_CHAT = 0x21;
 
 constexpr uint8_t LEAVE_MATCH = 0xFE;
 constexpr uint8_t DISCONNECT = 0xFF;

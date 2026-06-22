@@ -154,6 +154,11 @@ void Client::do_chat(const std::string& text) {
     protocol.send_chat(text);
 }
 
+void Client::do_private_chat(const std::string& target_nick, const std::string& text) {
+    std::lock_guard<std::mutex> lk(send_mutex);
+    protocol.send_private_chat(target_nick, text);
+}
+
 void Client::do_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                          int32_t amount) {
     std::lock_guard<std::mutex> lk(send_mutex);

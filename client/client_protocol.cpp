@@ -235,6 +235,16 @@ void ClientProtocol::send_chat(const std::string& text) {
     }
 }
 
+void ClientProtocol::send_private_chat(const std::string& target_nick, const std::string& text) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::PRIVATE_CHAT);
+    put_string(buf, target_nick);
+    put_string(buf, text);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_private_chat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                                    int32_t amount) {
     std::vector<uint8_t> buf;
@@ -374,7 +384,9 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     uint32_t pid = recv_u32();
-    return std::make_unique<PlayerLeftUpdate>(pid, "", 0);
+    std::string nick = recv_string();
+    uint32_t clan_id = recv_u32();
+    return std::make_unique<PlayerLeftUpdate>(pid, std::move(nick), clan_id);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
@@ -389,6 +401,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.type = static_cast<AttackType>(recv_u8());
     r.weapon_or_spell_name = recv_string();
     r.status = static_cast<AttackStatus>(recv_u8());
+    r.target_clan_id = recv_u32();
     return std::make_unique<AttackUpdate>(r);
 }
 
@@ -600,5 +613,6 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_catalog() {
         catalog.push_back(recv_string());
     }
     uint64_t gold = recv_u64();
-    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold);
+    bool vault = recv_u8() != 0;
+    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold, vault);
 }
