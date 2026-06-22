@@ -157,6 +157,7 @@ gold_drop_min_factor = 0.01
 gold_drop_max_factor = 0.20
 population_limit = 15
 spawn_time_seconds = 10
+chase_cooldown = 0.5
 
 # ---------------------------------
 # Server 

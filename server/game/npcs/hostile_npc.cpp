@@ -38,7 +38,8 @@ NPCBehavior HostileNPC::update(float time, const std::vector<Player*>& nearby_ta
     behavior.action = NPCAction::STILL;
 
     action_timer += time;
-    if (action_timer < 0.5f) {  // cooldown de 0.5s para no ser inmatables. extraer al config
+    if (action_timer < GameConfig::get_instance()
+                           .get_chase_cooldown()) {  // cooldown de 0.5s para no ser inmatables
         return behavior;
     }
 
