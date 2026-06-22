@@ -1,7 +1,5 @@
 #include "sprite_manager.h"
 
-#include <cstdio>
-#include <fstream>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -10,10 +8,6 @@ SpriteManager::SpriteManager(SDL_Renderer* renderer): sdl_renderer(renderer), as
 SpriteManager::~SpriteManager() {
     for (auto& pair : textures) {
         SDL_DestroyTexture(pair.second);
-    }
-    for (auto& pair : grh_sheets) {
-        if (pair.second)
-            SDL_DestroyTexture(pair.second);
     }
 }
 
@@ -286,55 +280,6 @@ SDL_Texture* SpriteManager::get_transition_overlay(const char* key) {
     return try_load_cached(key, path);
 }
 
-void SpriteManager::load_grh_index(const std::string& res_dir) {
-    recursos_dir = res_dir;
-    const std::string sep = res_dir.empty() || res_dir.back() == '/' ? "" : "/";
-    std::string path = res_dir + sep + "init/graficos.ini";
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        SDL_Log("load_grh_index: no se pudo abrir %s", path.c_str());
-        return;  // fallo no fatal: el juego sigue con el sistema de tiles sintéticos
-    }
-    std::string line;
-    while (std::getline(file, line)) {
-        // graficos.ini usa CRLF (\r\n); descartamos el \r sobrante
-        if (!line.empty() && line.back() == '\r')
-            line.pop_back();
-        // Saltear vacías, encabezados [INIT]/[Graphics], y claves que no son Grh
-        if (line.size() < 4 || line[0] != 'G' || line[1] != 'r' || line[2] != 'h')
-            continue;
-        // Formato: GrhN=frames-fileNum-x-y-w-h
-        int grh_id, frames, fn, x, y, w, h;
-        if (std::sscanf(line.c_str(), "Grh%d=%d-%d-%d-%d-%d-%d", &grh_id, &frames, &fn, &x, &y, &w,
-                        &h) != 7)
-            continue;
-        if (frames != 1)
-            continue;  // imágenes animadas se ignoran por ahora
-        grh_index[grh_id] = {fn, x, y, w, h};
-    }
-}
-
-SDL_Texture* SpriteManager::get_grh_sheet(int file_num) {
-    auto it = grh_sheets.find(file_num);
-    if (it != grh_sheets.end())
-        return it->second;  // puede ser nullptr si el PNG no existe
-    const std::string sep = recursos_dir.empty() || recursos_dir.back() == '/' ? "" : "/";
-    std::string path = recursos_dir + sep + "Graficos/" + std::to_string(file_num) + ".png";
-    SDL_Surface* surface = IMG_Load(path.c_str());
-    if (!surface) {
-        grh_sheets[file_num] = nullptr;  // cachear el intento fallido
-        return nullptr;
-    }
-    // PNGs de AO sin canal alpha usan fondo blanco como color de transparencia
-    if (surface->format->Amask == 0) {
-        Uint32 white = SDL_MapRGB(surface->format, 255, 255, 255);
-        SDL_SetColorKey(surface, SDL_TRUE, white);
-    }
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(sdl_renderer, surface);
-    SDL_FreeSurface(surface);
-    grh_sheets[file_num] = tex;
-    return tex;
-}
 
 void SpriteManager::load_head_textures() {
     const std::string sep = assets_dir.empty() || assets_dir.back() == '/' ? "" : "/";
@@ -362,13 +307,6 @@ void SpriteManager::load_npc_textures() {
     }
 }
 
-void SpriteManager::load_grh_sheets() {
-    // Precarga todos los spritesheets únicos del índice.
-    // Es un no-op si load_grh_index no fue llamado o si Recursos/Graficos no existe.
-    for (auto& [grh_id, entry] : grh_index) {
-        get_grh_sheet(entry.file_num);  // cachea el resultado en grh_sheets
-    }
-}
 
 SDL_Texture* SpriteManager::get_npc(NPCVisualType type) {
     const char* filename = nullptr;

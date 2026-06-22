@@ -134,32 +134,27 @@ NPCRenderer::NPCSpriteInfo NPCRenderer::npc_sprite_info(NPCVisualType t) {
             // 150x208 -> 6 cols x 4 filas, fw=25 fh=52
             return {25, 52, {6, 6, 5, 5}};
         case NPCVisualType::ZOMBIE:
-            // Extraído de Recursos/Graficos/4795.png filas 0-3 (de 8 totales)
-            // fw=96, fh=96 verificados píxel a píxel; 8 frames por dirección
-            // PNG resultante: 1024x384 RGBA
+            // sprite propio en assets/sprites/npcs/; fw=96, fh=96; 8 frames por dirección
+            // PNG: 1024x384 RGBA
             return {96, 96, {8, 8, 8, 8}};
         case NPCVisualType::SPIDER:
-            // Extraído de Recursos/Graficos/4792.png filas 0-3 (de 8 totales)
-            // fw=128, fh=128 verificados píxel a píxel; 8 frames por dirección
-            // PNG resultante: 1024x512 RGBA
+            // sprite propio en assets/sprites/npcs/; fw=128, fh=128; 8 frames por dirección
+            // PNG: 1024x512 RGBA
             return {128, 128, {8, 8, 8, 8}};
         case NPCVisualType::ORC:
             // 144x208 -> 6 cols x 4 filas, fw=24 fh=52
             return {24, 52, {6, 6, 5, 5}};
         case NPCVisualType::GOLEM_ICE:
-            // Extraído de Recursos/Graficos/4592.png filas 0-3 (de 4 útiles)
-            // fw=160, fh=160 verificados píxel a píxel; 6 frames por dirección
-            // PNG resultante: 1024x640 RGBA
+            // sprite propio en assets/sprites/npcs/; fw=160, fh=160; 6 frames por dirección
+            // PNG: 1024x640 RGBA
             return {160, 160, {6, 6, 6, 6}};
         case NPCVisualType::GOLEM_STONE:
-            // Extraído de Recursos/Graficos/4580.png filas 0-3 (de 4 útiles)
-            // fw=160, fh=160 verificados píxel a píxel; 6 frames por dirección
-            // PNG resultante: 1024x640 RGBA
+            // sprite propio en assets/sprites/npcs/; fw=160, fh=160; 6 frames por dirección
+            // PNG: 1024x640 RGBA
             return {160, 160, {6, 6, 6, 6}};
         case NPCVisualType::GOLEM_INFERNAL:
-            // Extraído de Recursos/Graficos/4593.png filas 0-3 (de 4 útiles)
-            // fw=160, fh=160 verificados píxel a píxel; 6 frames por dirección
-            // PNG resultante: 1024x640 RGBA
+            // sprite propio en assets/sprites/npcs/; fw=160, fh=160; 6 frames por dirección
+            // PNG: 1024x640 RGBA
             return {160, 160, {6, 6, 6, 6}};
         default:
             return {32, 32, {1, 1, 1, 1}};

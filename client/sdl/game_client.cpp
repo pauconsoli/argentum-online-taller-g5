@@ -90,8 +90,6 @@ void GameClient::init_subsystems(bool fullscreen, bool load_font) {
     sprite_manager->load_terrain_textures(base_assets);  // también carga items y overlays fijos
     sprite_manager->load_head_textures();                // 6 cabezas usadas por el cliente
     sprite_manager->load_npc_textures();                 // 11 tipos de NPC
-    sprite_manager->load_grh_index("Recursos");  // no-op si Recursos/init/graficos.ini no existe
-    sprite_manager->load_grh_sheets();           // no-op si grh_index vacío
     terrain_renderer =
         std::make_unique<TerrainRenderer>(renderer.get(), sprite_manager.get(), camera);
     npc_renderer = std::make_unique<NPCRenderer>(renderer.get(), sprite_manager.get(), camera);
