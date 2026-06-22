@@ -117,7 +117,6 @@ void GameClient::run() {
 
     ClientMap client_map = build_sample_client_map();
 
-    // esto que es? porque se declara asi?
     state.reset_position();
 
     direction = 0;
@@ -146,6 +145,7 @@ void GameClient::run() {
             current_frame = 0;
         }
 
+
         if (state.player_x() >= 0 && state.player_y() >= 0) {
             camera.center_on(state.player_x(), state.player_y(),
                              client_map.get_width() * config.tile_width,
@@ -166,7 +166,6 @@ void GameClient::run() {
 // Carga todos los efectos de sonido del juego en el AudioManager.
 void GameClient::load_audio_assets() {
     const std::string audio_path = get_base_asset_dir() + "/audio/sfx/";
-
     audio_manager->load_sound("melee_hit", audio_path + "melee_hit.wav");
     audio_manager->load_sound("ranged_attack", audio_path + "ranged_attack.wav");
     audio_manager->load_sound("explosion", audio_path + "explosion.wav");
@@ -207,23 +206,18 @@ void GameClient::process_sdl_events() {
             switch (event.key.keysym.sym) {
                 case SDLK_1:
                     client->do_cheat(CheatType::HEAL_FULL);
-                    mini_chat->add_message("vida al maximo");
                     break;
                 case SDLK_2:
                     client->do_cheat(CheatType::RESTORE_MANA);
-                    mini_chat->add_message("mana al maximo");
                     break;
                 case SDLK_3:
                     client->do_cheat(CheatType::DIE);
-                    mini_chat->add_message("te suicidaste");
                     break;
                 case SDLK_4:
                     client->do_cheat(CheatType::LEVEL_UP);
-                    mini_chat->add_message("subiste un nivel");
                     break;
                 case SDLK_5:
                     client->do_cheat(CheatType::GIVE_GOLD);
-                    mini_chat->add_message("oro recibido");
                     break;
                 default:
                     break;
@@ -288,7 +282,6 @@ void GameClient::dispatch_chat_command(const std::string& input) {
     }
     if (starts_with(input, "/tomar")) {
         client->do_pick_up();
-        mini_chat->add_message("/tomar");
         return;
     }
     if (starts_with(input, "/tirar")) {
@@ -300,10 +293,15 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         return;
     }
     if (input == "/resucitar") {
-        if (state.is_ghost())
+        if (!state.is_ghost()) {
+            mini_chat->add_message("No es posible resucitar. Su jugador se encuentra vivo");
+            return;
+        }
+        if (state.is_ghost() && state.selected_npc_id() == 0) {
             client->do_resurrect();
-        else
+        } else {
             handle_npc_command(NPCInteraction::RESURRECT, "", 0, input);
+        }
         return;
     }
     if (input == "/listar") {
@@ -423,7 +421,6 @@ void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg,
         return;
     }
     client->do_interact(state.selected_npc_id(), type, arg, amount);
-    mini_chat->add_message(display);
 }
 
 void GameClient::handle_drop_command(const std::string& input) {
