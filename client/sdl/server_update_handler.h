@@ -17,6 +17,7 @@
 #include "common/updates/inventory_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_left_update.h"
+#include "common/updates/revive_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/system_msg_update.h"
 #include "common/updates/world_map_update.h"
@@ -56,6 +57,7 @@ class ServerUpdateHandler {
     void on_clan_review(const ClanReviewUpdate&);
     void on_system_msg(const SystemMsgUpdate&);
     void on_interact(const NpcInteractUpdate&);
+    void on_revive(const ReviveUpdate&);
     void show_interact_error(InteractStatus status);
     void play_attack_sound(const AttackResult& r);
 };

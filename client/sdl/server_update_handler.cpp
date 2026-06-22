@@ -59,6 +59,9 @@ void ServerUpdateHandler::apply_pending(UpdateQueue& queue, ClientMap& map, int 
             case UpdateType::NPC_INTERACT:
                 on_interact(static_cast<const NpcInteractUpdate&>(*update));
                 break;
+            case UpdateType::REVIVE:
+                on_revive(static_cast<const ReviveUpdate&>(*update));
+                break;
             default:
                 break;
         }
@@ -74,7 +77,10 @@ void ServerUpdateHandler::on_error(const ErrorUpdate& eu) {
 
 void ServerUpdateHandler::on_snapshot(const SnapshotUpdate& snap, ClientMap& /*map*/, int tile_w,
                                       int tile_h) {
+    bool was_ghost = state.is_ghost();
     state.apply_snapshot(snap, tile_w, tile_h);
+    if (was_ghost && !state.is_ghost())
+        notifier.message("Fuiste resucitado");
 }
 
 void ServerUpdateHandler::on_player_left(const PlayerLeftUpdate& pu) {
@@ -195,16 +201,21 @@ void ServerUpdateHandler::on_death(const DeathUpdate& du, int tile_w, int tile_h
         if (du.get_killer_id() == state.player_id()) {
             notifier.message("Mataste a " + snap.nick);
         } else if (snap.clan_id != 0 && snap.clan_id == state.clan_id()) {
-            std::string killer_name = "Alguien";
-            auto kit = state.players().find(du.get_killer_id());
-            if (kit != state.players().end()) {
-                killer_name = kit->second.nick;
+            if (du.get_killer_id() == dead_id) {
+                notifier.message("[Clan] " + snap.nick + " se suicidó");
             } else {
-                auto nit = state.npcs().find(du.get_killer_id());
-                if (nit != state.npcs().end())
-                    killer_name = nit->second.name;
+                std::string killer_name = "Alguien";
+                auto kit = state.players().find(du.get_killer_id());
+                if (kit != state.players().end()) {
+                    killer_name = kit->second.nick;
+                } else {
+                    auto nit = state.npcs().find(du.get_killer_id());
+                    if (nit != state.npcs().end())
+                        killer_name = nit->second.name;
+                }
+                notifier.message("[Clan] ¡" + snap.nick + " fue asesinado por " + killer_name +
+                                 "!");
             }
-            notifier.message("[Clan] ¡" + snap.nick + " fue asesinado por " + killer_name + "!");
         } else {
             notifier.message("Un jugador murio en combate");
         }
@@ -396,7 +407,8 @@ void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
             notifier.message("Fuiste curado");
             break;
         case NPCInteraction::RESURRECT:
-            notifier.message("Fuiste resucitado");
+            // el mensaje viene del snapshot, para poder mostrarlo en los dos casos de /resucitar
+            // sin que se repita
             break;
         case NPCInteraction::LIST:
             break;
@@ -452,6 +464,20 @@ void ServerUpdateHandler::show_interact_error(InteractStatus status) {
             notifier.message("NPC no válido");
             break;
         default:
+            break;
+    }
+}
+
+void ServerUpdateHandler::on_revive(const ReviveUpdate& ru) {
+    switch (ru.get_status()) {
+        case ResurrectStatus::SUCCESS:
+            notifier.message("Comenzando resurrección. Estarás inmovilizado durante el proceso...");
+            break;
+        case ResurrectStatus::ALREADY_RESURRECTING:
+            notifier.message("Ya estás siendo resucitado");
+            break;
+        case ResurrectStatus::NOT_DEAD:
+            notifier.message("No podés resucitar estando vivo");
             break;
     }
 }

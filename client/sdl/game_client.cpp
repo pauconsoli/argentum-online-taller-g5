@@ -467,26 +467,28 @@ void GameClient::handle_left_click(int screen_x, int screen_y) {
         music_paused = audio_manager->is_music_paused();
         return;
     }
-    if (state.is_ghost())
-        return;
     int tile_x = (camera.get_x() + screen_x) / config.tile_width;
     int tile_y = (camera.get_y() + screen_y) / config.tile_height;
     try_attack_at_tile(tile_x, tile_y);
-    try_equip_at(screen_x, screen_y);
+    if (!state.is_ghost())
+        try_equip_at(screen_x, screen_y);
 }
 
 bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
-    for (const auto& [pid, ps] : state.players()) {
-        if (pid == state.player_id() || ps.x != tile_x || ps.y != tile_y)
-            continue;
-        client->do_attack(pid);
-        return true;
+    if (!state.is_ghost()) {
+        for (const auto& [pid, ps] : state.players()) {
+            if (pid == state.player_id() || ps.x != tile_x || ps.y != tile_y)
+                continue;
+            client->do_attack(pid);
+            return true;
+        }
     }
     for (const auto& [nid, ns] : state.npcs()) {
         if (ns.x != tile_x || ns.y != tile_y)
             continue;
         if (ns.is_hostile) {
-            client->do_attack(nid);
+            if (!state.is_ghost())
+                client->do_attack(nid);
             return true;
         }
         state.select_npc(nid);
