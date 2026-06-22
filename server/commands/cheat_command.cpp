@@ -13,9 +13,9 @@ static std::string cheat_msg(CheatType cheat, bool died) {
         case CheatType::HEAL_FULL:
             return "[CHEAT] HP restaurado al maximo";
         case CheatType::RESTORE_MANA:
-            return "[CHEAT] Mana restaurado al maximo";
+            return "[CHEAT] MP restaurado al maximo";
         case CheatType::DIE:
-            return died ? "[CHEAT] Moriste instantaneamente" : "";
+            return died ? "[CHEAT] Moriste instantáneamente" : "";
         case CheatType::LEVEL_UP:
             return "[CHEAT] Subiste de nivel";
         case CheatType::GIVE_GOLD:

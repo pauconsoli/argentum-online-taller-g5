@@ -523,7 +523,9 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_chat_msg() {
     uint32_t sender_id = recv_u32();
     std::string sender_nick = recv_string();
     std::string text = recv_string();
-    return std::make_unique<ChatMsgUpdate>(sender_id, std::move(sender_nick), std::move(text));
+    bool is_private = recv_u8() != 0;
+    return std::make_unique<ChatMsgUpdate>(sender_id, std::move(sender_nick), std::move(text), 0,
+                                           is_private);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_system_msg() {
