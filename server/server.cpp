@@ -126,9 +126,16 @@ uint32_t Server::create_match(const std::string& name, uint8_t max_players,
     if (max_players == 0) {
         throw std::invalid_argument("max_players debe ser > 0");
     }
+
+    std::lock_guard<std::mutex> lk(matches_mutex);
+    for (const auto& [id, m] : matches) {
+        if (m->get_name() == name) {
+            throw std::invalid_argument("Ya existe un match con el nombre '" + name + "'");
+        }
+    }
+
     uint32_t match_id = next_match_id.fetch_add(1);
     auto match = std::make_unique<BasicMatch>(match_id, name, max_players, world_factory());
-    std::lock_guard<std::mutex> lk(matches_mutex);
     matches.emplace(match_id, std::move(match));
     return match_id;
 }

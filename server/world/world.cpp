@@ -516,10 +516,9 @@ InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPC
     if (!player || !npc)
         return InteractResult{InteractStatus::INVALID_TARGET};
 
-    // el jugador tiene que estar adyacente al NPC
+    // el jugador tiene que estar en la ciudad (zona segura)
     const Position& pp = player->get_position();
-    const Position& np = npc->get_position();
-    if (std::abs(pp.x - np.x) > 1 || std::abs(pp.y - np.y) > 1)
+    if (!map.is_safe(pp))
         return InteractResult{InteractStatus::OUT_OF_RANGE};
 
     return npc->interact(type, arg, amount, *player, bank);

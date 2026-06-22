@@ -609,6 +609,7 @@ void ServerProtocol::send_chat_msg(const GameUpdate& update) {
     put_u32(buf, u.sender_id);
     put_string(buf, u.sender_nick);
     put_string(buf, u.text);
+    put_u8(buf, u.is_private ? 1 : 0);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_chat_msg: client closed connection");
     }

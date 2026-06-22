@@ -1,7 +1,9 @@
 #include "main_window.h"
 
+#include <QIcon>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QString>
@@ -26,7 +28,19 @@ MainWindow::MainWindow(QWidget* parent):
     status_user_label(new QLabel(this)) {
 
     setWindowTitle(tr("Argentum Online - G5"));
+    setWindowIcon(QIcon(":/logo.png"));
     resize(720, 560);
+
+    setStyleSheet(
+        "QMainWindow {"
+        "  background-image: url(:/background.jpg);"
+        "  background-repeat: no-repeat;"
+        "  background-position: center;"
+        "  background-color: #1a1410;"
+        "}"
+        "QStackedWidget > QWidget {"
+        "  background-color: rgba(20, 16, 12, 180);"
+        "}");
 
     stack->addWidget(connection_page);  // 0
     stack->addWidget(lobby_page);       // 1
