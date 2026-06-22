@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "server/game/game_config.h"
 #include "server/game/inventory.h"
@@ -72,13 +73,14 @@ InteractResult Merchant::on_list(Player& player, Bank& /*bank*/) {
     const ItemRegistry& registry = ItemRegistry::get_instance();
     InteractResult result{InteractStatus::SUCCESS};
 
-    const auto& weapons = registry.get_weapon_keys();
-    const auto& defensive = registry.get_defensive_keys();
-    const auto& potions = registry.get_potion_keys();
+    auto add_with_price = [&](const std::vector<std::string>& keys) {
+        for (const auto& name : keys)
+            result.catalog.push_back(name + " - $" + std::to_string(registry.get_price(name)));
+    };
 
-    result.catalog.insert(result.catalog.end(), weapons.begin(), weapons.end());
-    result.catalog.insert(result.catalog.end(), defensive.begin(), defensive.end());
-    result.catalog.insert(result.catalog.end(), potions.begin(), potions.end());
+    add_with_price(registry.get_weapon_keys());
+    add_with_price(registry.get_defensive_keys());
+    add_with_price(registry.get_potion_keys());
 
     return result;
 }

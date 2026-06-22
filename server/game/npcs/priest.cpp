@@ -1,6 +1,7 @@
 #include "server/game/npcs/priest.h"
 
 #include <utility>
+#include <vector>
 
 #include "server/game/inventory.h"
 #include "server/game/items/item_registry.h"
@@ -78,11 +79,13 @@ InteractResult Priest::on_list(Player& player, Bank& /*bank*/) {
     const ItemRegistry& registry = ItemRegistry::get_instance();
     InteractResult result{InteractStatus::SUCCESS};
 
-    const auto& potions = registry.get_potion_keys();
-    const auto& magic = registry.get_magic_weapon_keys();
+    auto add_with_price = [&](const std::vector<std::string>& keys) {
+        for (const auto& name : keys)
+            result.catalog.push_back(name + " - $" + std::to_string(registry.get_price(name)));
+    };
 
-    result.catalog.insert(result.catalog.end(), potions.begin(), potions.end());
-    result.catalog.insert(result.catalog.end(), magic.begin(), magic.end());
+    add_with_price(registry.get_potion_keys());
+    add_with_price(registry.get_magic_weapon_keys());
 
     return result;
 }
