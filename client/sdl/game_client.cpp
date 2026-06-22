@@ -420,7 +420,6 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         }
     }
     client->do_chat(input);
-    mini_chat->add_message(input);
 }
 
 void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount,

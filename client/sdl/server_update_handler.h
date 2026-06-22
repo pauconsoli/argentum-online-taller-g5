@@ -59,6 +59,7 @@ class ServerUpdateHandler {
     void on_interact(const NpcInteractUpdate&);
     void on_revive(const ReviveUpdate&);
     void show_interact_error(InteractStatus status);
+    void show_attack_error(AttackStatus status);
     void play_attack_sound(const AttackResult& r);
 };
 

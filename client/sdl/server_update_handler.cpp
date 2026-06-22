@@ -105,6 +105,10 @@ void ServerUpdateHandler::on_inventory(const InventoryUpdate& iu) {
 
 void ServerUpdateHandler::on_attack(const AttackUpdate& au) {
     const AttackResult& result = au.get_result();
+    if (result.attacker_id == state.player_id() && result.status != AttackStatus::SUCCESS) {
+        show_attack_error(result.status);
+        return;
+    }
     if (result.evaded) {
         notifier.message("Ataque esquivado");
     } else if (result.attacker_id == state.player_id()) {
@@ -184,6 +188,7 @@ void ServerUpdateHandler::play_attack_sound(const AttackResult& result) {
 
 void ServerUpdateHandler::on_death(const DeathUpdate& du, int tile_w, int tile_h) {
     if (du.get_dead_id() == state.player_id()) {
+        state.select_npc(0);
         notifier.message("Moriste. Dirigite al sacerdote para resucitar");
         notifier.play("death");
         return;
@@ -431,6 +436,25 @@ void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
     }
 }
 
+void ServerUpdateHandler::show_attack_error(AttackStatus status) {
+    switch (status) {
+        case AttackStatus::INVALID_TARGET:
+            notifier.message("No podés atacar a un miembro de tu clan");
+            break;
+        case AttackStatus::OUT_OF_RANGE:
+            notifier.message("Estás muy lejos para atacar");
+            break;
+        case AttackStatus::DEAD:
+            notifier.message("No podés atacar a alguien que ya está muerto");
+            break;
+        case AttackStatus::NO_MANA:
+            notifier.message("No tenés maná suficiente para atacar");
+            break;
+        default:
+            break;
+    }
+}
+
 void ServerUpdateHandler::show_interact_error(InteractStatus status) {
     switch (status) {
         case InteractStatus::INSUFFICIENT_GOLD:
@@ -446,6 +470,7 @@ void ServerUpdateHandler::show_interact_error(InteractStatus status) {
             notifier.message("No podés hacer eso mientras estás muerto");
             break;
         case InteractStatus::OUT_OF_RANGE:
+            state.select_npc(0);
             notifier.message("Estás muy lejos del NPC");
             break;
         case InteractStatus::NOT_ALLOWED:
