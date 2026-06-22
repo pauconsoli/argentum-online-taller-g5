@@ -273,7 +273,7 @@ AttackStatus World::validate_attack_conditions(const Character* attacker,
 
     // zonas seguras
     if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
-        return AttackStatus::INVALID_TARGET;
+        return AttackStatus::SAFE_ZONE;
     }
 
     // mismo clan

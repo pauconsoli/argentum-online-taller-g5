@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-enum class AttackStatus { SUCCESS, NO_MANA, OUT_OF_RANGE, INVALID_TARGET, DEAD };
+enum class AttackStatus { SUCCESS, NO_MANA, OUT_OF_RANGE, INVALID_TARGET, DEAD, SAFE_ZONE };
 
 enum class AttackType { NORMAL, RANGED, MAGIC };
 

@@ -441,6 +441,9 @@ void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
 
 void ServerUpdateHandler::show_attack_error(AttackStatus status) {
     switch (status) {
+        case AttackStatus::SAFE_ZONE:
+            notifier.message("No podés atacar en una zona segura");
+            break;
         case AttackStatus::INVALID_TARGET:
             notifier.message("No podés atacar a un miembro de tu clan");
             break;
