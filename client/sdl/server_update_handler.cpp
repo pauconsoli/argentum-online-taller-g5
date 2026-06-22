@@ -56,6 +56,9 @@ void ServerUpdateHandler::apply_pending(UpdateQueue& queue, ClientMap& map, int 
             case UpdateType::SYSTEM_MSG:
                 on_system_msg(static_cast<const SystemMsgUpdate&>(*update));
                 break;
+            case UpdateType::NPC_INTERACT:
+                on_interact(static_cast<const NpcInteractUpdate&>(*update));
+                break;
             default:
                 break;
         }
@@ -349,4 +352,85 @@ void ServerUpdateHandler::on_clan_review(const ClanReviewUpdate& cru) {
 
 void ServerUpdateHandler::on_system_msg(const SystemMsgUpdate& su) {
     notifier.message(su.get_message());
+}
+
+void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
+    const InteractResult& result = update.get_result();
+    const NPCInteraction type = update.get_npc_interaction_type();
+
+    if (result.status != InteractStatus::SUCCESS) {
+        show_interact_error(result.status);
+        return;
+    }
+
+    switch (type) {
+        case NPCInteraction::BUY:
+            notifier.message("Compraste " + result.item_name + " por " +
+                             std::to_string(result.gold_amount) + " oro");
+            break;
+        case NPCInteraction::SELL:
+            notifier.message("Vendiste " + result.item_name + " por " +
+                             std::to_string(result.gold_amount) + " oro");
+            break;
+        case NPCInteraction::HEAL:
+            notifier.message("Fuiste curado");
+            break;
+        case NPCInteraction::RESURRECT:
+            notifier.message("Fuiste resucitado");
+            break;
+        case NPCInteraction::LIST:
+            break;
+        case NPCInteraction::DEPOSIT_GOLD:
+            notifier.message("Depositaste " + std::to_string(result.gold_amount) +
+                             " oro en el banco");
+            break;
+        case NPCInteraction::WITHDRAW_GOLD:
+            notifier.message("Retiraste " + std::to_string(result.gold_amount) + " oro del banco");
+            break;
+        case NPCInteraction::DEPOSIT_ITEM:
+            notifier.message("Depositaste " + result.item_name + " en el banco");
+            break;
+        case NPCInteraction::WITHDRAW_ITEM:
+            notifier.message("Retiraste " + result.item_name + " del banco");
+            break;
+        default:
+            break;
+    }
+}
+
+void ServerUpdateHandler::show_interact_error(InteractStatus status) {
+    switch (status) {
+        case InteractStatus::INSUFFICIENT_GOLD:
+            notifier.message("No tenés oro suficiente");
+            break;
+        case InteractStatus::INVENTORY_FULL:
+            notifier.message("Tu inventario está lleno");
+            break;
+        case InteractStatus::ITEM_NOT_FOUND:
+            notifier.message("Ese item no existe");
+            break;
+        case InteractStatus::PLAYER_DEAD:
+            notifier.message("No podés hacer eso mientras estás muerto");
+            break;
+        case InteractStatus::OUT_OF_RANGE:
+            notifier.message("Estás muy lejos del NPC");
+            break;
+        case InteractStatus::NOT_ALLOWED:
+            notifier.message("Ese NPC no puede hacer eso");
+            break;
+        case InteractStatus::PLAYER_NOT_DEAD:
+            notifier.message("No podés resucitar estando vivo");
+            break;
+        case InteractStatus::ALREADY_FULL:
+            notifier.message("El banco está lleno");
+            break;
+        case InteractStatus::INVALID_AMOUNT:
+            notifier.message("Cantidad inválida");
+            break;
+        case InteractStatus::INVALID_TARGET:
+            notifier.message("NPC no válido");
+            break;
+        default:
+            break;
+    }
 }

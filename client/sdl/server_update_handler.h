@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "common/npc_interact_result.h"
 #include "common/queue.h"
 #include "common/updates/attack_update.h"
 #include "common/updates/catalog_update.h"
@@ -14,6 +15,7 @@
 #include "common/updates/error_update.h"
 #include "common/updates/game_update.h"
 #include "common/updates/inventory_update.h"
+#include "common/updates/npc_interact_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/snapshot_update.h"
 #include "common/updates/system_msg_update.h"
@@ -53,6 +55,8 @@ class ServerUpdateHandler {
     void on_clan_result(const ClanResultUpdate&);
     void on_clan_review(const ClanReviewUpdate&);
     void on_system_msg(const SystemMsgUpdate&);
+    void on_interact(const NpcInteractUpdate&);
+    void show_interact_error(InteractStatus status);
     void play_attack_sound(const AttackResult& r);
 };
 
