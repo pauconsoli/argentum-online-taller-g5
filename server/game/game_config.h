@@ -74,7 +74,7 @@ class GameConfig {
     float npc_gold_drop_max_factor;
     int npc_population_limit;
     int npc_spawn_time_seconds;
-    int chase_cooldown;
+    float chase_cooldown;
 
     int server_game_loop_sleep_ms;
 

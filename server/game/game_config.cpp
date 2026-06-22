@@ -286,6 +286,11 @@ int GameConfig::get_npc_spawn_time_seconds() const {
     return npc_spawn_time_seconds;
 }
 
+float GameConfig::get_chase_cooldown() const {
+    check_loaded(loaded);
+    return chase_cooldown;
+}
+
 int GameConfig::get_server_game_loop_sleep_ms() const {
     check_loaded(loaded);
     return server_game_loop_sleep_ms;
