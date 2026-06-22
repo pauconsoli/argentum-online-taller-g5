@@ -28,9 +28,9 @@ HelpMenu::HelpMenu(SDL_Renderer* renderer, const std::string& font_path, int win
         {"H", "Abrir / cerrar ayuda"},
         {"", ""},
         {"Chat (Enter y escribir)", ""},
-        {"/meditar", "Recuperar mana"},
+        {"/meditar", "Recuperar maná"},
         {"/resucitar", "Resucitar"},
-        {"/curar", "Curar vida y mana"},
+        {"/curar", "Curar vida y maná"},
         {"/tomar", "Levantar del suelo"},
         {"/tirar", "Tirar el item"},
         {"@nick msg", "Mensaje privado"},
@@ -42,7 +42,9 @@ HelpMenu::HelpMenu(SDL_Renderer* renderer, const std::string& font_path, int win
         {"/comprar <obj>", "Comprar a comerciante"},
         {"/vender <obj>", "Vender a comerciante"},
         {"/depositar <obj>", "Guardar en el banco"},
+        {"/depositar oro <cant>", " "},
         {"/retirar <obj>", "Sacar del banco"},
+        {"/retirar oro <cant>", " "},
         {"", ""},
         {"Clanes (fundador)", ""},
         {"/fundar-clan <n>", "Fundar un clan"},
@@ -56,9 +58,9 @@ HelpMenu::HelpMenu(SDL_Renderer* renderer, const std::string& font_path, int win
     };
 
     cheats = {
-        {"Cheats (para probar)", ""},   {"Ctrl + 1", "Vida al maximo"},
-        {"Ctrl + 2", "Mana al maximo"}, {"Ctrl + 3", "Morir"},
-        {"Ctrl + 4", "Subir nivel"},    {"Ctrl + 5", "Dar oro"},
+        {"Cheats (para probar)", ""},   {"Ctrl + 1", "Vida al máximo"},
+        {"Ctrl + 2", "Maná al máximo"}, {"Ctrl + 3", "Morir"},
+        {"Ctrl + 4", "Subir de nivel"}, {"Ctrl + 5", "+10000 de oro"},
     };
 }
 
@@ -105,7 +107,8 @@ void HelpMenu::draw() {
         rows = static_cast<int>(right.size());
 
     int panel_w = window_width * 90 / 100;
-    int panel_h = 60 + rows * 22 + 16 + static_cast<int>(cheats.size()) * 22 + 44;
+    int cheat_rows = 1 + static_cast<int>(cheats.size()) / 2;
+    int panel_h = 60 + rows * 22 + 16 + cheat_rows * 22 + 66;
     int panel_x = (window_width - panel_w) / 2;
     int panel_y = (window_height - panel_h) / 2;
 
@@ -147,17 +150,22 @@ void HelpMenu::draw() {
         y += 22;
     }
 
-    // Cheats: bloque a lo ancho, debajo de las dos columnas.
+    // Cheats en 2 columnas, debajo de las columnas principales.
     y = panel_y + 60 + rows * 22 + 16;
-    for (auto& line : cheats) {
-        if (line.second.empty()) {
-            draw_text(line.first, col1, y, yellow);
-        } else {
-            draw_text(line.first, col1, y, blue);
-            draw_text(line.second, col1 + desc, y, white);
-        }
+    if (!cheats.empty()) {
+        draw_text(cheats[0].first, col1, y, yellow);
         y += 22;
+        for (int i = 1; i < static_cast<int>(cheats.size()); i += 2) {
+            draw_text(cheats[i].first, col1, y, blue);
+            draw_text(cheats[i].second, col1 + desc, y, white);
+            if (i + 1 < static_cast<int>(cheats.size())) {
+                draw_text(cheats[i + 1].first, col2, y, blue);
+                draw_text(cheats[i + 1].second, col2 + desc, y, white);
+            }
+            y += 22;
+        }
     }
 
     draw_text("Algunos comandos requieren seleccionar antes al NPC o jugador.", col1, y + 6, white);
+    draw_text("El nick de los miembros de tu clan aparecerá en color verde.", col1, y + 28, white);
 }
