@@ -223,8 +223,9 @@ void TerrainRenderer::draw_ao_costa_overlay(int col, int row, int tile_w, int ti
 }
 
 // Dibuja los overlays de transición arena→pasto sobre tiles de SAND con vecinos GRASS.
-// Usa 2 piezas base (sur y este) + espejado SDL para cubrir los 4 bordes rectos.
-// Las esquinas (2+ cardinales con pasto adyacentes) no dibujan nada por ahora.
+// Bordes rectos: piezas AO (ao_pasto_sur/este + espejado). Cada cardinal es independiente;
+// si hay 2+ cardinales se acumulan, cubriendo el caso convexa sin pieza especial.
+// Esquinas cóncavas (pasto solo en diagonal): overlay sintético viejo rotado.
 void TerrainRenderer::draw_ao_pasto_overlay(int col, int row, int tile_w, int tile_h, int tx,
                                             int ty, const ClientMap& client_map) {
     if (client_map.at(col, row).terrain != TerrainType::SAND)
@@ -235,62 +236,43 @@ void TerrainRenderer::draw_ao_pasto_overlay(int col, int row, int tile_w, int ti
     bool g_e = has_terrain(client_map, col + 1, row, TerrainType::GRASS);
     bool g_o = has_terrain(client_map, col - 1, row, TerrainType::GRASS);
 
-    // Bordes rectos: exactamente un cardinal con pasto.
-    if (g_s && !g_n && !g_e && !g_o) {
+    // Bordes rectos AO — if independientes: se acumulan cuando hay 2+ cardinales con pasto.
+    if (g_s) {
         SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_sur");
         if (tex)
             renderer_->draw_frame(tex, 0, 0, tile_w, tile_h, tx, ty);
-    } else if (g_n && !g_s && !g_e && !g_o) {
+    }
+    if (g_n) {
         SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_sur");
         if (tex)
             renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_VERTICAL);
-    } else if (g_e && !g_n && !g_s && !g_o) {
+    }
+    if (g_e) {
         SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_este");
         if (tex)
             renderer_->draw_frame(tex, 0, 0, tile_w, tile_h, tx, ty);
-    } else if (g_o && !g_n && !g_s && !g_e) {
+    }
+    if (g_o) {
         SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_este");
         if (tex)
             renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_HORIZONTAL);
-
-        // Esquinas convexas: exactamente dos cardinales adyacentes con pasto.
-        // Pieza base = pasto al S+O; flips cubren S+E, N+O, N+E.
-    } else if (g_s && g_o && !g_n && !g_e) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_convexa");
-        if (tex)
-            renderer_->draw_frame(tex, 0, 0, tile_w, tile_h, tx, ty);
-    } else if (g_s && g_e && !g_n && !g_o) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_convexa");
-        if (tex)
-            renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_HORIZONTAL);
-    } else if (g_n && g_o && !g_s && !g_e) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_convexa");
-        if (tex)
-            renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_VERTICAL);
-    } else if (g_n && g_e && !g_s && !g_o) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_convexa");
-        auto flip_hv = static_cast<SDL_RendererFlip>(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
-        if (tex)
-            renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, flip_hv);
     }
 
-    // Esquinas cóncavas: ningún cardinal con pasto, pasto solo en diagonal.
-    // Pieza base = pasto diagonal SE; flips cubren SO, NE, NO.
-    // Se acumulan: una celda puede tener pasto en múltiples diagonales a la vez.
-    if (!g_n && !g_s && !g_e && !g_o) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_concava");
-        if (tex) {
-            auto flip_hv = static_cast<SDL_RendererFlip>(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
-            if (has_terrain(client_map, col + 1, row + 1, TerrainType::GRASS))
-                renderer_->draw_frame(tex, 0, 0, tile_w, tile_h, tx, ty);
-            if (has_terrain(client_map, col - 1, row + 1, TerrainType::GRASS))
-                renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty,
-                                              SDL_FLIP_HORIZONTAL);
-            if (has_terrain(client_map, col + 1, row - 1, TerrainType::GRASS))
-                renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_VERTICAL);
-            if (has_terrain(client_map, col - 1, row - 1, TerrainType::GRASS))
-                renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, flip_hv);
-        }
+    // Esquinas cóncavas: pasto solo en diagonal, sin cardinal adyacente que lo cubra.
+    // Usa el overlay sintético viejo en vez de ao_pasto_concava (set 6017, verde muy oscuro).
+    // Condición: igual que draw_transition — solo exige que los dos cardinales ADYACENTES
+    // a esa diagonal no tengan pasto (puede haber pasto en el cardinal opuesto).
+    SDL_Texture* corner =
+        sprite_manager_->get_transition_overlay("terrain_overlay_grass_sand_corner");
+    if (corner) {
+        if (!g_n && !g_o && has_terrain(client_map, col - 1, row - 1, TerrainType::GRASS))
+            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 0.0);
+        if (!g_n && !g_e && has_terrain(client_map, col + 1, row - 1, TerrainType::GRASS))
+            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 90.0);
+        if (!g_s && !g_e && has_terrain(client_map, col + 1, row + 1, TerrainType::GRASS))
+            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 180.0);
+        if (!g_s && !g_o && has_terrain(client_map, col - 1, row + 1, TerrainType::GRASS))
+            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 270.0);
     }
 }
 
