@@ -1,5 +1,6 @@
 #include "player.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -69,7 +70,11 @@ void Player::move(const Position& new_position) {
 }
 
 void Player::add_gold(uint64_t amount) {
-    gold += amount;
+    uint64_t max_holdable = GameFormulas::calculate_max_holdable_gold(*this);
+    if (gold >= max_holdable)
+        return;
+    uint64_t space = max_holdable - gold;
+    gold += std::min(amount, space);
 }
 
 bool Player::remove_gold(uint64_t amount) {

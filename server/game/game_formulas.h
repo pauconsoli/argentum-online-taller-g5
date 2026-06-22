@@ -60,6 +60,7 @@ class GameFormulas {
     static int get_hand_combat_damage(const Player& attacker);
 
     // MUERTE Y DROPS
+    static uint64_t calculate_max_holdable_gold(const Player& player);
     static uint64_t calculate_player_dropped_gold(const Player& player);
     static uint64_t calculate_player_dropped_experience(const Player& player);
     static uint64_t calculate_npc_dropped_gold(const Character& npc);

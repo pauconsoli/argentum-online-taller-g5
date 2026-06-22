@@ -427,7 +427,7 @@ CheatResult World::apply_cheat(uint32_t player_id, CheatType cheat) {
             return {true, false};
 
         case CheatType::GIVE_GOLD:
-            player->add_gold(10000);
+            player->add_gold(GameFormulas::calculate_max_holdable_gold(*player));
             return {true, false};
     }
 
