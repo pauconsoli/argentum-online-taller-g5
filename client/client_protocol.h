@@ -44,6 +44,7 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_attacked();
     std::unique_ptr<GameUpdate> recv_death();
     std::unique_ptr<GameUpdate> recv_revive();
+    std::unique_ptr<GameUpdate> recv_meditate();
     std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_chat_msg();
     std::unique_ptr<GameUpdate> recv_system_msg();

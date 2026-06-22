@@ -62,6 +62,9 @@ void ServerUpdateHandler::apply_pending(UpdateQueue& queue, ClientMap& map, int 
             case UpdateType::REVIVE:
                 on_revive(static_cast<const ReviveUpdate&>(*update));
                 break;
+            case UpdateType::MEDITATE:
+                on_meditate(static_cast<const MeditateUpdate&>(*update));
+                break;
             default:
                 break;
         }
@@ -489,6 +492,20 @@ void ServerUpdateHandler::show_interact_error(InteractStatus status) {
             notifier.message("NPC no válido");
             break;
         default:
+            break;
+    }
+}
+
+void ServerUpdateHandler::on_meditate(const MeditateUpdate& mu) {
+    switch (mu.get_status()) {
+        case MeditateStatus::SUCCESS:
+            notifier.message("Meditando...");
+            break;
+        case MeditateStatus::PLAYER_DEAD:
+            notifier.message("Estás muerto, no podés meditar");
+            break;
+        case MeditateStatus::NO_MANA:
+            notifier.message("Tu clase no tiene maná");
             break;
     }
 }

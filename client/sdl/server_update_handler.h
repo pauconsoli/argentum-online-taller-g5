@@ -15,6 +15,7 @@
 #include "common/updates/error_update.h"
 #include "common/updates/game_update.h"
 #include "common/updates/inventory_update.h"
+#include "common/updates/meditate_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_left_update.h"
 #include "common/updates/revive_update.h"
@@ -58,6 +59,7 @@ class ServerUpdateHandler {
     void on_system_msg(const SystemMsgUpdate&);
     void on_interact(const NpcInteractUpdate&);
     void on_revive(const ReviveUpdate&);
+    void on_meditate(const MeditateUpdate&);
     void show_interact_error(InteractStatus status);
     void show_attack_error(AttackStatus status);
     void play_attack_sound(const AttackResult& r);

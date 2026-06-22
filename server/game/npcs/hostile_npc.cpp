@@ -1,5 +1,6 @@
 #include "server/game/npcs/hostile_npc.h"
 
+#include <algorithm>
 #include <cmath>
 #include <utility>
 

@@ -44,6 +44,7 @@ constexpr uint8_t STATS = 0x91;
 constexpr uint8_t DEATH = 0x92;
 constexpr uint8_t REVIVE = 0x93;
 constexpr uint8_t ATTACKED = 0x94;
+constexpr uint8_t MEDITATE = 0x95;
 
 constexpr uint8_t INVENTORY = 0xA0;
 constexpr uint8_t CATALOG = 0xA1;

@@ -34,6 +34,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/meditate_update.h"
 #include "common/updates/moved_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
@@ -307,6 +308,9 @@ void ServerProtocol::send_update(const GameUpdate& update) {
         case UpdateType::REVIVE:
             send_revive(update);
             break;
+        case UpdateType::MEDITATE:
+            send_meditate(update);
+            break;
         case UpdateType::INVENTORY:
             send_inventory(update);
             break;
@@ -481,6 +485,16 @@ void ServerProtocol::send_death(const GameUpdate& update) {
     put_u32(buf, u.get_killer_id());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_death: client closed connection");
+    }
+}
+
+void ServerProtocol::send_meditate(const GameUpdate& update) {
+    const auto& u = static_cast<const MeditateUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::MEDITATE);
+    put_u8(buf, static_cast<uint8_t>(u.get_status()));
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_meditate: client closed connection");
     }
 }
 
