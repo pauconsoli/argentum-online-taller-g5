@@ -528,6 +528,7 @@ void ServerProtocol::send_catalog(const GameUpdate& update) {
         put_string(buf, item_name);
     }
     put_u64(buf, u.get_gold_in_bank());
+    put_u8(buf, u.is_vault() ? 1 : 0);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_catalog: client closed connection");
     }

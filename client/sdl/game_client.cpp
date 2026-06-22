@@ -495,7 +495,7 @@ bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
                 mini_chat->add_message("Seleccionaste al sacerdote");
                 break;
             case NPCVisualType::MERCHANT:
-                mini_chat->add_message("Seleccionaste al mercader");
+                mini_chat->add_message("Seleccionaste al comerciante");
                 break;
             case NPCVisualType::BANKER:
                 mini_chat->add_message("Seleccionaste al banquero");

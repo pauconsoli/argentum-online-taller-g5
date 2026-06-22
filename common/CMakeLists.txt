@@ -19,6 +19,7 @@ target_sources(taller_common
     resolvererror.h
     socket.h
     thread.h
+    string_utils.h
     # commands
     commands/client_command.h
     commands/move_command.h

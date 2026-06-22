@@ -65,8 +65,9 @@ InteractResult Priest::on_buy(const std::string& item_name, Player& player) {
         return InteractResult{InteractStatus::INVENTORY_FULL};
     }
 
+    const std::string real_name = item->get_name();
     player.get_inventory().add_item(std::move(item), 1);
-    return InteractResult{InteractStatus::SUCCESS, item_name, price};
+    return InteractResult{InteractStatus::SUCCESS, real_name, price};
 }
 
 InteractResult Priest::on_list(Player& player, Bank& /*bank*/) {

@@ -37,8 +37,9 @@ InteractResult Merchant::on_buy(const std::string& item_name, Player& player) {
         return InteractResult{InteractStatus::INVENTORY_FULL};
     }
 
+    const std::string real_name = item->get_name();
     player.get_inventory().add_item(std::move(item), 1);
-    return InteractResult{InteractStatus::SUCCESS, item_name, price};
+    return InteractResult{InteractStatus::SUCCESS, real_name, price};
 }
 
 InteractResult Merchant::on_sell(const std::string& item_name, Player& player) {
@@ -59,7 +60,7 @@ InteractResult Merchant::on_sell(const std::string& item_name, Player& player) {
         registry.get_price(item_name) / GameConfig::get_instance().get_npc_buy_item_factor();
     player.add_gold(sell_price);
 
-    return InteractResult{InteractStatus::SUCCESS, item_name, sell_price};
+    return InteractResult{InteractStatus::SUCCESS, item->get_name(), sell_price};
 }
 
 // para una primera instancia estoy considerando que todos los merchants venden pociones

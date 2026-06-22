@@ -36,8 +36,9 @@ InteractResult Banker::on_deposit_item(const std::string& item_name, Player& pla
         return InteractResult{InteractStatus::ITEM_NOT_FOUND};
     }
 
+    const std::string real_name = item->get_name();
     bank.deposit_item(player.get_id(), std::move(item));
-    return InteractResult{InteractStatus::SUCCESS, item_name};
+    return InteractResult{InteractStatus::SUCCESS, real_name};
 }
 
 InteractResult Banker::on_withdraw_gold(int amount, Player& player, Bank& bank) {
@@ -73,8 +74,9 @@ InteractResult Banker::on_withdraw_item(const std::string& item_name, Player& pl
         return InteractResult{InteractStatus::INVENTORY_FULL};
     }
 
+    const std::string real_name = item->get_name();
     player.get_inventory().add_item(std::move(item), 1);
-    return InteractResult{InteractStatus::SUCCESS, item_name};
+    return InteractResult{InteractStatus::SUCCESS, real_name};
 }
 
 InteractResult Banker::on_list(Player& player, Bank& bank) {

@@ -241,14 +241,23 @@ void ServerUpdateHandler::on_chat(const ChatMsgUpdate& msg) {
 
 void ServerUpdateHandler::on_catalog(const CatalogUpdate& cat) {
     const auto& items = cat.get_catalog();
+    if (cat.is_vault()) {
+        std::string nick = "jugador";
+        auto it = state.players().find(state.player_id());
+        if (it != state.players().end())
+            nick = it->second.nick;
+        notifier.message("--- Bóveda de " + nick + " ---");
+        notifier.message("Items: ");
+        for (const auto& name : items) notifier.message("  " + name);
+        notifier.message("Oro: " + std::to_string(cat.get_gold_in_bank()));
+        return;
+    }
     if (items.empty()) {
         notifier.message("No hay items disponibles");
         return;
     }
     notifier.message("--- Catálogo ---");
     for (const auto& name : items) notifier.message(name);
-    if (cat.get_gold_in_bank() > 0)
-        notifier.message("Oro en banco: " + std::to_string(cat.get_gold_in_bank()));
 }
 
 void ServerUpdateHandler::on_clan_result(const ClanResultUpdate& cu) {
@@ -258,47 +267,47 @@ void ServerUpdateHandler::on_clan_result(const ClanResultUpdate& cu) {
     if (r.status != ClanActionStatus::SUCCESS) {
         switch (r.status) {
             case ClanActionStatus::LEVEL_TOO_LOW:
-                notifier.message("[Clan] Necesitás nivel 6 o más para fundar un clan.");
+                notifier.message("[Clan] Necesitás nivel 6 o más para fundar un clan");
                 break;
             case ClanActionStatus::ALREADY_IN_CLAN:
-                notifier.message("[Clan] Ya pertenecés a un clan.");
+                notifier.message("[Clan] Ya pertenecés a un clan");
                 break;
             case ClanActionStatus::NAME_TAKEN:
-                notifier.message("[Clan] Ya existe un clan con ese nombre.");
+                notifier.message("[Clan] Ya existe un clan con ese nombre");
                 break;
             case ClanActionStatus::NAME_EMPTY:
-                notifier.message("[Clan] El nombre del clan no puede estar vacío.");
+                notifier.message("[Clan] El nombre del clan no puede estar vacío");
                 break;
             case ClanActionStatus::CLAN_NOT_FOUND:
-                notifier.message("[Clan] No existe ese clan.");
+                notifier.message("[Clan] No existe ese clan");
                 break;
             case ClanActionStatus::NOT_FOUNDER:
-                notifier.message("[Clan] Solo el fundador puede hacer eso.");
+                notifier.message("[Clan] Solo el fundador puede hacer eso");
                 break;
             case ClanActionStatus::NOT_IN_CLAN:
-                notifier.message("[Clan] No pertenecés a ningún clan.");
+                notifier.message("[Clan] No pertenecés a ningún clan");
                 break;
             case ClanActionStatus::NOT_PENDING:
-                notifier.message("[Clan] Ese jugador no tiene una solicitud pendiente.");
+                notifier.message("[Clan] Ese jugador no tiene una solicitud pendiente");
                 break;
             case ClanActionStatus::CLAN_FULL:
-                notifier.message("[Clan] El clan está lleno (máximo 16 miembros).");
+                notifier.message("[Clan] El clan está lleno (máximo 16 miembros)");
                 break;
             case ClanActionStatus::TARGET_OFFLINE:
-                notifier.message("[Clan] Ese jugador no está conectado.");
+                notifier.message("[Clan] Ese jugador no está conectado");
                 break;
             case ClanActionStatus::TARGET_IS_SELF:
-                notifier.message("[Clan] No podés aplicar eso a vos mismo.");
+                notifier.message("[Clan] No podés aplicar eso a vos mismo");
                 break;
             case ClanActionStatus::FOUNDER_CANNOT_LEAVE:
-                notifier.message("[Clan] El fundador no puede abandonar el clan.");
+                notifier.message("[Clan] El fundador no puede abandonar el clan");
                 break;
             case ClanActionStatus::PLAYER_BANNED:
-                notifier.message("[Clan] Estás baneado de este clan.");
+                notifier.message("[Clan] Estás baneado de este clan");
                 break;
             case ClanActionStatus::INTERNAL_ERROR:
             default:
-                notifier.message("[Clan] Error interno del servidor.");
+                notifier.message("[Clan] Error interno del servidor");
                 break;
         }
         return;
@@ -308,48 +317,47 @@ void ServerUpdateHandler::on_clan_result(const ClanResultUpdate& cu) {
 
     switch (action) {
         case ClanAction::FOUND:
-            notifier.message("[Clan] Fundaste el clan '" + r.clan_name + "'.");
+            notifier.message("[Clan] Fundaste el clan '" + r.clan_name + "'");
             break;
         case ClanAction::JOIN_REQUEST:
             if (i_am_target) {
                 notifier.message("[Clan] " + r.actor_nick +
-                                 " quiere unirse a tu clan. Usá /clan-aceptar o /clan-rechazar.");
+                                 " quiere unirse a tu clan. Usá /clan-aceptar o /clan-rechazar");
             } else {
                 notifier.message("[Clan] Tu solicitud para unirte a '" + r.clan_name +
-                                 "' fue enviada.");
+                                 "' fue enviada");
             }
             break;
         case ClanAction::ACCEPT:
             if (i_am_target) {
-                notifier.message("[Clan] Fuiste aceptado en el clan '" + r.clan_name + "'.");
+                notifier.message("[Clan] Fuiste aceptado en el clan '" + r.clan_name + "'");
             } else {
-                notifier.message("[Clan] Aceptaste a " + r.other_nick + " en el clan.");
+                notifier.message("[Clan] Aceptaste a " + r.other_nick + " en el clan");
             }
             break;
         case ClanAction::REJECT:
             if (i_am_target) {
-                notifier.message("[Clan] Tu solicitud al clan '" + r.clan_name +
-                                 "' fue rechazada.");
+                notifier.message("[Clan] Tu solicitud al clan '" + r.clan_name + "' fue rechazada");
             } else {
-                notifier.message("[Clan] Rechazaste la solicitud de " + r.other_nick + ".");
+                notifier.message("[Clan] Rechazaste la solicitud de " + r.other_nick);
             }
             break;
         case ClanAction::BAN:
             if (i_am_target) {
-                notifier.message("[Clan] Fuiste baneado del clan '" + r.clan_name + "'.");
+                notifier.message("[Clan] Fuiste baneado del clan '" + r.clan_name + "'");
             } else {
-                notifier.message("[Clan] Baneaste a " + r.other_nick + " del clan.");
+                notifier.message("[Clan] Baneaste a " + r.other_nick + " del clan");
             }
             break;
         case ClanAction::KICK:
             if (i_am_target) {
-                notifier.message("[Clan] Fuiste expulsado del clan '" + r.clan_name + "'.");
+                notifier.message("[Clan] Fuiste expulsado del clan '" + r.clan_name + "'");
             } else {
-                notifier.message("[Clan] Expulsaste a " + r.other_nick + " del clan.");
+                notifier.message("[Clan] Expulsaste a " + r.other_nick + " del clan");
             }
             break;
         case ClanAction::LEAVE:
-            notifier.message("[Clan] Abandonaste el clan.");
+            notifier.message("[Clan] Abandonaste el clan");
             break;
         case ClanAction::REVIEW:
             break;
@@ -378,11 +386,11 @@ void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
     switch (type) {
         case NPCInteraction::BUY:
             notifier.message("Compraste " + result.item_name + " por " +
-                             std::to_string(result.gold_amount) + " oro");
+                             std::to_string(result.gold_amount) + " de oro");
             break;
         case NPCInteraction::SELL:
             notifier.message("Vendiste " + result.item_name + " por " +
-                             std::to_string(result.gold_amount) + " oro");
+                             std::to_string(result.gold_amount) + " de oro");
             break;
         case NPCInteraction::HEAL:
             notifier.message("Fuiste curado");
@@ -394,10 +402,11 @@ void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
             break;
         case NPCInteraction::DEPOSIT_GOLD:
             notifier.message("Depositaste " + std::to_string(result.gold_amount) +
-                             " oro en el banco");
+                             " de oro en el banco");
             break;
         case NPCInteraction::WITHDRAW_GOLD:
-            notifier.message("Retiraste " + std::to_string(result.gold_amount) + " oro del banco");
+            notifier.message("Retiraste " + std::to_string(result.gold_amount) +
+                             " de oro del banco");
             break;
         case NPCInteraction::DEPOSIT_ITEM:
             notifier.message("Depositaste " + result.item_name + " en el banco");

@@ -3,9 +3,11 @@
 #include <vector>
 
 #include "common/npc_interact_result.h"
+#include "common/npc_type.h"
 #include "common/updates/catalog_update.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/npc_interact_update.h"
+#include "server/game/npcs/npc.h"
 #include "server/game/player.h"
 #include "server/world/world.h"
 
@@ -15,8 +17,10 @@ std::vector<std::unique_ptr<GameUpdate>> InteractNPCCommand::execute(World& worl
     InteractResult result = world.interact_with_npc(player_id, npc_id, type, arg, amount);
 
     if (type == NPCInteraction::LIST && result.status == InteractStatus::SUCCESS) {
-        updates.push_back(
-            std::make_unique<CatalogUpdate>(player_id, result.catalog, result.gold_amount));
+        NPC* npc = world.get_npc(npc_id);
+        bool is_vault = npc && npc->get_type() == NPCType::BANKER;
+        updates.push_back(std::make_unique<CatalogUpdate>(player_id, result.catalog,
+                                                          result.gold_amount, is_vault));
         return updates;
     }
 

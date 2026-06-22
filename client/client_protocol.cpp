@@ -613,5 +613,6 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_catalog() {
         catalog.push_back(recv_string());
     }
     uint64_t gold = recv_u64();
-    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold);
+    bool vault = recv_u8() != 0;
+    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold, vault);
 }
