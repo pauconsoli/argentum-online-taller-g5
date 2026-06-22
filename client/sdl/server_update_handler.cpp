@@ -217,7 +217,11 @@ void ServerUpdateHandler::on_death(const DeathUpdate& du, int tile_w, int tile_h
 }
 
 void ServerUpdateHandler::on_chat(const ChatMsgUpdate& msg) {
-    notifier.message(msg.sender_nick + ": " + msg.text);
+    if (msg.is_private) {
+        notifier.message("[Privado] " + msg.sender_nick + ": " + msg.text);
+    } else {
+        notifier.message(msg.sender_nick + ": " + msg.text);
+    }
 }
 
 void ServerUpdateHandler::on_catalog(const CatalogUpdate& cat) {
@@ -273,6 +277,9 @@ void ServerUpdateHandler::on_clan_result(const ClanResultUpdate& cu) {
                 break;
             case ClanActionStatus::FOUNDER_CANNOT_LEAVE:
                 notifier.message("[Clan] El fundador no puede abandonar el clan.");
+                break;
+            case ClanActionStatus::PLAYER_BANNED:
+                notifier.message("[Clan] Estás baneado de este clan.");
                 break;
             case ClanActionStatus::INTERNAL_ERROR:
             default:

@@ -81,6 +81,8 @@ class ServerProtocol {
     std::unique_ptr<ClientCommand> recv_interact_payload(uint32_t player_id);
     std::unique_ptr<ClientCommand> recv_clan_payload(uint32_t player_id);
     std::unique_ptr<ClientCommand> recv_chat_payload(uint32_t player_id, const std::string& nick);
+    std::unique_ptr<ClientCommand> recv_private_chat_payload(uint32_t player_id,
+                                                             const std::string& nick);
     std::unique_ptr<ClientCommand> recv_cheat_payload(uint32_t player_id);
 
     void send_update(const GameUpdate& update);

@@ -615,6 +615,9 @@ ClanResult World::request_join_clan(uint32_t player_id, const std::string& clan_
     if (!clan) {
         return ClanResult(ClanActionStatus::CLAN_NOT_FOUND, clan_name);
     }
+    if (clan->is_banned(player_id)) {
+        return ClanResult(ClanActionStatus::PLAYER_BANNED, clan->get_name(), player->get_name());
+    }
     if (!clan->request_join(player_id)) {
         ClanActionStatus status =
             clan->is_full() ? ClanActionStatus::CLAN_FULL : ClanActionStatus::INTERNAL_ERROR;

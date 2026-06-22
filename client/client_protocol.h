@@ -69,6 +69,7 @@ class ClientProtocol {
     void send_drop_item(uint8_t slot_index);
     void send_equip_item(uint8_t slot_index);
     void send_chat(const std::string& text);
+    void send_private_chat(const std::string& target_nick, const std::string& text);
     void send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                        int32_t amount);
     void send_clan_action(ClanAction action, const std::string& arg);

@@ -253,6 +253,13 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_chat_payload(uint32_t player
     return std::make_unique<ChatCommand>(player_id, nick, std::move(text));
 }
 
+std::unique_ptr<ClientCommand> ServerProtocol::recv_private_chat_payload(uint32_t player_id,
+                                                                         const std::string& nick) {
+    std::string target_nick = recv_string();
+    std::string text = recv_string();
+    return std::make_unique<ChatCommand>(player_id, nick, std::move(text), std::move(target_nick));
+}
+
 std::unique_ptr<ClientCommand> ServerProtocol::recv_cheat_payload(uint32_t player_id) {
     uint8_t type_raw = recv_u8();
     CheatType cheat_type = static_cast<CheatType>(type_raw);

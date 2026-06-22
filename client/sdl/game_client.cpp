@@ -412,6 +412,15 @@ void GameClient::dispatch_chat_command(const std::string& input) {
         mini_chat->add_message("Comando desconocido");
         return;
     }
+    if (!input.empty() && input[0] == '@') {
+        size_t space_pos = input.find(' ');
+        if (space_pos != std::string::npos && space_pos > 1) {
+            std::string target_nick = input.substr(1, space_pos - 1);
+            std::string msg = input.substr(space_pos + 1);
+            client->do_private_chat(target_nick, msg);
+            return;
+        }
+    }
     client->do_chat(input);
     mini_chat->add_message(input);
 }

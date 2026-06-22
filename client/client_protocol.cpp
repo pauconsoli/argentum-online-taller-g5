@@ -235,6 +235,16 @@ void ClientProtocol::send_chat(const std::string& text) {
     }
 }
 
+void ClientProtocol::send_private_chat(const std::string& target_nick, const std::string& text) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::PRIVATE_CHAT);
+    put_string(buf, target_nick);
+    put_string(buf, text);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_private_chat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                                    int32_t amount) {
     std::vector<uint8_t> buf;

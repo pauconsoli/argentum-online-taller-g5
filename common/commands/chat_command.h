@@ -14,10 +14,15 @@ class ChatCommand: public ClientCommand {
     uint32_t player_id;
     std::string nick;
     std::string text;
+    std::string target_nick;  // vacío = broadcast
 
  public:
-    ChatCommand(uint32_t player_id, std::string nick, std::string text):
-        player_id(player_id), nick(std::move(nick)), text(std::move(text)) {}
+    ChatCommand(uint32_t player_id, std::string nick, std::string text,
+                std::string target_nick = ""):
+        player_id(player_id),
+        nick(std::move(nick)),
+        text(std::move(text)),
+        target_nick(std::move(target_nick)) {}
 
     uint32_t get_player_id() const override {
         return player_id;
