@@ -38,9 +38,9 @@ HelpMenu::HelpMenu(SDL_Renderer* renderer, const std::string& font_path, int win
 
     right = {
         {"Comercio y banco", ""},
-        {"/listar", "Ver items en venta"},
-        {"/comprar <obj>", "Comprar a comerciante"},
-        {"/vender <obj>", "Vender a comerciante"},
+        {"/listar", "Ver catálogo/bóveda"},
+        {"/comprar <obj>", "Comprar item"},
+        {"/vender <obj>", "Vender item"},
         {"/depositar <obj>", "Guardar en el banco"},
         {"/depositar oro <cant>", " "},
         {"/retirar <obj>", "Sacar del banco"},
