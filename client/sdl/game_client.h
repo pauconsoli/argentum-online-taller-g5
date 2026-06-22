@@ -104,7 +104,7 @@ class GameClient: public Notifier {
     void dispatch_chat_command(const std::string& input);
     void handle_drop_command(const std::string& input);
     void handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount,
-                            const std::string& display);
+                            const std::string& /*display*/);
     void handle_left_click(int screen_x, int screen_y);
     bool try_attack_at_tile(int tile_x, int tile_y);
     void try_equip_at(int screen_x, int screen_y);

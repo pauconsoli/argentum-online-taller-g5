@@ -384,7 +384,9 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     uint32_t pid = recv_u32();
-    return std::make_unique<PlayerLeftUpdate>(pid, "", 0);
+    std::string nick = recv_string();
+    uint32_t clan_id = recv_u32();
+    return std::make_unique<PlayerLeftUpdate>(pid, std::move(nick), clan_id);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
@@ -399,6 +401,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.type = static_cast<AttackType>(recv_u8());
     r.weapon_or_spell_name = recv_string();
     r.status = static_cast<AttackStatus>(recv_u8());
+    r.target_clan_id = recv_u32();
     return std::make_unique<AttackUpdate>(r);
 }
 

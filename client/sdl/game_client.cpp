@@ -424,7 +424,7 @@ void GameClient::dispatch_chat_command(const std::string& input) {
 }
 
 void GameClient::handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount,
-                                    const std::string& display) {
+                                    const std::string& /*display*/) {
     if (state.selected_npc_id() == 0) {
         mini_chat->add_message("Seleccioná un NPC primero");
         return;

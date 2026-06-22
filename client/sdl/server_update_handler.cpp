@@ -192,10 +192,22 @@ void ServerUpdateHandler::on_death(const DeathUpdate& du, int tile_w, int tile_h
         const auto& snap = pit->second;
         dead_tx = snap.x;
         dead_ty = snap.y;
-        if (du.get_killer_id() == state.player_id())
+        if (du.get_killer_id() == state.player_id()) {
             notifier.message("Mataste a " + snap.nick);
-        else
+        } else if (snap.clan_id != 0 && snap.clan_id == state.clan_id()) {
+            std::string killer_name = "Alguien";
+            auto kit = state.players().find(du.get_killer_id());
+            if (kit != state.players().end()) {
+                killer_name = kit->second.nick;
+            } else {
+                auto nit = state.npcs().find(du.get_killer_id());
+                if (nit != state.npcs().end())
+                    killer_name = nit->second.name;
+            }
+            notifier.message("[Clan] ¡" + snap.nick + " fue asesinado por " + killer_name + "!");
+        } else {
             notifier.message("Un jugador murio en combate");
+        }
     } else {
         auto nit = state.npcs().find(dead_id);
         if (nit != state.npcs().end()) {

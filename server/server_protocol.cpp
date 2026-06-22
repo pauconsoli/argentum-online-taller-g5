@@ -411,6 +411,8 @@ void ServerProtocol::send_player_left(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::PLAYER_LEFT);
     put_u32(buf, u.player_id);
+    put_string(buf, u.nick);
+    put_u32(buf, u.clan_id);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_player_left: client closed connection");
     }
@@ -465,6 +467,7 @@ void ServerProtocol::send_attacked(const GameUpdate& update) {
     put_u8(buf, static_cast<uint8_t>(r.type));
     put_string(buf, r.weapon_or_spell_name);
     put_u8(buf, static_cast<uint8_t>(r.status));
+    put_u32(buf, r.target_clan_id);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_attacked: client closed connection");
     }
