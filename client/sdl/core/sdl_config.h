@@ -21,7 +21,6 @@ struct SdlConfig {
         return 1000 / target_fps;
     }
 
-    // Carga desde TOML; si el archivo falta o es inválido, devuelve defaults seguros.
     static SdlConfig load(const std::string& path);
 };
 

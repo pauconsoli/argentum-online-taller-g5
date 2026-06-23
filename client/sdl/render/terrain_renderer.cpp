@@ -93,24 +93,12 @@ void TerrainRenderer::draw_base_tile(int col, int row, int tile_w, int tile_h,
     renderer_->draw_frame(sprite_manager_->get_terrain(terrain), 0, 0, tile_w, tile_h, tx, ty);
 }
 
-// Dibuja los overlays de la celda (col, row) en dos etapas:
-//   Etapa A — overlay de tipo de terreno (ej. muro de ciudad):
-//     - Las entradas de mazmorra se omiten visualmente para evitar artefactos de arte;
-//       la lógica de teletransporte sigue funcionando en el servidor.
-//     - El overlay se centra horizontalmente y se alinea al borde inferior del tile.
-//   Etapa B — overlays de transición entre terrenos adyacentes:
-//     - Se aplican en orden de menor a mayor prioridad visual para que en esquinas
-//       compartidas el terreno "superior" quede encima (agua < arena < pasto/tierra).
 void TerrainRenderer::draw_overlays_for_tile(int col, int row, int tile_w, int tile_h,
                                              const ClientMap& client_map) {
     int tx = camera_.get_screen_x(col * tile_w);
     int ty = camera_.get_screen_y(row * tile_h);
     TerrainType terrain = client_map.at(col, row).terrain;
 
-    // Etapa A: overlay de tipo (muros de ciudad).
-    // Las entradas de mazmorra se omiten visualmente
-    // — la lógica de teletransporte sigue funcionando porque está en el servidor.
-    // TODO(chiaradelaurentis): quitar esta guarda cuando se quiera mostrar las entradas nuevamente.
     bool is_dungeon_entrance =
         (terrain == TerrainType::DUNGEON_ENTRANCE_1 || terrain == TerrainType::DUNGEON_ENTRANCE_2);
     SDL_Texture* type_overlay =
@@ -123,15 +111,11 @@ void TerrainRenderer::draw_overlays_for_tile(int col, int row, int tile_w, int t
                               ty + (tile_h - oh));
     }
 
-    // no hay imagenes de transicion para todos
-
     draw_sand_water_overlay(col, row, tile_w, tile_h, tx, ty, client_map);
-    // draw_sand_grass_overlay(col, row, tile_w, tile_h, tx, ty, client_map);
     draw_transition(col, row, tile_w, tile_h, tx, ty, client_map, TerrainType::WATER,
                     TerrainType::GRASS, "terrain_overlay_grass_water");
     draw_transition(col, row, tile_w, tile_h, tx, ty, client_map, TerrainType::DIRT,
                     TerrainType::GRASS, "terrain_overlay_grass");
-    // prueba borrar
     draw_transition(col, row, tile_w, tile_h, tx, ty, client_map, TerrainType::SAND,
                     TerrainType::GRASS, "terrain_overlay_grass");
     draw_transition(col, row, tile_w, tile_h, tx, ty, client_map, TerrainType::STONE,
@@ -148,10 +132,6 @@ void TerrainRenderer::draw_transition(int col, int row, int tile_w, int tile_h, 
 
     Cardinals neighbors = cardinals_of(client_map, col, row, vecino);
 
-    // Paso 3: carga las dos texturas base (edge y corner).
-    // Se usan dos PNGs base con rotación clockwise para cubrir las 8 direcciones:
-    //   edge:   vecino en borde norte → 0°=N, 90°=E, 180°=S, 270°=W
-    //   corner: vecino en esquina NW  → 0°=NW, 90°=NE, 180°=SE, 270°=SW
     char key_edge[64];
     char key_corner[64];
     std::snprintf(key_edge, sizeof(key_edge), "%s_edge", nombre_base);
@@ -210,7 +190,6 @@ void TerrainRenderer::draw_sand_water_overlay(int col, int row, int tile_w, int 
 
     const char* key = nullptr;
     switch (mask) {
-        // Ángulos convexos del lago (dos cardinales de arena adyacentes).
         case 0b0101:
             key = "ao_angulo_ne";
             break;
@@ -223,7 +202,6 @@ void TerrainRenderer::draw_sand_water_overlay(int col, int row, int tile_w, int 
         case 0b1001:
             key = "ao_angulo_nw";
             break;
-        // Bordes rectos (exactamente un cardinal con arena).
         case 0b0100:
             key = "ao_costa_norte";
             break;

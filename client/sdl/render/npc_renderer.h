@@ -42,7 +42,7 @@ class NPCRenderer {
     SpriteManager* sprite_manager_;
     const Camera& camera_;
 
-    // El contenedor central: un mapa de id de NPC → su estado de animación
+    // id de NPC - su estado de animacion
     std::map<uint32_t, NPCAnimState> npc_anim_states_;
 };
 

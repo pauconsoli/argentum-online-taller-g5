@@ -124,14 +124,12 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
             bool occupied = (slot < n_slots) && !slots[slot].item_name.empty();
             bool equipped = occupied && slots[slot].is_equipped;
 
-            // Borde amarillo si equipado, gris si no
             if (equipped)
                 SDL_SetRenderDrawColor(sdl_renderer, 255, 220, 0, 255);
             else
                 SDL_SetRenderDrawColor(sdl_renderer, 110, 110, 110, 255);
             SDL_RenderDrawRect(sdl_renderer, &fill);
 
-            // Borde celeste extra si es el slot seleccionado con click derecho
             if (slot == selected_slot) {
                 SDL_Rect sel = {cell_x - 1, cell_y - 1, CELL + 2, CELL + 2};
                 SDL_SetRenderDrawColor(sdl_renderer, 0, 200, 255, 255);
@@ -145,7 +143,7 @@ void Hud::draw_inventory(SpriteManager* sprites, const std::vector<InventorySlot
                     int ox = cell_x + (CELL - ICON) / 2;
                     int oy = cell_y + (CELL - ICON) / 2;
                     SDL_Rect dst = {ox, oy, ICON, ICON};
-                    // Contorno negro fino: misma técnica que Renderer::draw_frame_scaled_outlined
+
                     static const int dirs[8][2] = {{-1, 0},  {1, 0},  {0, -1}, {0, 1},
                                                    {-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
                     SDL_SetTextureColorMod(icon, 0, 0, 0);
@@ -243,13 +241,13 @@ void Hud::draw(int hp, int max_hp, int mana, int max_mana, int level, uint64_t g
     SDL_Color red = {220, 55, 55, 255};
     SDL_Color blue = {55, 100, 255, 255};
 
-    constexpr int LABEL_W = 30;  // ancho reservado para "HP " / "MP "
+    constexpr int LABEL_W = 30;
     constexpr int BAR_H = 18;
-    constexpr int ROW_GAP = 4;  // espacio entre filas
+    constexpr int ROW_GAP = 4;
     constexpr int PAD = 6;
     constexpr int margin = 5;
 
-    // filas: Nivel, HP, MP, Oro, Exp  → altura total
+
     constexpr int panel_w = 190;
     constexpr int panel_h = PAD + 20 + ROW_GAP  // Nivel
                             + BAR_H + ROW_GAP   // HP

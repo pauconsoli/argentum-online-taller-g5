@@ -30,9 +30,6 @@ class WorldRenderer;
 
 class GameClient: public Notifier {
  private:
-    // Deleter que cierra ventana y termina SDL juntos.
-    // Declarado antes que renderer para que renderer se destruya primero
-    // (orden de destrucción = inverso al de declaración).
     struct SdlWindowDeleter {
         void operator()(SDL_Window* w) const noexcept {
             SDL_DestroyWindow(w);
@@ -54,7 +51,6 @@ class GameClient: public Notifier {
     std::unique_ptr<PlayerRenderer> player_renderer;
     std::unique_ptr<AudioManager> audio_manager;
     std::unique_ptr<Client> client;
-    InputHandler input_handler;
     Camera camera;
     int width;
     int height;
@@ -67,7 +63,6 @@ class GameClient: public Notifier {
     bool music_paused = false;
     std::string chat_input;
 
-    // Run-loop state shared across extracted methods
     bool running = false;
     Uint32 frame_start = 0;
     bool moving = false;
@@ -78,7 +73,7 @@ class GameClient: public Notifier {
     Uint32 last_move_time = 0;
 
  public:
-    // Constructor standalone: crea y arranca su propio Client (binario argentum_client).
+    // Constructor para testing/desarrollo: crea Client internamente
     GameClient(int width, int height, bool fullscreen, const std::string& host,
                const std::string& port);
     // Constructor de handoff Qt→SDL: recibe Client ya conectado y con lobby completado.

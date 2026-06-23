@@ -99,8 +99,6 @@ std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
     return fringe;
 }
 
-// Dibuja un item tirado en el suelo (sombra + sprite con outline).
-// Selección de textura: oro → item por nombre → sprite de fallback.
 void WorldRenderer::draw_ground_item(const GroundItemSnapshot& ground_item) {
     SDL_Texture* tex =
         ground_item.is_gold ?

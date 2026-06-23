@@ -1,5 +1,3 @@
-// VERSION ACTUAL SIN CAMBIOS DE PAU
-
 #include "game_client.h"
 
 #include <cstdlib>
@@ -14,7 +12,7 @@
 #include "render/world_renderer.h"
 #include "state/client_map.h"
 
-// esto deberia estar en sprite manager??
+
 static std::string get_base_asset_dir() {
     if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
         return std::string(env_dir);
@@ -22,6 +20,16 @@ static std::string get_base_asset_dir() {
     return "assets";
 }
 
+GameClient::GameClient(int width, int height, bool fullscreen, const std::string& host,
+                       const std::string& port):
+    client(std::make_unique<Client>(host, port)),
+    camera(width, height),
+    width(width),
+    height(height),
+    state(1, 1, 1),
+    update_handler(state, *this) {
+    init_subsystems(fullscreen, false);
+}
 
 GameClient::GameClient(int width, int height, bool fullscreen, std::unique_ptr<Client> c,
                        uint8_t race, uint8_t klass, uint32_t player_id):
@@ -51,6 +59,11 @@ void GameClient::init_subsystems(bool fullscreen, bool load_font) {
     if (!window) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
+    }
+    std::string icon_path = get_base_asset_dir() + "/icon2.png";
+    if (SDL_Surface* icon = IMG_Load(icon_path.c_str())) {
+        SDL_SetWindowIcon(window.get(), icon);
+        SDL_FreeSurface(icon);
     }
     renderer = std::make_unique<Renderer>(window.get());
     SDL_RenderSetLogicalSize(renderer->get_sdl_renderer(), width, height);
@@ -111,8 +124,6 @@ void GameClient::run() {
     }
 }
 
-
-// Carga todos los efectos de sonido del juego en el AudioManager.
 void GameClient::load_audio_assets() {
     const std::string audio_path = get_base_asset_dir() + "/audio/sfx/";
     audio_manager->load_sound("melee_hit", audio_path + "melee_hit.wav");

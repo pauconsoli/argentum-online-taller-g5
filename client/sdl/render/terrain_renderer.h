@@ -55,9 +55,6 @@ class TerrainRenderer {
 
     void draw_sand_water_overlay(int col, int row, int tile_w, int tile_h, int tx, int ty,
                                  const ClientMap& client_map);
-    //  void draw_sand_grass_overlay(int col, int row, int tile_w, int tile_h, int tx, int ty,
-    //                             const ClientMap& client_map);
-
     static bool has_terrain(const ClientMap& map, int col, int row, TerrainType expected);
 };
 

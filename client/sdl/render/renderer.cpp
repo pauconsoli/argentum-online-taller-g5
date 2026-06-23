@@ -53,11 +53,9 @@ void Renderer::draw_frame_scaled(SDL_Texture* texture, int frame_x, int frame_y,
 void Renderer::draw_frame_scaled_outlined(SDL_Texture* texture, int frame_x, int frame_y,
                                           int frame_w, int frame_h, int x, int y, int draw_w,
                                           int draw_h, int grosor) {
-    // 4 cardinales (5 draws/sprite). Para volver a 8+1, descomentar las diagonales y cambiar [4] →
-    // [8].
+
     static const int dirs[4][2] = {
         {-1, 0}, {1, 0}, {0, -1}, {0, 1},  // N, S, E, O
-        // {-1, -1}, {1, -1}, {-1, 1}, {1, 1},
     };
 
     // Teñir de negro semitransparente para las copias del contorno

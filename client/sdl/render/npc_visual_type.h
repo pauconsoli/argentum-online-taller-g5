@@ -29,25 +29,25 @@ inline NPCVisualType npc_visual_type_from_network(uint32_t npc_type) {
         case 9:
             return NPCVisualType::GOLEM_INFERNAL;
         case 10:
-            return NPCVisualType::GOBLIN;  // GOBLIN
+            return NPCVisualType::GOBLIN;
         case 11:
-            return NPCVisualType::GOBLIN;  // GOBLIN_EXECUTIONER → mismo sprite
+            return NPCVisualType::GOBLIN;
         case 12:
-            return NPCVisualType::SPIDER;  // SPIDER
+            return NPCVisualType::SPIDER;
         case 13:
-            return NPCVisualType::SPIDER;  // SPIDER_GIANT → mismo sprite
+            return NPCVisualType::SPIDER;
         case 14:
-            return NPCVisualType::SKELETON;  // SKELETON
+            return NPCVisualType::SKELETON;
         case 15:
-            return NPCVisualType::SKELETON;  // SKELETON_WARRIOR → mismo sprite
+            return NPCVisualType::SKELETON;
         case 16:
             return NPCVisualType::ZOMBIE;
         case 17:
             return NPCVisualType::ORC;
         case 18:
-            return NPCVisualType::GOLEM_STONE;  // GOLEM
+            return NPCVisualType::GOLEM_STONE;
         case 19:
-            return NPCVisualType::GOLEM_ICE;  // GOLEM_IRON
+            return NPCVisualType::GOLEM_ICE;
         default:
             return NPCVisualType::UNKNOWN;
     }
