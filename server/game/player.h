@@ -108,6 +108,7 @@ class Player: public Character {
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
+    void set_experience(uint64_t amount);
 
     int get_current_mana() const;
 
