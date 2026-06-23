@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "common/attack_result.h"
 #include "common/position.h"
 #include "server/game/character.h"
 #include "server/game/player_class.h"
@@ -46,7 +47,7 @@ class GameFormulas {
 
     // ATAQUE
 
-    static bool can_attack_by_level(int attacker_level, int target_level);
+    static AttackStatus check_level_attack(int attacker_level, int target_level);
     static int calculate_damage(const Player& attacker, const Weapon* weapon = nullptr);
     static int calculate_base_damage_in_range(int min_damage, int max_damage);
     static bool calculate_critical_attack();

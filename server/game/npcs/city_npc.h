@@ -39,8 +39,8 @@ class CityNPC: public NPC {
     }
 
     // no pueden ser atacados
-    bool validate_attack_from(int /*attacker_level*/) const override {
-        return false;
+    AttackStatus validate_attack_from(int /*attacker_level*/) const override {
+        return AttackStatus::INVALID_TARGET;
     }
 
     Loot drop_loot() override {

@@ -56,7 +56,7 @@ class Player: public Character {
 
     int get_defense() const override;
 
-    bool validate_attack_from(int attacker_level) const override;
+    AttackStatus validate_attack_from(int attacker_level) const override;
 
     int get_agility() const override;
 

@@ -446,8 +446,17 @@ void ServerUpdateHandler::show_attack_error(AttackStatus status) {
         case AttackStatus::SAFE_ZONE:
             notifier.message("No podés atacar en una zona segura");
             break;
-        case AttackStatus::INVALID_TARGET:
+        case AttackStatus::SAME_CLAN:
             notifier.message("No podés atacar a un miembro de tu clan");
+            break;
+        case AttackStatus::NEWBIE_PROTECTION:
+            notifier.message("Fair play: el nivel de alguno de los dos es < 12 ");
+            break;
+        case AttackStatus::LEVEL_DIFFERENCE:
+            notifier.message("La diferencia de nivel es demasiado grande para un ataque");
+            break;
+        case AttackStatus::INVALID_TARGET:
+            notifier.message("Objetivo inválido");
             break;
         case AttackStatus::OUT_OF_RANGE:
             notifier.message("Estás muy lejos para atacar");

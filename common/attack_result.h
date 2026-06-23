@@ -12,7 +12,10 @@ enum class AttackStatus {
     DEAD,
     SAFE_ZONE,
     FULL_HP,
-    CANNOT_HEAL_NPC
+    CANNOT_HEAL_NPC,
+    NEWBIE_PROTECTION,
+    LEVEL_DIFFERENCE,
+    SAME_CLAN
 };
 
 enum class AttackType { NORMAL, RANGED, MAGIC };

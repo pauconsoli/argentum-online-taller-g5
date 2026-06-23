@@ -222,11 +222,16 @@ TEST_F(GameFormulasTest, MeditationManaRecovery) {
 
 TEST_F(GameFormulasTest, CanAttackByLevel) {
     // Nivel máximo newbie = 12, max diferencia = 10
-    EXPECT_FALSE(GameFormulas::can_attack_by_level(5, 10));   // ambos newbies
-    EXPECT_FALSE(GameFormulas::can_attack_by_level(15, 10));  // target newbie
-    EXPECT_FALSE(GameFormulas::can_attack_by_level(10, 15));  // attacker newbie
-    EXPECT_TRUE(GameFormulas::can_attack_by_level(15, 20));   // diferencia 5 (válido)
-    EXPECT_FALSE(GameFormulas::can_attack_by_level(15, 30));  // diferencia 15 (inválido)
+    EXPECT_EQ(GameFormulas::check_level_attack(5, 10),
+              AttackStatus::NEWBIE_PROTECTION);  // ambos newbies
+    EXPECT_EQ(GameFormulas::check_level_attack(15, 10),
+              AttackStatus::NEWBIE_PROTECTION);  // target newbie
+    EXPECT_EQ(GameFormulas::check_level_attack(10, 15),
+              AttackStatus::NEWBIE_PROTECTION);  // attacker newbie
+    EXPECT_EQ(GameFormulas::check_level_attack(15, 20),
+              AttackStatus::SUCCESS);  // diferencia 5 (válido)
+    EXPECT_EQ(GameFormulas::check_level_attack(15, 30),
+              AttackStatus::LEVEL_DIFFERENCE);  // diferencia 15 (inválido)
 }
 
 TEST_F(GameFormulasTest, CalculateAttackExperienceGain) {

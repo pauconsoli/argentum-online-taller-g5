@@ -38,8 +38,8 @@ class NPC: public Character {
     bool can_cast_magic() const override {
         return false;
     }
-    bool validate_attack_from(int /*attacker_level*/) const override {
-        return true;
+    AttackStatus validate_attack_from(int /*attacker_level*/) const override {
+        return AttackStatus::SUCCESS;
     }
     int get_defense() const override;
     int get_agility() const override;
