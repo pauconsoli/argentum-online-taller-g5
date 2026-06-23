@@ -69,7 +69,6 @@ class GameClient: public Notifier {
 
     // Run-loop state shared across extracted methods
     bool running = false;
-    SDL_Event event{};
     Uint32 frame_start = 0;
     bool moving = false;
     int direction = 0;
@@ -99,7 +98,7 @@ class GameClient: public Notifier {
     void init_subsystems(bool fullscreen, bool load_font);
     void load_audio_assets();
     void process_sdl_events();
-    void handle_chat_event(const SDL_Event& e);
+    void dispatch_action(const InputAction& action);
     void handle_chat_submit();
     void dispatch_chat_command(const std::string& input);
     void handle_drop_command(const std::string& input);
@@ -109,6 +108,9 @@ class GameClient: public Notifier {
     void try_equip_at(int screen_x, int screen_y);
     void handle_right_click(int screen_x, int screen_y);
     void process_keyword_input();
+    void update_animation();
+    void update_camera(const ClientMap& client_map);
+    void cap_framerate();
 };
 
 #endif

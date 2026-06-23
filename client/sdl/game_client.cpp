@@ -56,24 +56,24 @@ void GameClient::message(const std::string& text) {
 
 void GameClient::play(const std::string& sound, int vol) {
     if (vol < 0)
-        // ppor que vol < 0?
         audio_manager->play_sound(sound);
     else
         audio_manager->play_sound(sound, vol);
 }
 
-void GameClient::show_clan_review(const ClanReviewUpdate& cru) {
-    clan_panel->set_data(cru);
+void GameClient::show_clan_review(const ClanReviewUpdate& clan_review_updated) {
+    clan_panel->set_data(clan_review_updated);
 }
 
 void GameClient::init_subsystems(bool fullscreen, bool load_font) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
     Uint32 flags = SDL_WINDOW_SHOWN;
-    if (fullscreen)
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    window.reset(SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
-                                  SDL_WINDOWPOS_CENTERED, width, height, flags));
+
+    // if (fullscreen)
+    //     flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    // window.reset(SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
+    //                               SDL_WINDOWPOS_CENTERED, width, height, flags));
     if (!window) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
@@ -112,11 +112,10 @@ void GameClient::run() {
 
     audio_manager->play_background_music(get_base_asset_dir() + "/audio/music/background.mp3",
                                          MIX_MAX_VOLUME / 2);
-
     ClientMap client_map(0, 0, {});
+    state.reset_position();  // por que se hace reset position?
 
-    state.reset_position();
-
+    // por que hay variables declaradas aca?
     direction = 0;
     current_frame = 0;
     total_frames = 6;
@@ -125,39 +124,17 @@ void GameClient::run() {
 
     while (running) {
         frame_start = SDL_GetTicks();
-
-
         process_sdl_events();
         process_keyword_input();
         update_handler.apply_pending(client->get_received_updates(), client_map, config.tile_width,
                                      config.tile_height);
         npc_renderer->sync_from_snapshot(state.last_npc_snapshot());
 
-
-        if (moving) {
-            Uint32 now = SDL_GetTicks();
-            if (now - last_frame_time > config.frame_delay_ms) {
-                current_frame = (current_frame + 1) % total_frames;
-                last_frame_time = now;
-            }
-        } else {
-            current_frame = 0;
-        }
-
-
-        if (state.player_x() >= 0 && state.player_y() >= 0) {
-            camera.center_on(state.player_x(), state.player_y(),
-                             client_map.get_width() * config.tile_width,
-                             client_map.get_height() * config.tile_height);
-        }
-
+        update_animation();
+        update_camera(client_map);
         world_renderer->draw(state, client_map, direction, current_frame, chat_active, chat_input,
                              music_paused, width, height);
-
-        Uint32 elapsed = SDL_GetTicks() - frame_start;
-        if (elapsed < config.frame_time_ms()) {
-            SDL_Delay(config.frame_time_ms() - elapsed);
-        }
+        cap_framerate();
     }
 }
 
@@ -174,86 +151,58 @@ void GameClient::load_audio_assets() {
 
 
 void GameClient::process_sdl_events() {
-    while (SDL_PollEvent(&event)) {
-        if (!input_handler.handle_quit(event))
-            running = false;
-
-        if (clan_panel->is_visible() &&
-            ((event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) ||
-             (event.type == SDL_MOUSEBUTTONDOWN))) {
-            clan_panel->hide();
-            continue;
-        }
-        if (chat_active) {
-            handle_chat_event(event);
-            continue;
-        }
-        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
-            chat_active = true;
-            SDL_StartTextInput();
-            continue;
-        } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h) {
-            help_menu->toggle();
-            continue;
-        } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_m) {
-            audio_manager->toggle_music();
-            music_paused = audio_manager->is_music_paused();
-            continue;
-        } else if (event.type == SDL_KEYDOWN && (event.key.keysym.mod & KMOD_CTRL) &&
-                   event.key.repeat == 0) {
-            // cheats: Ctrl + numero, para probar sin NPCs
-            switch (event.key.keysym.sym) {
-                case SDLK_1:
-                    client->do_cheat(CheatType::HEAL_FULL);
-                    break;
-                case SDLK_2:
-                    client->do_cheat(CheatType::RESTORE_MANA);
-                    break;
-                case SDLK_3:
-                    client->do_cheat(CheatType::DIE);
-                    break;
-                case SDLK_4:
-                    client->do_cheat(CheatType::LEVEL_UP);
-                    break;
-                case SDLK_5:
-                    client->do_cheat(CheatType::GIVE_GOLD);
-                    break;
-                default:
-                    break;
-            }
-            continue;
-        }
-        if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
-            handle_left_click(event.button.x, event.button.y);
-            continue;
-        }
-        if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_RIGHT)
-            handle_right_click(event.button.x, event.button.y);
-    }
+    InputContext ctx{chat_active, clan_panel->is_visible()};
+    for (const auto& action : input_handler.poll_events(ctx)) dispatch_action(action);
 }
 
-void GameClient::handle_chat_event(const SDL_Event& e) {
-    if (e.type == SDL_TEXTINPUT) {
-        chat_input += e.text.text;
-        return;
-    }
-    if (e.type != SDL_KEYDOWN)
-        return;
-    switch (e.key.keysym.sym) {
-        case SDLK_RETURN:
-        case SDLK_RETURN2:
-            handle_chat_submit();
+void GameClient::dispatch_action(const InputAction& action) {
+
+    static const CheatType cheat_map[] = {
+        CheatType::HEAL_FULL, CheatType::RESTORE_MANA, CheatType::DIE,
+        CheatType::LEVEL_UP,  CheatType::GIVE_GOLD,
+    };
+    switch (action.type) {
+        case InputActionType::Quit:
+            running = false;
             break;
-        case SDLK_BACKSPACE:
+        case InputActionType::DismissOverlay:
+            clan_panel->hide();
+            break;
+        case InputActionType::OpenChat:
+            chat_active = true;
+            SDL_StartTextInput();
+            break;
+        case InputActionType::ToggleHelp:
+            help_menu->toggle();
+            break;
+        case InputActionType::ToggleMusic:
+            audio_manager->toggle_music();
+            music_paused = audio_manager->is_music_paused();
+            break;
+        case InputActionType::Cheat:
+            if (action.cheat_slot >= 1 && action.cheat_slot <= 5)
+                client->do_cheat(cheat_map[action.cheat_slot - 1]);
+            break;
+        case InputActionType::ClickPrimary:
+            handle_left_click(action.x, action.y);
+            break;
+        case InputActionType::ClickSecondary:
+            handle_right_click(action.x, action.y);
+            break;
+        case InputActionType::ChatText:
+            chat_input += action.text;
+            break;
+        case InputActionType::ChatBackspace:
             if (!chat_input.empty())
                 chat_input.pop_back();
             break;
-        case SDLK_ESCAPE:
+        case InputActionType::ChatSubmit:
+            handle_chat_submit();
+            break;
+        case InputActionType::ChatCancel:
             chat_input.clear();
             chat_active = false;
             SDL_StopTextInput();
-            break;
-        default:
             break;
     }
 }
@@ -527,11 +476,10 @@ void GameClient::handle_right_click(int screen_x, int screen_y) {
 }
 
 void GameClient::process_keyword_input() {
-    const Uint8* keys = SDL_GetKeyboardState(nullptr);
     moving = false;
-    if (!chat_active) {
-        bool can_move = (frame_start - last_move_time >= config.move_interval_ms);
-        if (keys[SDL_SCANCODE_DOWN]) {
+    bool can_move = (frame_start - last_move_time >= config.move_interval_ms);
+    switch (input_handler.poll_movement(chat_active)) {
+        case MoveDir::Down:
             direction = 0;
             total_frames = 6;
             moving = true;
@@ -539,7 +487,8 @@ void GameClient::process_keyword_input() {
                 client->do_move(Direction::DOWN);
                 last_move_time = frame_start;
             }
-        } else if (keys[SDL_SCANCODE_UP]) {
+            break;
+        case MoveDir::Up:
             direction = 1;
             total_frames = 6;
             moving = true;
@@ -547,7 +496,8 @@ void GameClient::process_keyword_input() {
                 client->do_move(Direction::UP);
                 last_move_time = frame_start;
             }
-        } else if (keys[SDL_SCANCODE_LEFT]) {
+            break;
+        case MoveDir::Left:
             direction = 2;
             total_frames = 5;
             moving = true;
@@ -555,7 +505,8 @@ void GameClient::process_keyword_input() {
                 client->do_move(Direction::LEFT);
                 last_move_time = frame_start;
             }
-        } else if (keys[SDL_SCANCODE_RIGHT]) {
+            break;
+        case MoveDir::Right:
             direction = 3;
             total_frames = 5;
             moving = true;
@@ -563,6 +514,35 @@ void GameClient::process_keyword_input() {
                 client->do_move(Direction::RIGHT);
                 last_move_time = frame_start;
             }
+            break;
+        case MoveDir::None:
+            break;
+    }
+}
+
+void GameClient::update_animation() {
+    if (moving) {
+        Uint32 now = SDL_GetTicks();
+        if (now - last_frame_time > config.frame_delay_ms) {
+            current_frame = (current_frame + 1) % total_frames;
+            last_frame_time = now;
         }
+    } else {
+        current_frame = 0;
+    }
+}
+
+void GameClient::update_camera(const ClientMap& client_map) {
+    if (state.player_x() >= 0 && state.player_y() >= 0) {
+        camera.center_on(state.player_x(), state.player_y(),
+                         client_map.get_width() * config.tile_width,
+                         client_map.get_height() * config.tile_height);
+    }
+}
+
+void GameClient::cap_framerate() {
+    Uint32 elapsed = SDL_GetTicks() - frame_start;
+    if (elapsed < config.frame_time_ms()) {
+        SDL_Delay(config.frame_time_ms() - elapsed);
     }
 }
