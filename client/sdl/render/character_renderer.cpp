@@ -46,7 +46,7 @@ void CharacterRenderer::draw_equipped_item(int player_position_x, int player_pos
             break;
         case ItemType::SHIELD:
             renderer->draw_frame(item_texture, 0, 0, ITEM_SPRITE_SIZE, ITEM_SPRITE_SIZE,
-                                 player_position_x - ITEM_SPRITE_SIZE + 6, player_position_y);
+                                 player_position_x - ITEM_SPRITE_SIZE + 14, player_position_y);
             break;
         case ItemType::HELMET: {
             SDL_Rect src = {0, 0, ITEM_SPRITE_SIZE, ITEM_SPRITE_SIZE};

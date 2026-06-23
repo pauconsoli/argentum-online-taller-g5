@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "renderer.h"
+#include "../render/renderer.h"
 
 Hud::Hud(SDL_Renderer* renderer, const std::string& font_path, int win_height, int win_width):
     sdl_renderer(renderer), font(nullptr), window_height(win_height), window_width(win_width) {

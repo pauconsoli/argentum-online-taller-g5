@@ -9,8 +9,8 @@
 #include <SDL2/SDL.h>
 #include <SDL_ttf.h>
 
+#include "../assets/sprite_manager.h"
 #include "common/updates/inventory_update.h"
-#include "sprite_manager.h"
 
 class Hud {
  private:

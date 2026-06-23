@@ -46,8 +46,7 @@ void TerrainRenderer::draw(int start_col, int end_col, int start_row, int end_ro
     SDL_RenderCopy(sdl_r, terrain_cache_, nullptr, nullptr);
 }
 
-// Pasada 1: recorre cada celda visible y pinta su tile base.
-// Las celdas fuera del mapa se tratan como GRASS (ver draw_base_tile).
+// se pinta el tile base
 void TerrainRenderer::draw_base_tiles(int start_col, int end_col, int start_row, int end_row,
                                       int tile_w, int tile_h, const ClientMap& client_map) {
     for (int row = start_row; row <= end_row; row++) {

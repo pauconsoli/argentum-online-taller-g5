@@ -8,10 +8,10 @@
 #include <string>
 #include <utility>
 
-#include "client_map.h"
 #include "common/cheat_type.h"
 #include "common/clan/clan_action.h"
-#include "world_renderer.h"
+#include "render/world_renderer.h"
+#include "state/client_map.h"
 
 // esto deberia estar en sprite manager??
 static std::string get_base_asset_dir() {

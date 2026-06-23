@@ -1,11 +1,11 @@
 #ifndef TERRAIN_RENDERER_H
 #define TERRAIN_RENDERER_H
 
-#include "client_map.h"
+#include "../assets/sprite_manager.h"
+#include "../core/camera.h"
+#include "../state/client_map.h"
 #include "common/world/terrain_type.h"
-#include "core/camera.h"
 #include "renderer.h"
-#include "sprite_manager.h"
 
 class TerrainRenderer {
  public:

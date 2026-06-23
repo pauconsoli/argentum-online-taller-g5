@@ -7,11 +7,11 @@
 
 #include <SDL2/SDL.h>
 
+#include "../assets/sprite_manager.h"
+#include "../core/camera.h"
 #include "common/updates/snapshot_update.h"
-#include "core/camera.h"
 #include "npc_visual_type.h"
 #include "renderer.h"
-#include "sprite_manager.h"
 
 class NPCRenderer {
  public:
