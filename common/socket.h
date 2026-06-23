@@ -13,11 +13,6 @@ class Socket {
     int stream_status;
 
     /*
-     * Construye el socket pasándole directamente el file descriptor.
-     * */
-    explicit Socket(int skt);
-
-    /*
      * Checkea que el file descriptor (skt) sea "valido".
      *
      * No hace un checkeo muy exhaustivo, simplemente verifica que
@@ -43,6 +38,12 @@ class Socket {
     void chk_skt_or_fail() const;
 
  public:
+    /*
+     * Construye el socket pasándole directamente el file descriptor.
+     * Útil para tests (envolver un fd de socketpair) y para internals.
+     * */
+    explicit Socket(int skt);
+
     /*
      * Constructores para `Socket` tanto para conectarse a un servidor
      * (`Socket::Socket(const char*, const char*)`) como para ser usado
