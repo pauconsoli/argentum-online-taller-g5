@@ -12,6 +12,9 @@ enum class CommandType : uint8_t {
     PICK_UP = 0x04,
     DROP_ITEM = 0x05,
     CHAT = 0x06,
+    RESURRECT = 0x07,
+    INTERACT = 0x08,
+    CLAN = 0x09,
 };
 
 class World;

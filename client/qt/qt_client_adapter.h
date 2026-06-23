@@ -37,12 +37,13 @@ class QtClientAdapter: public QObject {
     void loginOk(uint32_t player_id);
     void matchListReceived(const std::vector<MatchInfo>& matches);
     void matchCreated();
-    void matchJoined();
+    void matchJoined(bool was_restored, uint8_t restored_race, uint8_t restored_klass);
     void errorReceived(uint8_t code, QString detail);
     void disconnectedFromServer();
 
     void attackReceived(AttackResult result);
     void worldMapReceived(uint16_t width, uint16_t height, std::vector<MapCellData> cells);
+    void chatMessageReceived(uint32_t sender_id, QString sender_nick, QString text);
 
  private slots:
     void poll_updates();

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "common/attack_result.h"
 #include "common/position.h"
 #include "server/game/character.h"
 #include "server/game/player_class.h"
@@ -20,11 +21,10 @@ struct BaseStats {
 };
 
 class GameFormulas {
- private:
+ public:
     static int get_random_int(int min, int max);
     static float get_random_float(float min, float max);
 
- public:
     // STATS
 
     static int calculate_max_hp(const Player& player);
@@ -35,9 +35,9 @@ class GameFormulas {
 
     // CÁLCULOS DE RECUPERACIÓN
 
-    static int calculate_health_recovery(const Player& player, float seconds);
-    static int calculate_time_mana_recovery(const Player& player, float seconds);
-    static int calculate_meditation_mana_recovery(const Player& player, float seconds);
+    static float calculate_health_recovery(const Player& player, float seconds);
+    static float calculate_time_mana_recovery(const Player& player, float seconds);
+    static float calculate_meditation_mana_recovery(const Player& player, float seconds);
 
     // SPAWN
 
@@ -47,21 +47,24 @@ class GameFormulas {
 
     // ATAQUE
 
-    static bool can_attack_by_level(int attacker_level, int target_level);
+    static AttackStatus check_level_attack(int attacker_level, int target_level);
     static int calculate_damage(const Player& attacker, const Weapon* weapon = nullptr);
+    static int calculate_base_damage_in_range(int min_damage, int max_damage);
     static bool calculate_critical_attack();
     static bool calculate_evasion(const Character& target);
     static int calculate_defense(const Player& target);
     static int calculate_healing(int min_heal, int max_heal);
-    static int calculate_attack_experience_gain(const Player& attacker, const Character& target,
+    static int calculate_attack_experience_gain(const Character& attacker, const Character& target,
                                                 int damage);
-    static int calculate_kill_experience_gain(const Player& attacker, const Character& target);
+    static int calculate_kill_experience_gain(const Character& attacker, const Character& target);
 
     static int get_hand_combat_damage(const Player& attacker);
 
     // MUERTE Y DROPS
+    static uint64_t calculate_max_holdable_gold(const Player& player);
     static uint64_t calculate_player_dropped_gold(const Player& player);
     static uint64_t calculate_player_dropped_experience(const Player& player);
+    static uint64_t calculate_npc_dropped_gold(const Character& npc);
 };
 
 #endif

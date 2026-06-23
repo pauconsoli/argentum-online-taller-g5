@@ -9,27 +9,35 @@ GameConfig::GameConfig():
     loaded(false),
     max_inventory_items(0),
     spawn_position{},
+    resurrect_still_factor(0.0f),
     initial_player_level(0),
     gold_max_safe_base(0.0f),
     gold_max_safe_exp(0.0f),
     gold_excess_factor(0.0f),
     npc_gold_drop_factor(0.0f),
+    npc_buy_item_factor(0),
     level_limit_base(0.0f),
     level_limit_exp(0.0f),
     kill_bonus_factor(0.0f),
     death_exp_loss_mult(0.0f),
     critical_chance(0.0f),
+    critical_multiplier(0),
     evasion_threshold(0.0f),
     newbie_max_level(0),
     max_level_difference(0),
     clan_max_members(0),
     clan_min_level_to_found(0),
+    bonus_factor(0.0f),
+    bonus_range(0),
     npc_drop_nothing_prob(0.0f),
     npc_drop_gold_prob(0.0f),
     npc_drop_potion_prob(0.0f),
     npc_drop_item_prob(0.0f),
     npc_gold_drop_min_factor(0.0f),
     npc_gold_drop_max_factor(0.0f),
+    npc_population_limit(0),
+    npc_spawn_time_seconds(0),
+    chase_cooldown(0.0f),
     server_game_loop_sleep_ms(0) {}
 
 static float lookup(const std::map<PlayerRace, float>& m, PlayerRace key, const char* field) {
@@ -158,6 +166,11 @@ int GameConfig::get_initial_player_level() const {
     return initial_player_level;
 }
 
+float GameConfig::get_resurrect_still_factor() const {
+    check_loaded(loaded);
+    return resurrect_still_factor;
+}
+
 float GameConfig::get_gold_max_safe_base() const {
     check_loaded(loaded);
     return gold_max_safe_base;
@@ -173,6 +186,11 @@ float GameConfig::get_gold_excess_factor() const {
 float GameConfig::get_npc_gold_drop_factor() const {
     check_loaded(loaded);
     return npc_gold_drop_factor;
+}
+
+int GameConfig::get_npc_buy_item_factor() const {
+    check_loaded(loaded);
+    return npc_buy_item_factor;
 }
 
 float GameConfig::get_level_limit_base() const {
@@ -197,6 +215,11 @@ float GameConfig::get_critical_chance() const {
     check_loaded(loaded);
     return critical_chance;
 }
+int GameConfig::get_critical_multiplier() const {
+    check_loaded(loaded);
+    return critical_multiplier;
+}
+
 float GameConfig::get_evasion_threshold() const {
     check_loaded(loaded);
     return evasion_threshold;
@@ -217,6 +240,15 @@ int GameConfig::get_clan_max_members() const {
 int GameConfig::get_clan_min_level_to_found() const {
     check_loaded(loaded);
     return clan_min_level_to_found;
+}
+
+float GameConfig::get_bonus_factor() const {
+    check_loaded(loaded);
+    return bonus_factor;
+}
+int GameConfig::get_bonus_range() const {
+    check_loaded(loaded);
+    return bonus_range;
 }
 
 float GameConfig::get_npc_drop_nothing_prob() const {
@@ -242,6 +274,21 @@ float GameConfig::get_npc_gold_drop_min_factor() const {
 float GameConfig::get_npc_gold_drop_max_factor() const {
     check_loaded(loaded);
     return npc_gold_drop_max_factor;
+}
+
+int GameConfig::get_npc_population_limit() const {
+    check_loaded(loaded);
+    return npc_population_limit;
+}
+
+int GameConfig::get_npc_spawn_time_seconds() const {
+    check_loaded(loaded);
+    return npc_spawn_time_seconds;
+}
+
+float GameConfig::get_chase_cooldown() const {
+    check_loaded(loaded);
+    return chase_cooldown;
 }
 
 int GameConfig::get_server_game_loop_sleep_ms() const {

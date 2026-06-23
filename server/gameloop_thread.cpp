@@ -1,14 +1,21 @@
 #include "gameloop_thread.h"
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "common/attack_result.h"
+#include "common/updates/attack_update.h"
+#include "common/updates/death_update.h"
+#include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
+#include "game/clan.h"
 #include "game/game_config.h"
 #include "game/match.h"
+#include "game/player.h"
 #include "server.h"
 #include "world/world.h"
 
@@ -23,13 +30,66 @@ void GameLoopThread::run() {
             sleep_ms /
             1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
 
+        using Clock = std::chrono::steady_clock;
+        using Ms = std::chrono::duration<double, std::milli>;
+        const Ms rate(sleep_ms);
+
+        auto t1 = Clock::now();
+        constexpr int AUTO_SAVE_INTERVAL_SEC = 30;
+        auto last_save_time = Clock::now();
+
         while (should_keep_running()) {
 
             server.for_each_match([tick_seconds, tick_id](Match& match) {
-                match.tick();
-
                 World& world = match.get_world();
-                world.update(tick_seconds);
+                world.reset_player_movement();
+                match.tick();
+                auto attack_results = world.update(tick_seconds);
+
+                for (const auto& result : attack_results) {
+                    auto update_for_attacker =
+                        std::make_shared<AttackUpdate>(result, result.attacker_id);
+                    match.send_update_to_player(result.attacker_id, update_for_attacker);
+                    auto update_for_target =
+                        std::make_shared<AttackUpdate>(result, result.target_id);
+                    match.send_update_to_player(result.target_id, update_for_target);
+
+                    if (result.damage > 0 && result.target_clan_id != 0) {
+                        Clan* target_clan = world.get_clan(result.target_clan_id);
+                        if (target_clan) {
+                            for (uint32_t member_id : target_clan->get_members()) {
+                                if (member_id != result.attacker_id &&
+                                    member_id != result.target_id) {
+                                    auto update_for_member =
+                                        std::make_shared<AttackUpdate>(result, member_id);
+                                    match.send_update_to_player(member_id, update_for_member);
+                                }
+                            }
+                        }
+                    }
+                    if (result.target_died) {
+                        auto death_update =
+                            std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);
+                        match.broadcast_update_to_all(death_update);
+
+                        Player* dead_player = world.get_player(result.target_id);
+                        if (dead_player) {
+                            std::vector<InventorySlotData> items_data;
+                            for (const auto& slot : dead_player->get_inventory().get_slots()) {
+                                if (slot.item) {
+                                    items_data.push_back({slot.item->get_name(),
+                                                          static_cast<uint32_t>(slot.quantity),
+                                                          slot.equipped_slot.has_value()});
+                                } else {
+                                    items_data.push_back({"", 0, false});
+                                }
+                            }
+                            auto inv_update = std::make_shared<InventoryUpdate>(
+                                result.target_id, std::move(items_data), dead_player->get_gold());
+                            match.send_update_to_player(result.target_id, inv_update);
+                        }
+                    }
+                }
 
                 std::vector<PlayerSnapshot> snapshots;
                 for (Player* p : world.get_players()) {
@@ -49,8 +109,36 @@ void GameLoopThread::run() {
                     ps.level = p->get_level();
                     ps.is_ghost = p->is_dead();
                     ps.is_meditating = p->is_meditating();
+                    ps.clan_id = p->get_clan_id();
+                    ps.direction = static_cast<uint8_t>(p->get_direction());
+                    ps.is_moving = p->is_moving();
+
+                    for (const auto& [slot, item] : p->get_equipment()) {
+                        if (item) {
+                            ps.equipment.push_back(item->get_name());
+                        }
+                    }
 
                     snapshots.push_back(ps);
+                }
+
+                std::vector<NPCSnapshot> npc_snapshots;
+                for (NPC* n : world.get_npcs()) {
+                    if (n->is_dead())
+                        continue;
+
+                    NPCSnapshot ns;
+                    ns.npc_id = n->get_id();
+                    ns.name = n->get_name();
+                    ns.x = n->get_position().x;
+                    ns.y = n->get_position().y;
+                    ns.hp = n->get_current_hp();
+                    ns.max_hp = n->get_max_hp();
+                    ns.is_hostile = n->is_hostile();
+                    ns.npc_type = static_cast<uint32_t>(n->get_type());
+                    ns.direction = static_cast<uint8_t>(n->get_direction());
+                    ns.is_moving = n->is_moving();
+                    npc_snapshots.push_back(ns);
                 }
 
                 std::vector<GroundItemSnapshot> ground_snapshots;
@@ -69,18 +157,43 @@ void GameLoopThread::run() {
                     ground_snapshots.push_back(world_ground_item);
                 }
 
-                // esto habría que revisarlo, no se debería enviar de todos, a todos, todas la
-                // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo
-                // de los que cambiaron por ej
                 auto snapshot_update = std::make_shared<SnapshotUpdate>(
-                    tick_id, std::move(snapshots), std::move(ground_snapshots));
-                match.broadcast_update_to_all(snapshot_update);
+                    tick_id, std::move(snapshots), std::move(npc_snapshots),
+                    std::move(ground_snapshots));
+                match.broadcast_update_to_all(
+                    snapshot_update);  // broadcast a todos los jugadores del match (a mejorar)
             });
 
             tick_id++;
+            
+            auto now = Clock::now();
+            auto elapsed_since_save =
+                std::chrono::duration_cast<std::chrono::seconds>(now - last_save_time).count();
+            if (elapsed_since_save >= AUTO_SAVE_INTERVAL_SEC) {
+                server.save_state();
+                last_save_time = now;
+            }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+            // OPTIMIZACIÓN DEL GAMELOOP: calculo lo que tardó el tick y sleep solo el tiempo restante
+            auto t2 = Clock::now();
+            Ms passed = t2 - t1;
+            Ms rest = rate - passed;
+
+            if (rest.count() < 0) {
+                Ms behind = -rest;  // para que sea +
+                Ms skipped_time = Ms(behind.count() - std::fmod(behind.count(), rate.count()));
+                uint32_t skipped_ticks = static_cast<uint32_t>(skipped_time.count() / rate.count());
+
+                t1 += std::chrono::duration_cast<Clock::duration>(skipped_time);
+                tick_id += skipped_ticks;
+
+                rest = rate - Ms(std::fmod(behind.count(), rate.count()));
+            }
+
+            std::this_thread::sleep_for(rest);
+            t1 += std::chrono::duration_cast<Clock::duration>(rate);
         }
+
     } catch (const std::exception& e) {
         std::cerr << "[GAMELOOP] Error: " << e.what() << "\n";
     }

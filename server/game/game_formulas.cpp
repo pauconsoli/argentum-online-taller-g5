@@ -65,6 +65,13 @@ int GameFormulas::calculate_max_gold(const Player& player) {
                             std::pow(player.get_level(), config.get_gold_max_safe_exp()));
 }
 
+// OroMaxEnMano = OroMax * (1 + excess_factor)
+uint64_t GameFormulas::calculate_max_holdable_gold(const Player& player) {
+    const GameConfig& config = GameConfig::get_instance();
+    return static_cast<uint64_t>(calculate_max_gold(player) *
+                                 (1.0f + config.get_gold_excess_factor()));
+}
+
 // Limite = 1000 * Nivel^1.8
 uint64_t GameFormulas::calculate_level_up_limit(int level) {
     const GameConfig& config = GameConfig::get_instance();
@@ -84,30 +91,30 @@ BaseStats GameFormulas::calculate_base_stats(PlayerRace race, PlayerClass klass)
 // RECOVERY
 
 // Vida = FRazaRecuperacion * segundos
-int GameFormulas::calculate_health_recovery(const Player& player, float seconds) {
+float GameFormulas::calculate_health_recovery(const Player& player, float seconds) {
     const GameConfig& config = GameConfig::get_instance();
     float recovery_factor = config.get_race_recovery_factor(player.get_race());
-    return static_cast<int>(recovery_factor * seconds);
+    return recovery_factor * seconds;
 }
 
 // Mana = FRazaRecuperacion * segundos
-int GameFormulas::calculate_time_mana_recovery(const Player& player, float seconds) {
+float GameFormulas::calculate_time_mana_recovery(const Player& player, float seconds) {
     if (!player.can_cast_magic()) {
-        return 0;
+        return 0.0f;
     }
     const GameConfig& config = GameConfig::get_instance();
     float recovery_factor = config.get_race_recovery_factor(player.get_race());
-    return static_cast<int>(recovery_factor * seconds);
+    return recovery_factor * seconds;
 }
 
 // Mana = FClaseMeditacion * Inteligencia * segundos
-int GameFormulas::calculate_meditation_mana_recovery(const Player& player, float seconds) {
+float GameFormulas::calculate_meditation_mana_recovery(const Player& player, float seconds) {
     if (!player.can_cast_magic()) {
-        return 0;
+        return 0.0f;
     }
     const GameConfig& config = GameConfig::get_instance();
     float meditation_factor = config.get_class_meditation_factor(player.get_class());
-    return static_cast<int>(meditation_factor * player.get_intelligence() * seconds);
+    return meditation_factor * player.get_intelligence() * seconds;
 }
 
 
@@ -138,16 +145,20 @@ std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const s
 
 // ATAQUE
 
-bool GameFormulas::can_attack_by_level(int attacker_level, int target_level) {
+AttackStatus GameFormulas::check_level_attack(int attacker_level, int target_level) {
     const GameConfig& config = GameConfig::get_instance();
     int newbie_max_level = config.get_newbie_max_level();
     int max_level_difference = config.get_max_level_difference();
 
     if (attacker_level <= newbie_max_level || target_level <= newbie_max_level) {
-        return false;
+        return AttackStatus::NEWBIE_PROTECTION;
     }
 
-    return std::abs(attacker_level - target_level) <= max_level_difference;
+    if (std::abs(attacker_level - target_level) > max_level_difference) {
+        return AttackStatus::LEVEL_DIFFERENCE;
+    }
+
+    return AttackStatus::SUCCESS;
 }
 
 // esta fórmula es inventada
@@ -171,6 +182,10 @@ int GameFormulas::calculate_damage(const Player& attacker, const Weapon* weapon)
         get_random_int(min_dmg, max_dmg);  // ver si usar el get_random_int o get_random_float
 
     return attacker.get_strength() * weapon_damage;
+}
+
+int GameFormulas::calculate_base_damage_in_range(int min_damage, int max_damage) {
+    return get_random_int(min_damage, max_damage);
 }
 
 // Esquivar si rand(0, 1) ^ Agilidad < 0.001
@@ -211,14 +226,15 @@ int GameFormulas::calculate_healing(int min_heal, int max_heal) {
 }
 
 // Exp = Daño * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_attack_experience_gain(const Player& attacker, const Character& target,
-                                                   int damage) {
+int GameFormulas::calculate_attack_experience_gain(const Character& attacker,
+                                                   const Character& target, int damage) {
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
     return static_cast<int>(damage * level_multiplier);
 }
 
 // Exp = rand(0, 0.1) * VidaMaxDelOtro * max(NivelDelOtro - Nivel + 10, 0)
-int GameFormulas::calculate_kill_experience_gain(const Player& attacker, const Character& target) {
+int GameFormulas::calculate_kill_experience_gain(const Character& attacker,
+                                                 const Character& target) {
     const GameConfig& config = GameConfig::get_instance();
     int target_max_hp = target.get_max_hp();
     int level_multiplier = std::max(target.get_level() - attacker.get_level() + 10, 0);
@@ -241,4 +257,12 @@ uint64_t GameFormulas::calculate_player_dropped_experience(const Player& player)
     const GameConfig& config = GameConfig::get_instance();
     return static_cast<uint64_t>(player.get_experience() *
                                  config.get_death_exp_loss_mult());  // exp * 0.4
+}
+
+uint64_t GameFormulas::calculate_npc_dropped_gold(const Character& npc) {
+    const GameConfig& config = GameConfig::get_instance();
+    float min_factor = config.get_npc_gold_drop_min_factor();
+    float max_factor = config.get_npc_gold_drop_max_factor();
+    float random_factor = get_random_float(min_factor, max_factor);
+    return static_cast<uint64_t>(random_factor * npc.get_max_hp());
 }

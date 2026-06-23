@@ -1,5 +1,6 @@
 #include "player.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -12,13 +13,22 @@
 Player::Player(uint32_t id, const std::string& name, PlayerRace race, PlayerClass player_class,
                int level, int max_hp, int max_mana, int strength, int agility, int intelligence,
                int constitution, const Position& position):
-    Character(id, level, max_hp, max_mana, strength, agility, intelligence, constitution, position),
+    Character(id, level, max_hp, position),
     name(name),
     p_race(race),
     p_class(player_class),
     gold(0),
     experience(0),
+    current_mana(max_mana),
+    max_mana(max_mana),
+    strength(strength),
+    agility(agility),
+    intelligence(intelligence),
+    constitution(constitution),
+    clan_id(0),
     meditating(false),
+    partial_hp_regen(0.0f),
+    partial_mana_regen(0.0f),
     inventory(std::make_unique<Inventory>()) {}
 
 bool Player::can_cast_magic() const {
@@ -29,8 +39,12 @@ int Player::get_defense() const {
     return GameFormulas::calculate_defense(*this);
 }
 
-bool Player::validate_attack_from(int attacker_level) const {
-    return GameFormulas::can_attack_by_level(attacker_level, this->get_level());
+AttackStatus Player::validate_attack_from(int attacker_level) const {
+    return GameFormulas::check_level_attack(attacker_level, this->get_level());
+}
+
+int Player::get_agility() const {
+    return agility;
 }
 
 Loot Player::drop_loot() {
@@ -56,7 +70,11 @@ void Player::move(const Position& new_position) {
 }
 
 void Player::add_gold(uint64_t amount) {
-    gold += amount;
+    uint64_t max_holdable = GameFormulas::calculate_max_holdable_gold(*this);
+    if (gold >= max_holdable)
+        return;
+    uint64_t space = max_holdable - gold;
+    gold += std::min(amount, space);
 }
 
 bool Player::remove_gold(uint64_t amount) {
@@ -89,6 +107,53 @@ void Player::add_experience(uint64_t amount) {
     }
 }
 
+bool Player::can_enter_safe_zones() const {
+    return true;
+}
+
+bool Player::is_healing_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_healing() : false;
+}
+
+bool Player::is_ranged_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_ranged() : false;
+}
+
+bool Player::is_magic_attack() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->is_magic() : false;
+}
+
+std::string Player::get_attack_name() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->get_attack_name() : "Ataque con puños";
+}
+
+int Player::calculate_base_damage() const {
+    Weapon* weapon = get_equipped_weapon();
+    if (weapon) {
+        return weapon->apply_effect(*this).damage;
+    }
+    return GameFormulas::calculate_damage(*this);
+}
+
+int Player::calculate_base_healing() const {
+    Weapon* weapon = get_equipped_weapon();
+    return weapon ? weapon->apply_effect(*this).healing : 0;
+}
+
+AttackStatus Player::consume_attack_resources() {
+    Weapon* weapon = get_equipped_weapon();
+    if (weapon && weapon->get_mana_cost() > 0) {
+        if (current_mana < weapon->get_mana_cost())
+            return AttackStatus::NO_MANA;
+        consume_mana(weapon->get_mana_cost());
+    }
+    return AttackStatus::SUCCESS;
+}
+
 void Player::level_up() {
 
     int new_level = get_level() + 1;
@@ -113,8 +178,40 @@ void Player::stop_meditating() {
     meditating = false;
 }
 
+void Player::resurrect() {
+    if (dead) {
+        dead = false;
+        current_hp = max_hp;
+        current_mana = max_mana;
+    }
+}
+
 bool Player::is_meditating() const {
     return meditating;
+}
+
+void Player::add_partial_hp(float hp) {
+    partial_hp_regen += hp;
+}
+
+float Player::get_partial_hp() const {
+    return partial_hp_regen;
+}
+
+void Player::decrease_partial_hp(float hp) {
+    partial_hp_regen -= hp;
+}
+
+void Player::add_partial_mana(float mana) {
+    partial_mana_regen += mana;
+}
+
+float Player::get_partial_mana() const {
+    return partial_mana_regen;
+}
+
+void Player::decrease_partial_mana(float mana) {
+    partial_mana_regen -= mana;
 }
 
 const std::string& Player::get_name() const {
@@ -135,6 +232,38 @@ uint64_t Player::get_gold() const {
 
 uint64_t Player::get_experience() const {
     return experience;
+}
+
+void Player::set_experience(uint64_t amount) {
+    experience = amount;
+}
+
+int Player::get_current_mana() const {
+    return current_mana;
+}
+
+int Player::get_max_mana() const {
+    return max_mana;
+}
+
+int Player::get_strength() const {
+    return strength;
+}
+
+int Player::get_intelligence() const {
+    return intelligence;
+}
+
+int Player::get_constitution() const {
+    return constitution;
+}
+
+uint32_t Player::get_clan_id() const {
+    return clan_id;
+}
+
+void Player::set_clan_id(uint32_t new_clan_id) {
+    clan_id = new_clan_id;
 }
 
 // SOBRECARGA: una por si quiero modificar el inventario, otra solo para lectura

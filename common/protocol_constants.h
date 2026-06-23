@@ -16,8 +16,13 @@ constexpr uint8_t MEDITATE = 0x12;
 constexpr uint8_t PICK_UP = 0x13;
 constexpr uint8_t DROP_ITEM = 0x14;
 constexpr uint8_t EQUIP_ITEM = 0x15;
+constexpr uint8_t INTERACT = 0x16;
+constexpr uint8_t CLAN = 0x17;
+constexpr uint8_t RESURRECT = 0x18;
+constexpr uint8_t CHEAT = 0x19;
 
 constexpr uint8_t CHAT = 0x20;
+constexpr uint8_t PRIVATE_CHAT = 0x21;
 
 constexpr uint8_t LEAVE_MATCH = 0xFE;
 constexpr uint8_t DISCONNECT = 0xFF;
@@ -39,10 +44,17 @@ constexpr uint8_t STATS = 0x91;
 constexpr uint8_t DEATH = 0x92;
 constexpr uint8_t REVIVE = 0x93;
 constexpr uint8_t ATTACKED = 0x94;
+constexpr uint8_t MEDITATE = 0x95;
 
 constexpr uint8_t INVENTORY = 0xA0;
+constexpr uint8_t CATALOG = 0xA1;
+constexpr uint8_t NPC_INTERACT = 0xA2;
 
-constexpr uint8_t CHAT_MSG = 0xB0;
+constexpr uint8_t CHAT_MSG = 0xB0;    // chat de jugador a jugadores (broadcast)
+constexpr uint8_t SYSTEM_MSG = 0xB1;  // mensaje del sistema (NPCs, errores) a 1 jugador
+
+constexpr uint8_t CLAN_RESULT = 0xC0;  // resultado de un comando de clan (targeted)
+constexpr uint8_t CLAN_REVIEW = 0xC1;  // respuesta a /revisar-clan (targeted)
 
 constexpr uint8_t ERROR = 0xEE;
 }  // namespace ServerOpcode
@@ -53,6 +65,6 @@ constexpr uint8_t MATCH_NOT_FOUND = 0x02;
 constexpr uint8_t MATCH_FULL = 0x03;
 constexpr uint8_t COMMAND_NOT_ALLOWED = 0x04;
 constexpr uint8_t INVALID_ARG = 0x05;
-}
+}  // namespace ProtocolError
 
 #endif

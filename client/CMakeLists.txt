@@ -4,22 +4,46 @@ target_sources(argentum_client
     client.cpp
     client_protocol.cpp
     sdl/game_client.cpp
-    sdl/renderer.cpp
-    sdl/input_handler.cpp
-    sdl/camera.cpp
-    sdl/hud.cpp
-    sdl/mini_chat.cpp
-    sdl/sprite_manager.cpp
-    sdl/client_map.cpp
+    sdl/assets/audio_manager.cpp
+    sdl/assets/sprite_manager.cpp
+    sdl/core/camera.cpp
+    sdl/core/input_handler.cpp
+    sdl/core/sdl_config.cpp
+    sdl/render/character_renderer.cpp
+    sdl/render/npc_renderer.cpp
+    sdl/render/player_renderer.cpp
+    sdl/render/renderer.cpp
+    sdl/render/terrain_renderer.cpp
+    sdl/render/world_renderer.cpp
+    sdl/state/client_map.cpp
+    sdl/state/sdl_game_state.cpp
+    sdl/state/server_update_handler.cpp
+    sdl/ui/clan_panel.cpp
+    sdl/ui/help_menu.cpp
+    sdl/ui/hud.cpp
+    sdl/ui/mini_chat.cpp
+
     PUBLIC
     client.h
     client_protocol.h
     sdl/game_client.h
-    sdl/renderer.h
-    sdl/input_handler.h
-    sdl/camera.h
-    sdl/hud.h
-    sdl/mini_chat.h
-    sdl/sprite_manager.h
-    sdl/client_map.h
+    sdl/assets/audio_manager.h
+    sdl/assets/sprite_manager.h
+    sdl/core/camera.h
+    sdl/core/input_handler.h
+    sdl/core/sdl_config.h
+    sdl/render/character_renderer.h
+    sdl/render/npc_renderer.h
+    sdl/render/npc_visual_type.h
+    sdl/render/player_renderer.h
+    sdl/render/renderer.h
+    sdl/render/terrain_renderer.h
+    sdl/render/world_renderer.h
+    sdl/state/client_map.h
+    sdl/state/sdl_game_state.h
+    sdl/state/server_update_handler.h
+    sdl/ui/clan_panel.h
+    sdl/ui/help_menu.h
+    sdl/ui/hud.h
+    sdl/ui/mini_chat.h
     )

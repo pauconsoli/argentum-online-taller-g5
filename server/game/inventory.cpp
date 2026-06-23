@@ -1,22 +1,23 @@
 #include "server/game/inventory.h"
 
-#include <algorithm>
+#include <string>
 #include <utility>
 
+#include "common/string_utils.h"
+#include "inventory.h"
 #include "server/game/game_config.h"
 #include "server/game/items/item.h"
-#include "server/game/player.h"
 
 Inventory::Inventory() {
     int max_items = GameConfig::get_instance().get_max_inventory_items();
     for (int i = 0; i < max_items; ++i) {
-        slots.push_back(InventorySlot{nullptr, 0, std::nullopt});
+        i_slots.push_back(InventorySlot{nullptr, 0, std::nullopt});
     }
 }
 
 int Inventory::find_item_by_ref(const Item& item) const {
-    for (int i = 0; i < static_cast<int>(slots.size()); i++) {
-        if (slots[i].item.get() ==
+    for (int i = 0; i < static_cast<int>(i_slots.size()); i++) {
+        if (i_slots[i].item.get() ==
             &item)  // lo encuentra con la referencia puntual del item, para equipar/desquipar
             return i;
     }
@@ -24,9 +25,9 @@ int Inventory::find_item_by_ref(const Item& item) const {
 }
 
 int Inventory::find_item_by_type(const Item& item) const {
-    for (int i = 0; i < static_cast<int>(slots.size()); i++) {
-        if (slots[i].item &&
-            slots[i].item->get_name() ==
+    for (int i = 0; i < static_cast<int>(i_slots.size()); i++) {
+        if (i_slots[i].item &&
+            i_slots[i].item->get_name() ==
                 item.get_name()) {  // lo encuentra por tipo/nombre, para stackearlo
             return i;
         }
@@ -46,16 +47,16 @@ bool Inventory::add_item(std::unique_ptr<Item> item, int quantity) {
         int index = find_item_by_type(*item);
 
         if (index != -1) {
-            slots[index].quantity += quantity;
+            i_slots[index].quantity += quantity;
             return true;
         }
     }
 
-    for (int i = 0; i < static_cast<int>(slots.size()); i++) {
-        if (!slots[i].item) {
-            slots[i].item = std::move(item);
-            slots[i].quantity = quantity;
-            slots[i].equipped_slot = std::nullopt;
+    for (int i = 0; i < static_cast<int>(i_slots.size()); i++) {
+        if (!i_slots[i].item) {
+            i_slots[i].item = std::move(item);
+            i_slots[i].quantity = quantity;
+            i_slots[i].equipped_slot = std::nullopt;
             return true;
         }
     }
@@ -82,24 +83,30 @@ bool Inventory::equip(Item& item, Player& player) {
         return use_consumable(index, player);
     }
 
+    // Si el ítem YA estaba equipado, lo desequipamos (funcionamiento de "toggle")
+    if (i_slots[index].equipped_slot.has_value()) {
+        i_slots[index].equipped_slot = std::nullopt;
+        return true;
+    }
+
     // acá veo si hay otro item equipado en ese slot, para desmarcarlo (swap), distinto al item que
     // quiero equipar
-    auto it = std::find_if(slots.begin(), slots.end(), [slot, &item](const auto& s) {
+    auto it = std::find_if(i_slots.begin(), i_slots.end(), [slot, &item](const auto& s) {
         return s.item && s.equipped_slot == slot && s.item.get() != &item;
     });
-    if (it != slots.end()) {
+    if (it != i_slots.end()) {
         it->equipped_slot = std::nullopt;
     }
 
-    slots[index].equipped_slot = *slot;  // EQUIPADO
+    i_slots[index].equipped_slot = *slot;  // EQUIPADO
 
     return true;
 }
 
 bool Inventory::unequip(EquipmentSlot slot) {
-    auto it = std::find_if(slots.begin(), slots.end(),
+    auto it = std::find_if(i_slots.begin(), i_slots.end(),
                            [slot](const auto& s) { return s.item && s.equipped_slot == slot; });
-    if (it != slots.end()) {
+    if (it != i_slots.end()) {
         it->equipped_slot = std::nullopt;
         return true;
     }
@@ -107,47 +114,67 @@ bool Inventory::unequip(EquipmentSlot slot) {
 }
 
 bool Inventory::use_consumable(int item_index, Player& player) {
-    (*slots[item_index].item).use(player);
-    remove_item(*slots[item_index].item);
+    (*i_slots[item_index].item).use(player);
+    remove_item(*i_slots[item_index].item);
     return true;
 }
 
 std::unique_ptr<Item> Inventory::remove_item(
-    Item& item) {  // SACSAR UNO SOLO por ej si voy usando pociones
+    const Item& item) {  // SACSAR UNO SOLO por ej si voy usando pociones
     int index = find_item_by_ref(item);
     if (index == -1)
         return nullptr;
 
-    if (slots[index].quantity > 1) {
-        slots[index].quantity--;
+    if (i_slots[index].quantity > 1) {
+        i_slots[index].quantity--;
         return nullptr;  // sigue en el inventario
     }
 
     auto owned = std::move(
-        slots[index].item);  // si entra acá era la última unidad, se saca el item del inventario
-    slots[index].quantity = 0;
-    slots[index].equipped_slot = std::nullopt;
+        i_slots[index].item);  // si entra acá era la última unidad, se saca el item del inventario
+    i_slots[index].quantity = 0;
+    i_slots[index].equipped_slot = std::nullopt;
     return owned;
 }
 
+int Inventory::find_item_by_name(const std::string& name) const {
+    const std::string name_norm = normalize_name(name);
+    for (int i = 0; i < static_cast<int>(i_slots.size()); i++) {
+        if (i_slots[i].item && normalize_name(i_slots[i].item->get_name()) == name_norm)
+            return i;
+    }
+    return -1;
+}
+
+bool Inventory::has_item_by_name(const std::string& name) const {
+    return find_item_by_name(name) != -1;
+}
+
+std::unique_ptr<Item> Inventory::remove_item_by_name(const std::string& name) {
+    int index = find_item_by_name(name);
+    if (index == -1)
+        return nullptr;
+    return remove_item(*i_slots[index].item);
+}
+
 bool Inventory::is_full() const {
-    return std::all_of(slots.begin(), slots.end(),
+    return std::all_of(i_slots.begin(), i_slots.end(),
                        [](const auto& slot) { return slot.item != nullptr; });
 }
 
 size_t Inventory::get_size() const {
     return static_cast<size_t>(std::count_if(
-        slots.begin(), slots.end(), [](const auto& slot) { return slot.item != nullptr; }));
+        i_slots.begin(), i_slots.end(), [](const auto& slot) { return slot.item != nullptr; }));
 }
 
 const std::vector<InventorySlot>& Inventory::get_slots() const {
-    return slots;
+    return i_slots;
 }
 
 Item* Inventory::get_equipped_item(EquipmentSlot slot) const {
-    auto it = std::find_if(slots.begin(), slots.end(),
+    auto it = std::find_if(i_slots.begin(), i_slots.end(),
                            [slot](const auto& s) { return s.item && s.equipped_slot == slot; });
-    if (it != slots.end()) {
+    if (it != i_slots.end()) {
         return it->item.get();
     }
     return nullptr;
@@ -155,7 +182,7 @@ Item* Inventory::get_equipped_item(EquipmentSlot slot) const {
 
 std::vector<std::pair<EquipmentSlot, Item*>> Inventory::get_equipped_items() const {
     std::vector<std::pair<EquipmentSlot, Item*>> result;
-    for (const auto& slot : slots) {
+    for (const auto& slot : i_slots) {
         if (slot.item && slot.equipped_slot.has_value()) {
             result.push_back({slot.equipped_slot.value(), slot.item.get()});
         }
@@ -168,20 +195,20 @@ bool Inventory::slot_has_item(EquipmentSlot slot) const {
 }
 
 InventorySlot Inventory::pop_slot(int slot_index) {
-    if (slot_index < 0 || slot_index >= static_cast<int>(slots.size())) {
+    if (slot_index < 0 || slot_index >= static_cast<int>(i_slots.size())) {
         return InventorySlot{nullptr, 0, std::nullopt};  // índice inválido
     }
 
-    InventorySlot slot_copy{std::move(slots[slot_index].item), slots[slot_index].quantity,
-                            slots[slot_index].equipped_slot};
-    slots[slot_index].quantity = 0;
-    slots[slot_index].equipped_slot = std::nullopt;
+    InventorySlot slot_copy{std::move(i_slots[slot_index].item), i_slots[slot_index].quantity,
+                            i_slots[slot_index].equipped_slot};
+    i_slots[slot_index].quantity = 0;
+    i_slots[slot_index].equipped_slot = std::nullopt;
     return slot_copy;
 }
 
 std::vector<InventorySlot> Inventory::drop_all() {
     std::vector<InventorySlot> dropped;
-    for (auto& slot : slots) {
+    for (auto& slot : i_slots) {
         if (slot.item) {
             dropped.push_back(
                 InventorySlot{std::move(slot.item), slot.quantity, slot.equipped_slot});

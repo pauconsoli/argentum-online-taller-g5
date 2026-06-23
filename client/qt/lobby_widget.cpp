@@ -6,11 +6,14 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPixmap>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
+
+#include "help_dialog.h"
 
 LobbyWidget::LobbyWidget(QWidget* parent):
         QWidget(parent),
@@ -24,6 +27,13 @@ LobbyWidget::LobbyWidget(QWidget* parent):
         status_label(new QLabel(this)) {
 
     auto* header = new QHBoxLayout;
+    auto* logo = new QLabel(this);
+    {
+        QPixmap pix(":/logo.png");
+        if (!pix.isNull()) {
+            logo->setPixmap(pix.scaledToHeight(60, Qt::SmoothTransformation));
+        }
+    }
     auto* title = new QLabel(tr("Partidas disponibles"), this);
     {
         QFont f = title->font();
@@ -34,8 +44,22 @@ LobbyWidget::LobbyWidget(QWidget* parent):
     logout_button->setStyleSheet(
             "QPushButton { background-color: #4a2418; border: 2px solid #8a3a1f; }"
             "QPushButton:hover { background-color: #6b3424; }");
+
+    auto* help_button = new QPushButton(tr("Ayuda"), this);
+    help_button->setStyleSheet(
+            "QPushButton { background-color: #4a3422; border: 2px solid #8a5a2b; color: #f0c870; }"
+            "QPushButton:hover { background-color: #6b4a30; }");
+    connect(help_button, &QPushButton::clicked, this, [this]() {
+        HelpDialog dlg(this);
+        dlg.exec();
+    });
+
+    header->addWidget(logo);
+    header->addSpacing(12);
     header->addWidget(title);
     header->addStretch();
+    header->addWidget(help_button);
+    header->addSpacing(8);
     header->addWidget(logout_button);
 
     table->setHorizontalHeaderLabels({tr("ID"), tr("Nombre"), tr("Jugadores"), tr("Max")});
@@ -88,7 +112,6 @@ void LobbyWidget::set_matches(const std::vector<MatchInfo>& matches) {
     int row = 0;
     for (const auto& m: matches) {
         auto* id_item = new QTableWidgetItem(QString::number(m.id));
-        // Guardamos el id como UserData para recuperarlo fácil al joinear.
         id_item->setData(Qt::UserRole, m.id);
         table->setItem(row, 0, id_item);
         table->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(m.name)));
@@ -116,6 +139,7 @@ void LobbyWidget::on_create_clicked() {
     }
     status_label->setVisible(false);
     emit createMatchRequested(name, static_cast<uint8_t>(new_max_input->value()));
+    new_name_input->clear();
 }
 
 void LobbyWidget::on_join_clicked() {

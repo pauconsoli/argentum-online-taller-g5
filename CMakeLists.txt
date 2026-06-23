@@ -108,6 +108,15 @@ target_include_directories(taller_common PUBLIC .)
 target_include_directories(taller_game PUBLIC .)
 target_include_directories(taller_world PUBLIC .)
 
+# Persistencia: nlohmann/json (header-only). Se descarga via FetchContent.
+if(ARGENTUM_SERVER)
+    include(FetchContent)
+    FetchContent_Declare(json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    )
+    FetchContent_MakeAvailable(json)
+endif()
+
 # HEY!! TODO XXX: you need to install some runtime and dev libraries *before*
 # compiling the client code.
 #
@@ -187,10 +196,11 @@ if(ARGENTUM_CLIENT)
     target_include_directories(argentum_client PRIVATE ${libSDL2pp_SOURCE_DIR})
     target_include_directories(argentum_client PRIVATE ${sdl2_image_SOURCE_DIR}/include)
     target_include_directories(argentum_client PRIVATE ${sdl2_ttf_SOURCE_DIR})
+    target_include_directories(argentum_client PRIVATE ${sdl2_mixer_SOURCE_DIR}/include)
 
 
     # Link the taller_common lib target
-    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf spdlog::spdlog)
+    target_link_libraries(argentum_client taller_common SDL2pp::SDL2pp SDL2_image SDL2_ttf SDL2_mixer spdlog::spdlog tomlplusplus::tomlplusplus)
 endif()
 
 # Binario CLI del cliente (sin GUI). Para smoke-testear el server mientras
@@ -208,8 +218,6 @@ if(ARGENTUM_CLIENT_CLI)
     target_link_libraries(argentum_client_cli taller_common spdlog::spdlog)
 endif()
 
-# Binario del cliente con menú Qt (pre-juego). El handoff a SDL para el
-# in-game lo integra Chiari después.
 if(ARGENTUM_CLIENT_QT)
     find_package(Qt5 COMPONENTS Core Widgets QUIET)
     if(Qt5_FOUND)
@@ -228,17 +236,31 @@ if(ARGENTUM_CLIENT_QT)
             client/qt/lobby_widget.h
             client/qt/race_class_widget.cpp
             client/qt/race_class_widget.h
+            client/qt/help_dialog.cpp
+            client/qt/help_dialog.h
+            client/qt/resources.qrc
             client/client.cpp
             client/client.h
             client/client_protocol.cpp
             client/sdl/game_client.cpp
-            client/sdl/renderer.cpp
-            client/sdl/input_handler.cpp
-            client/sdl/camera.cpp
-            client/sdl/hud.cpp
-            client/sdl/mini_chat.cpp
-            client/sdl/sprite_manager.cpp
-            client/sdl/client_map.cpp
+            client/sdl/assets/audio_manager.cpp
+            client/sdl/assets/sprite_manager.cpp
+            client/sdl/core/camera.cpp
+            client/sdl/core/input_handler.cpp
+            client/sdl/core/sdl_config.cpp
+            client/sdl/render/character_renderer.cpp
+            client/sdl/render/npc_renderer.cpp
+            client/sdl/render/player_renderer.cpp
+            client/sdl/render/renderer.cpp
+            client/sdl/render/terrain_renderer.cpp
+            client/sdl/render/world_renderer.cpp
+            client/sdl/state/client_map.cpp
+            client/sdl/state/sdl_game_state.cpp
+            client/sdl/state/server_update_handler.cpp
+            client/sdl/ui/clan_panel.cpp
+            client/sdl/ui/help_menu.cpp
+            client/sdl/ui/hud.cpp
+            client/sdl/ui/mini_chat.cpp
         )
 
         add_dependencies(argentum_client_qt taller_common SDL2pp::SDL2pp)
@@ -250,6 +272,7 @@ if(ARGENTUM_CLIENT_QT)
             ${libSDL2pp_SOURCE_DIR}
             ${sdl2_image_SOURCE_DIR}/include
             ${sdl2_ttf_SOURCE_DIR}
+            ${sdl2_mixer_SOURCE_DIR}/include
         )
 
         target_link_libraries(argentum_client_qt
@@ -259,7 +282,9 @@ if(ARGENTUM_CLIENT_QT)
             SDL2pp::SDL2pp
             SDL2_image
             SDL2_ttf
+            SDL2_mixer
             spdlog::spdlog
+            tomlplusplus::tomlplusplus
         )
     else()
         message(WARNING "Qt5 no encontrado. Saltando argentum_client_qt. Instalalo con: sudo apt-get install qtbase5-dev")
@@ -281,7 +306,7 @@ if(ARGENTUM_SERVER)
     taller_apply_sanitizers(argentum_server)
 
     # Link the taller_common, taller_game and taller_world lib targets
-    target_link_libraries(argentum_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus)
+    target_link_libraries(argentum_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus nlohmann_json::nlohmann_json)
 endif()
 
 # Testing section

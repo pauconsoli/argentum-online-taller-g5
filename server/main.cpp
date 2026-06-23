@@ -5,6 +5,7 @@
 
 #include "loader/game_config_loader.h"
 #include "loader/item_registry_loader.h"
+#include "loader/npc_registry_loader.h"
 #include "loader/world_item_loader.h"
 #include "loader/world_map_loader.h"
 #include "server.h"
@@ -13,6 +14,7 @@
 static constexpr const char* DEFAULT_MAP_CONFIG_PATH = "common/config/map.toml";
 static constexpr const char* DEFAULT_GAME_CONFIG_PATH = "common/config/game_config.toml";
 static constexpr const char* DEFAULT_ITEMS_CONFIG_PATH = "common/config/items.toml";
+static constexpr const char* DEFAULT_NPCS_CONFIG_PATH = "common/config/npcs.toml";
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -29,6 +31,7 @@ int main(int argc, char* argv[]) {
         std::string game_config_filepath;
         std::string items_config_filepath;
         std::string map_config_filepath;
+        std::string npcs_config_filepath;
 
         if (game_config_path_from_env) {
             // Entorno de producción (instalado): derivamos las rutas desde la variable de entorno.
@@ -42,15 +45,17 @@ int main(int argc, char* argv[]) {
             }
             items_config_filepath = config_dir + "/items.toml";
             map_config_filepath = config_dir + "/map.toml";
+            npcs_config_filepath = config_dir + "/npcs.toml";
         } else {
-            // Entorno de desarrollo: usamos las rutas relativas hardcodeadas como fallback.
             game_config_filepath = DEFAULT_GAME_CONFIG_PATH;
             items_config_filepath = DEFAULT_ITEMS_CONFIG_PATH;
             map_config_filepath = DEFAULT_MAP_CONFIG_PATH;
+            npcs_config_filepath = DEFAULT_NPCS_CONFIG_PATH;
         }
 
         GameConfigLoader::load(game_config_filepath);
         ItemRegistryLoader::load(items_config_filepath);
+        NPCRegistryLoader::load(npcs_config_filepath);
         auto world_factory = [&map_config_filepath]() {
             auto w = std::make_unique<World>(WorldMapLoader::load(map_config_filepath));
             WorldItemLoader::load_ground_items(*w, map_config_filepath);

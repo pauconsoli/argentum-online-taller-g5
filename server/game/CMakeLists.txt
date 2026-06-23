@@ -4,9 +4,11 @@ target_sources(taller_game
     character.cpp
     basic_match.cpp
     player.cpp
+    clan.cpp
     game_config.cpp
     game_formulas.cpp
     inventory.cpp
+    bank.cpp
     items/item.cpp
     items/weapon.cpp
     items/magic_weapon.cpp
@@ -14,16 +16,25 @@ target_sources(taller_game
     items/defensive_item.cpp
     items/consumable_item.cpp
     items/item_registry.cpp
+    npcs/npc.cpp
+    npcs/hostile_npc.cpp
+    npcs/city_npc.cpp
+    npcs/npc_registry.cpp
+    npcs/banker.cpp
+    npcs/merchant.cpp
+    npcs/priest.cpp
     PUBLIC
     # .h files
     character.h
     basic_match.h
     player.h
+    clan.h
     game_config.h
     game_formulas.h
     player_class.h
     player_race.h
     inventory.h
+    bank.h
     items/item.h
     items/weapon.h
     items/magic_weapon.h
@@ -32,4 +43,11 @@ target_sources(taller_game
     items/equipment_slot.h
     items/consumable_item.h
     items/item_registry.h
+    npcs/npc.h
+    npcs/hostile_npc.h
+    npcs/city_npc.h
+    npcs/npc_registry.h
+    npcs/banker.h
+    npcs/merchant.h
+    npcs/priest.h
     )

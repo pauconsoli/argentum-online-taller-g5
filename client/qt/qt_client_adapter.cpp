@@ -2,6 +2,7 @@
 
 #include "common/queue.h"
 #include "common/updates/attack_update.h"
+#include "common/updates/chat_msg_update.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
 #include "common/updates/match_created_update.h"
@@ -64,10 +65,12 @@ void QtClientAdapter::poll_updates() {
             case UpdateType::MATCH_CREATED:
                 emit matchCreated();
                 break;
-            case UpdateType::MATCH_JOINED:
+            case UpdateType::MATCH_JOINED: {
+                const auto* x = static_cast<const MatchJoinedUpdate*>(u.get());
                 timer->stop();  // leave WORLD_MAP and snapshots in queue for SDL
-                emit matchJoined();
+                emit matchJoined(x->was_restored, x->restored_race, x->restored_klass);
                 return;
+            }
             case UpdateType::ERROR: {
                 const auto* x = static_cast<const ErrorUpdate*>(u.get());
                 emit errorReceived(x->code, QString::fromStdString(x->detail));
@@ -81,6 +84,12 @@ void QtClientAdapter::poll_updates() {
             case UpdateType::WORLD_MAP: {
                 const auto* x = static_cast<const WorldMapUpdate*>(u.get());
                 emit worldMapReceived(x->width, x->height, x->cells);
+                break;
+            }
+            case UpdateType::CHAT_MSG: {
+                const auto* x = static_cast<const ChatMsgUpdate*>(u.get());
+                emit chatMessageReceived(x->sender_id, QString::fromStdString(x->sender_nick),
+                                         QString::fromStdString(x->text));
                 break;
             }
             default:

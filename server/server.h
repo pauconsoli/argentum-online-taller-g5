@@ -18,6 +18,8 @@
 #include "common/thread.h"
 #include "common/updates/match_list_update.h"
 #include "game/match.h"
+#include "persistence/persister.h"
+#include "persistence/player_save.h"
 #include "server_ops.h"
 #include "world/world.h"
 
@@ -44,8 +46,11 @@ class Server: public ServerOps {
 
     std::function<std::unique_ptr<World>()> world_factory;
 
+    Persister persister;
+
  public:
-    Server(const std::string& service_name, std::function<std::unique_ptr<World>()> world_factory);
+    Server(const std::string& service_name, std::function<std::unique_ptr<World>()> world_factory,
+           const std::string& save_path = "save.json");
 
     void run();
 
@@ -59,6 +64,13 @@ class Server: public ServerOps {
                                     std::shared_ptr<const GameUpdate> update);
 
     void for_each_match(std::function<void(Match&)> fn);
+
+    WorldSnapshot snapshot();
+
+    void save_state();
+
+    std::optional<PlayerSave> find_player_save(const std::string& nick,
+                                                const std::string& match_name) override;
 
     bool is_running() const {
         return keep_running;

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/attack_result.h"
 #include "server/game/character.h"
 #include "server/game/inventory.h"
 #include "server/game/player_class.h"
@@ -28,7 +29,19 @@ class Player: public Character {
     uint64_t gold;
     uint64_t experience;
 
+    int current_mana;
+    int max_mana;
+
+    int strength;
+    int agility;
+    int intelligence;
+    int constitution;
+
+    uint32_t clan_id;
+
     bool meditating;
+    float partial_hp_regen;
+    float partial_mana_regen;
 
     std::unique_ptr<Inventory> inventory;
 
@@ -43,7 +56,9 @@ class Player: public Character {
 
     int get_defense() const override;
 
-    bool validate_attack_from(int attacker_level) const override;
+    AttackStatus validate_attack_from(int attacker_level) const override;
+
+    int get_agility() const override;
 
     Loot drop_loot() override;
 
@@ -55,7 +70,17 @@ class Player: public Character {
 
     void remove_experience(uint64_t amount);
 
-    void add_experience(uint64_t amount);
+    void add_experience(uint64_t amount) override;
+
+    bool can_enter_safe_zones() const override;
+
+    bool is_healing_attack() const override;
+    bool is_ranged_attack() const override;
+    bool is_magic_attack() const override;
+    std::string get_attack_name() const override;
+    int calculate_base_damage() const override;
+    int calculate_base_healing() const override;
+    AttackStatus consume_attack_resources() override;
 
     void level_up();
 
@@ -63,9 +88,18 @@ class Player: public Character {
 
     void stop_meditating();
 
+    void resurrect();
+
     bool is_meditating() const;
 
-    const std::string& get_name() const;
+    void add_partial_hp(float hp);
+    float get_partial_hp() const;
+    void decrease_partial_hp(float hp);
+    void add_partial_mana(float mana);
+    float get_partial_mana() const;
+    void decrease_partial_mana(float mana);
+
+    const std::string& get_name() const override;
 
     PlayerRace get_race() const;
 
@@ -74,6 +108,21 @@ class Player: public Character {
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
+    void set_experience(uint64_t amount);
+
+    int get_current_mana() const;
+
+    int get_max_mana() const;
+
+    int get_strength() const;
+
+    int get_intelligence() const;
+
+    int get_constitution() const;
+
+    uint32_t get_clan_id() const override;
+
+    void set_clan_id(uint32_t new_clan_id);
 
     Inventory& get_inventory();
 

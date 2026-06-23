@@ -18,11 +18,21 @@ target_sources(argentum_server
     commands/drop_item_command.cpp
     commands/pick_up_item_command.cpp
     commands/equip_item_command.cpp
+    commands/resurrect_command.cpp
+    commands/interact_npc_command.cpp
+    commands/chat_command.cpp
+    commands/clan_command.cpp
+    commands/cheat_command.cpp
+    commands/restore_player_command.cpp
+    # persistence
+    persistence/persister.cpp
+    persistence/world_serializer.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp
     loader/item_registry_loader.cpp
     loader/world_item_loader.cpp
+    loader/npc_registry_loader.cpp
     PUBLIC
     # .h files
     server.h
@@ -39,4 +49,9 @@ target_sources(argentum_server
     loader/game_config_loader.h
     loader/item_registry_loader.h
     loader/world_item_loader.h
+    loader/npc_registry_loader.h
+    # persistence headers
+    persistence/player_save.h
+    persistence/persister.h
+    persistence/world_serializer.h
 )

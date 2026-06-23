@@ -1,7 +1,9 @@
 #include "main_window.h"
 
+#include <QIcon>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QString>
@@ -26,7 +28,19 @@ MainWindow::MainWindow(QWidget* parent):
     status_user_label(new QLabel(this)) {
 
     setWindowTitle(tr("Argentum Online - G5"));
+    setWindowIcon(QIcon(":/logo.png"));
     resize(720, 560);
+
+    setStyleSheet(
+        "QMainWindow {"
+        "  background-image: url(:/background.jpg);"
+        "  background-repeat: no-repeat;"
+        "  background-position: center;"
+        "  background-color: #1a1410;"
+        "}"
+        "QStackedWidget > QWidget {"
+        "  background-color: rgba(20, 16, 12, 180);"
+        "}");
 
     stack->addWidget(connection_page);  // 0
     stack->addWidget(lobby_page);       // 1
@@ -183,10 +197,22 @@ void MainWindow::connect_adapter_signals() {
     connect(adapter.get(), &QtClientAdapter::matchCreated, this,
             [this]() { handle_refresh_requested(); });
 
-    connect(adapter.get(), &QtClientAdapter::matchJoined, this, [this]() {
-        stack->setCurrentIndex(PAGE_RACE_CLASS);
-        update_status_bar();
-    });
+    connect(adapter.get(), &QtClientAdapter::matchJoined, this,
+            [this](bool was_restored, uint8_t restored_race, uint8_t restored_klass) {
+                if (was_restored) {
+                    if (!client) {
+                        return;
+                    }
+                    adapter->stop();
+                    adapter.reset();
+                    emit gameStartRequested(client.release(), restored_race, restored_klass,
+                                            current_player_id);
+                    close();
+                    return;
+                }
+                stack->setCurrentIndex(PAGE_RACE_CLASS);
+                update_status_bar();
+            });
 
     connect(
         adapter.get(), &QtClientAdapter::errorReceived, this,
@@ -200,6 +226,7 @@ void MainWindow::connect_adapter_signals() {
             return;
         QMessageBox::warning(this, tr("Desconectado"), tr("Se cerró la conexión con el servidor."));
         teardown_session();
+        close();
     });
 }
 

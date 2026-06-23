@@ -81,6 +81,8 @@ void GameConfigLoader::load(const std::string& config_path) {
         throw std::runtime_error("game_config.toml: falta la sección [world]");
     gc.spawn_position.x = require_int(*world, "world", "spawn_x");
     gc.spawn_position.y = require_int(*world, "world", "spawn_y");
+    gc.resurrect_still_factor = require_float(*world, "world", "resurrect_still_factor");
+
 
     const auto* level = root["level"].as_table();
     if (!level)
@@ -95,6 +97,7 @@ void GameConfigLoader::load(const std::string& config_path) {
     gc.gold_max_safe_exp = require_float(*gold, "gold", "max_safe_exp");
     gc.gold_excess_factor = require_float(*gold, "gold", "excess_factor");
     gc.npc_gold_drop_factor = require_float(*gold, "gold", "npc_drop_factor");
+    gc.npc_buy_item_factor = require_int(*gold, "gold", "npc_buy_item_factor");
 
     const auto* exp = root["experience"].as_table();
     if (!exp)
@@ -108,6 +111,7 @@ void GameConfigLoader::load(const std::string& config_path) {
     if (!combat)
         throw std::runtime_error("game_config.toml: falta la sección [combat]");
     gc.critical_chance = require_float(*combat, "combat", "critical_chance");
+    gc.critical_multiplier = require_int(*combat, "combat", "critical_multiplier");
     gc.evasion_threshold = require_float(*combat, "combat", "evasion_threshold");
     gc.newbie_max_level = require_int(*combat, "combat", "newbie_max_level");
     gc.max_level_difference = require_int(*combat, "combat", "max_level_difference");
@@ -117,6 +121,8 @@ void GameConfigLoader::load(const std::string& config_path) {
         throw std::runtime_error("game_config.toml: falta la sección [clan]");
     gc.clan_max_members = require_int(*clan, "clan", "max_members");
     gc.clan_min_level_to_found = require_int(*clan, "clan", "min_level_to_found");
+    gc.bonus_factor = require_float(*clan, "clan", "bonus_factor");
+    gc.bonus_range = require_int(*clan, "clan", "bonus_range");
 
     const auto* npc = root["npc"].as_table();
     if (!npc)
@@ -127,6 +133,9 @@ void GameConfigLoader::load(const std::string& config_path) {
     gc.npc_drop_item_prob = require_float(*npc, "npc", "drop_item_prob");
     gc.npc_gold_drop_min_factor = require_float(*npc, "npc", "gold_drop_min_factor");
     gc.npc_gold_drop_max_factor = require_float(*npc, "npc", "gold_drop_max_factor");
+    gc.npc_population_limit = require_int(*npc, "npc", "population_limit");
+    gc.npc_spawn_time_seconds = require_int(*npc, "npc", "spawn_time_seconds");
+    gc.chase_cooldown = require_float(*npc, "npc", "chase_cooldown");
 
     const auto* server = root["server"].as_table();
     if (!server)
