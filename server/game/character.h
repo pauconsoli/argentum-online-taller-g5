@@ -38,7 +38,7 @@ class Character {
         const = 0;  // para NPCs que no tengan inventario valor fijo, para Players se calcula con el
                     // inventario equipado usando la formula de GameFormulas
 
-    virtual bool validate_attack_from(int attacker_level) const = 0;
+    virtual AttackStatus validate_attack_from(int attacker_level) const = 0;
 
     virtual int get_agility() const = 0;
 

@@ -266,8 +266,9 @@ AttackStatus World::validate_attack_conditions(const Character* attacker,
         return AttackStatus::INVALID_TARGET;
     }
 
-    if (!target->validate_attack_from(attacker->get_level())) {
-        return AttackStatus::INVALID_TARGET;
+    AttackStatus level_status = target->validate_attack_from(attacker->get_level());
+    if (level_status != AttackStatus::SUCCESS) {
+        return level_status;
     }
 
     // zonas seguras
@@ -279,7 +280,7 @@ AttackStatus World::validate_attack_conditions(const Character* attacker,
     uint32_t attacker_clan = attacker->get_clan_id();
     uint32_t target_clan = target->get_clan_id();
     if (attacker_clan != 0 && attacker_clan == target_clan) {
-        return AttackStatus::INVALID_TARGET;
+        return AttackStatus::SAME_CLAN;
     }
 
     if (!is_in_range_for_attack(attacker, target)) {

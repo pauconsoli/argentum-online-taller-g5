@@ -39,8 +39,8 @@ int Player::get_defense() const {
     return GameFormulas::calculate_defense(*this);
 }
 
-bool Player::validate_attack_from(int attacker_level) const {
-    return GameFormulas::can_attack_by_level(attacker_level, this->get_level());
+AttackStatus Player::validate_attack_from(int attacker_level) const {
+    return GameFormulas::check_level_attack(attacker_level, this->get_level());
 }
 
 int Player::get_agility() const {
