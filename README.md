@@ -45,6 +45,27 @@ Para correr los tests unitarios:
 ```bash
 make run-tests
 ```
+
+O directamente el binario, con filtros:
+
+```bash
+# Todos los tests (game, world, protocolo)
+./build/argentum_tests
+
+# Solo los tests del protocolo binario
+./build/argentum_tests --gtest_filter='ProtocolFixture.*'
+
+# Un test específico
+./build/argentum_tests --gtest_filter='ProtocolFixture.LoginRoundTrip'
+
+# Listar todos los tests disponibles sin correrlos
+./build/argentum_tests --gtest_list_tests
+```
+
+Los tests del protocolo cubren round-trip de los mensajes principales
+(login, chat, attack con tipo de arma, snapshot, match_joined con restore,
+inventory con uint64 grandes, etc.) usando `socketpair()` para simular un
+par cliente-servidor sin abrir red real.
 Para levantar Server y Client (en la raíz):
 
 ```bash
@@ -90,3 +111,26 @@ Licencia: GPL v2
 | Click izquierdo sobre item en inventario | Equipar o usar el item (las pociones se consumen inmediatamente) |
 | Click derecho sobre item en inventario | Selecciona el item para `/tirar` (se marca con borde celeste) |
 
+---
+
+## Persistencia
+
+El server guarda el estado de los jugadores periódicamente en un archivo
+`save.json` (formato autorizado por la cátedra como alternativa al binario
+del enunciado). El save se actualiza:
+
+- Automáticamente cada **30 segundos** desde adentro del game loop.
+- Al cerrar el server limpio con `q`.
+
+La escritura es **atómica**: se escribe a un archivo temporal `.tmp` y se
+hace `rename` POSIX al definitivo. Si el server crashea mid-write, el save
+anterior queda intacto.
+
+Al volver a levantar el server, se recrean automáticamente los matches que
+estaban activos al cierre anterior. Cuando un jugador joinea un match con
+su mismo nick y nombre de match, el server detecta el save y lo restaura
+con sus stats, gold e inventario — sin pedir raza/clase de nuevo.
+
+La identidad del save es la combinación `(nick, match_name)`. El
+`match_id` es runtime y no sobrevive entre runs, por eso usamos el nombre
+del match (que es estable).
