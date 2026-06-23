@@ -14,7 +14,7 @@ max_hp = 100
 defense = 1         
 agility = 3
 min_damage = 15
-max_damage = 30
+max_damage = 20
 attack_range = 5
 zones = ["all"]
 
@@ -36,7 +36,7 @@ max_hp = 150
 defense = 4
 agility = 0       
 min_damage = 20    
-max_damage = 38
+max_damage = 30
 attack_range = 5
 zones = ["all"]
 
@@ -47,7 +47,7 @@ max_hp = 200
 defense = 9       
 agility = 0
 min_damage = 20     
-max_damage = 38
+max_damage = 35
 attack_range = 5
 zones = ["all"]
 
@@ -73,7 +73,7 @@ max_hp = 200
 defense = 3
 agility = 6         
 min_damage = 15
-max_damage = 28
+max_damage = 25
 attack_range = 5
 zones = ["dungeon"]
 
@@ -95,7 +95,7 @@ max_hp = 200
 defense = 8
 agility = 3        
 min_damage = 22
-max_damage = 42
+max_damage = 35
 attack_range = 6
 zones = ["dungeon"]
 
@@ -106,7 +106,7 @@ max_hp = 200
 defense = 8
 agility = 6         
 min_damage = 30   
-max_damage = 55
+max_damage = 45
 attack_range = 5
 zones = ["dungeon"]
 
@@ -116,7 +116,7 @@ level = 10
 max_hp = 300       
 defense = 12       
 agility = 5
-min_damage = 50    
-max_damage = 95
+min_damage = 30    
+max_damage = 50
 attack_range = 5
 zones = ["dungeon"]
