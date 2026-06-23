@@ -472,13 +472,13 @@ void GameClient::handle_left_click(int screen_x, int screen_y) {
         try_equip_at(screen_x, screen_y);
 }
 
-bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
+void GameClient::try_attack_at_tile(int tile_x, int tile_y) {
     if (!state.is_ghost()) {
         for (const auto& [pid, ps] : state.players()) {
             if (pid == state.player_id() || ps.x != tile_x || ps.y != tile_y)
                 continue;
             client->do_attack(pid);
-            return true;
+            return;
         }
     }
     for (const auto& [nid, ns] : state.npcs()) {
@@ -487,7 +487,7 @@ bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
         if (ns.is_hostile) {
             if (!state.is_ghost())
                 client->do_attack(nid);
-            return true;
+            return;
         }
         state.select_npc(nid);
         switch (npc_visual_type_from_network(ns.npc_type)) {
@@ -504,9 +504,8 @@ bool GameClient::try_attack_at_tile(int tile_x, int tile_y) {
                 mini_chat->add_message("Seleccionaste a un NPC");
                 break;
         }
-        return true;
+        return;
     }
-    return false;
 }
 
 void GameClient::try_equip_at(int screen_x, int screen_y) {

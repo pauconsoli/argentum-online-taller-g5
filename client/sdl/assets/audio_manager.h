@@ -16,7 +16,6 @@ class AudioManager {
     ~AudioManager();
 
     void play_background_music(const std::string& path, int volume);
-    static void stop_music();
     static void toggle_music();
     static bool is_music_paused();
 

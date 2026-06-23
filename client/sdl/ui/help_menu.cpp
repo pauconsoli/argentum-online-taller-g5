@@ -73,10 +73,6 @@ void HelpMenu::toggle() {
     visible = !visible;
 }
 
-bool HelpMenu::is_visible() const {
-    return visible;
-}
-
 void HelpMenu::draw_text(const std::string& text, int x, int y, SDL_Color color) {
     if (text.empty())
         return;

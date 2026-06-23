@@ -105,13 +105,10 @@ class GameClient: public Notifier {
     void handle_drop_command(const std::string& input);
     void handle_npc_command(NPCInteraction type, const std::string& arg, int32_t amount);
     void handle_left_click(int screen_x, int screen_y);
-    bool try_attack_at_tile(int tile_x, int tile_y);
+    void try_attack_at_tile(int tile_x, int tile_y);
     void try_equip_at(int screen_x, int screen_y);
     void handle_right_click(int screen_x, int screen_y);
     void process_keyword_input();
-    void send_chat_message(const std::string& text);
-    void toggle_chat();
-    void process_chat_input(const SDL_Event& e);
 };
 
 #endif
