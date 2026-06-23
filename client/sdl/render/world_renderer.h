@@ -28,8 +28,8 @@ enum class FringeType : uint8_t { TREE, ITEM, PLAYER, NPC };
 struct FringeEntry {
     int y_row;
     FringeType type;
-    int col;      // TREE: tile column (row == y_row)
-    uint32_t id;  // PLAYER: pid, NPC: nid
+    int col;
+    uint32_t id;
     union {
         const GroundItemSnapshot* item;
         const PlayerSnapshot* ps;

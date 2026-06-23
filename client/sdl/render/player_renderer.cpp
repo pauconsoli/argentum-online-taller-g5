@@ -88,7 +88,6 @@ void PlayerRenderer::render_single(uint32_t player_id, const PlayerSnapshot& pla
         }
     }
 
-    // Blanco por defecto; verde si el otro jugador pertenece al mismo clan.
     SDL_Color nick_color = {255, 255, 255, 255};
     if (my_clan_id != 0 && player_snapshoot.clan_id == my_clan_id && player_id != my_player_id)
         nick_color = {120, 255, 120, 255};

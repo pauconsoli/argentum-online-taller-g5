@@ -15,7 +15,7 @@ class HelpMenu {
     int window_width;
     int window_height;
     bool visible;
-    // Cada par es {comando, descripcion}. Si la descripcion esta vacia, es un titulo.
+
     std::vector<std::pair<std::string, std::string>> left;
     std::vector<std::pair<std::string, std::string>> right;
     std::vector<std::pair<std::string, std::string>> cheats;

@@ -2,8 +2,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "sdl/core/sdl_config.h"
 #include "sdl/game_client.h"
-#include "sdl/sdl_config.h"
 
 int main(int argc, const char* const argv[]) {
     if (argc < 3) {

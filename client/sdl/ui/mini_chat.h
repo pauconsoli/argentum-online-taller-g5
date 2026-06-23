@@ -28,7 +28,7 @@ class MiniChat {
 
     void add_message(const std::string& msg);
     void draw();
-    // Dibuja el cuadro de entrada de texto en la posición y dada.
+
     void draw_input(const std::string& input, int y);
 };
 
