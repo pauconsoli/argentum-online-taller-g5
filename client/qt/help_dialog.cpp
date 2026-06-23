@@ -144,11 +144,11 @@ HelpDialog::HelpDialog(QWidget* parent):
 
 <h3 style="color: #c89b3c;">Cheats útiles</h3>
 <ul>
-  <li><code>Ctrl+H</code> — HP al máximo</li>
-  <li><code>Ctrl+M</code> — MP al máximo</li>
-  <li><code>Ctrl+K</code> — Morir instantáneamente</li>
-  <li><code>Ctrl+L</code> — Subir de nivel</li>
-  <li><code>Ctrl+G</code> — +10.000 de oro</li>
+  <li><code>Ctrl+1</code> — HP al máximo</li>
+  <li><code>Ctrl+2</code> — MP al máximo</li>
+  <li><code>Ctrl+3</code> — Morir instantáneamente</li>
+  <li><code>Ctrl+4</code> — Subir de nivel</li>
+  <li><code>Ctrl+5</code> — Subir oro al máximo</li>
 </ul>
 
 <p style="color: #8a5a2b; margin-top: 20px;">
