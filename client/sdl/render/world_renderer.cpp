@@ -6,53 +6,39 @@
 
 #include <SDL2/SDL.h>
 
-#include "client_map.h"
-#include "sdl_game_state.h"
+#include "../state/client_map.h"
+#include "../state/sdl_game_state.h"
 
-enum class FringeType : uint8_t { TREE, ITEM, PLAYER, NPC };
-
-struct FringeEntry {
-    int y_row;
-    FringeType type;
-    int col;      // TREE: tile column (row == y_row)
-    uint32_t id;  // PLAYER: pid, NPC: nid
-    union {
-        const GroundItemSnapshot* item;
-        const PlayerSnapshot* ps;
-        const NPCSnapshot* ns;
-    };
-
-    static FringeEntry make_tree(int col, int row) {
-        FringeEntry e{};
-        e.y_row = row;
-        e.type = FringeType::TREE;
-        e.col = col;
-        return e;
-    }
-    static FringeEntry make_item(const GroundItemSnapshot& gi) {
-        FringeEntry e{};
-        e.y_row = gi.y;
-        e.type = FringeType::ITEM;
-        e.item = &gi;
-        return e;
-    }
-    static FringeEntry make_player(uint32_t pid, const PlayerSnapshot& p) {
-        FringeEntry e{};
-        e.y_row = p.y;
-        e.type = FringeType::PLAYER;
-        e.id = pid;
-        e.ps = &p;
-        return e;
-    }
-    static FringeEntry make_npc(uint32_t nid, const NPCSnapshot& n) {
-        FringeEntry e{};
-        e.y_row = n.y;
-        e.type = FringeType::NPC;
-        e.id = nid;
-        e.ns = &n;
-        return e;
-    }
-};
+FringeEntry FringeEntry::make_tree(int col, int row) {
+    FringeEntry e{};
+    e.y_row = row;
+    e.type = FringeType::TREE;
+    e.col = col;
+    return e;
+}
+FringeEntry FringeEntry::make_item(const GroundItemSnapshot& gi) {
+    FringeEntry e{};
+    e.y_row = gi.y;
+    e.type = FringeType::ITEM;
+    e.item = &gi;
+    return e;
+}
+FringeEntry FringeEntry::make_player(uint32_t pid, const PlayerSnapshot& p) {
+    FringeEntry e{};
+    e.y_row = p.y;
+    e.type = FringeType::PLAYER;
+    e.id = pid;
+    e.ps = &p;
+    return e;
+}
+FringeEntry FringeEntry::make_npc(uint32_t nid, const NPCSnapshot& n) {
+    FringeEntry e{};
+    e.y_row = n.y;
+    e.type = FringeType::NPC;
+    e.id = nid;
+    e.ns = &n;
+    return e;
+}
 
 WorldRenderer::WorldRenderer(Renderer& r, SpriteManager& sm, TerrainRenderer& tr, NPCRenderer& nr,
                              PlayerRenderer& pr, Hud& h, MiniChat& mc, HelpMenu& hm, ClanPanel& cp,
@@ -69,25 +55,24 @@ WorldRenderer::WorldRenderer(Renderer& r, SpriteManager& sm, TerrainRenderer& tr
     camera(cam),
     config(cfg) {}
 
-void WorldRenderer::draw(const GameState& state, const ClientMap& map, int direction,
-                         int current_frame, bool chat_active, const std::string& chat_input,
-                         bool music_paused, int screen_w, int screen_h) {
-    renderer.clear();
-
-    int start_col = camera.get_x() / config.tile_width;
-    int end_col = start_col + screen_w / config.tile_width + 1;
-    int start_row = camera.get_y() / config.tile_height;
-    int end_row = start_row + screen_h / config.tile_height + 1;
-    terrain_renderer.draw(start_col, end_col, start_row, end_row, config.tile_width,
+TileBounds WorldRenderer::draw_terrain(const ClientMap& map, int screen_w, int screen_h) {
+    TileBounds b;
+    b.start_col = camera.get_x() / config.tile_width;
+    b.end_col = b.start_col + screen_w / config.tile_width + 1;
+    b.start_row = camera.get_y() / config.tile_height;
+    b.end_row = b.start_row + screen_h / config.tile_height + 1;
+    terrain_renderer.draw(b.start_col, b.end_col, b.start_row, b.end_row, config.tile_width,
                           config.tile_height, map, screen_w, screen_h);
+    return b;
+}
 
-    // --- CAPA FRINGE: árboles, items, jugadores y NPCs ordenados por Y ---
+std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
+                                                     const GameState& state, const ClientMap& map) {
     std::vector<FringeEntry> fringe;
     fringe.reserve(64);
 
-    // Árboles (tiles blocking de pasto) — sacados del terrain pass para poder Y-sortear
-    for (int row = start_row; row <= end_row; ++row) {
-        for (int col = start_col; col <= end_col; ++col) {
+    for (int row = bounds.start_row; row <= bounds.end_row; ++row) {
+        for (int col = bounds.start_col; col <= bounds.end_col; ++col) {
             if (col < 0 || col >= map.get_width() || row < 0 || row >= map.get_height())
                 continue;
             const auto& tile = map.at(col, row);
@@ -96,20 +81,22 @@ void WorldRenderer::draw(const GameState& state, const ClientMap& map, int direc
         }
     }
 
-    // Items en el suelo
     std::transform(state.ground_items().begin(), state.ground_items().end(),
                    std::back_inserter(fringe), FringeEntry::make_item);
 
-    // Jugadores
     for (const auto& [pid, ps] : state.players())
         fringe.push_back(FringeEntry::make_player(pid, ps));
 
-    // NPCs
     for (const auto& [nid, ns] : state.npcs()) fringe.push_back(FringeEntry::make_npc(nid, ns));
 
     std::stable_sort(fringe.begin(), fringe.end(),
                      [](const FringeEntry& a, const FringeEntry& b) { return a.y_row < b.y_row; });
 
+    return fringe;
+}
+
+void WorldRenderer::draw_fringe(const std::vector<FringeEntry>& fringe, const GameState& state,
+                                int direction, int current_frame) {
     for (const auto& e : fringe) {
         switch (e.type) {
             case FringeType::TREE:
@@ -148,16 +135,28 @@ void WorldRenderer::draw(const GameState& state, const ClientMap& map, int direc
                 break;
         }
     }
+}
 
+void WorldRenderer::draw_ui(const GameState& state, bool chat_active, const std::string& chat_input,
+                            bool music_paused, int screen_h) {
     hud.draw(state.hp(), state.max_hp(), state.mp(), state.max_mp(), state.level(), state.gold(),
              state.xp());
     hud.draw_inventory(&sprite_manager, state.inventory_slots(), state.selected_slot());
     hud.draw_music_button(music_paused);
-
     mini_chat.draw();
     if (chat_active)
         mini_chat.draw_input(chat_input, screen_h - 30);
     help_menu.draw();
     clan_panel.draw();
+}
+
+void WorldRenderer::draw(const GameState& state, const ClientMap& map, int direction,
+                         int current_frame, bool chat_active, const std::string& chat_input,
+                         bool music_paused, int screen_w, int screen_h) {
+    renderer.clear();
+    const auto bounds = draw_terrain(map, screen_w, screen_h);
+    const auto fringe = build_fringe(bounds, state, map);
+    draw_fringe(fringe, state, direction, current_frame);
+    draw_ui(state, chat_active, chat_input, music_paused, screen_h);
     renderer.present();
 }

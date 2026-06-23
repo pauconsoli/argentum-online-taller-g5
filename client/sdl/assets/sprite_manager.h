@@ -8,8 +8,8 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
 
+#include "../render/npc_visual_type.h"
 #include "common/world/terrain_type.h"
-#include "npc_visual_type.h"
 
 class SpriteManager {
  private:

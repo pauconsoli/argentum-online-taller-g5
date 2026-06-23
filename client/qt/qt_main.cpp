@@ -3,8 +3,8 @@
 #include <memory>
 
 #include "client/client.h"
+#include "client/sdl/core/sdl_config.h"
 #include "client/sdl/game_client.h"
-#include "client/sdl/sdl_config.h"
 #include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
 #include "common/updates/world_map_update.h"

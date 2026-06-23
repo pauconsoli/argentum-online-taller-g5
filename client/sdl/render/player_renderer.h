@@ -6,11 +6,11 @@
 #include <string>
 #include <vector>
 
+#include "../assets/sprite_manager.h"
+#include "../core/camera.h"
 #include "character_renderer.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
-#include "core/camera.h"
-#include "sprite_manager.h"
 
 class PlayerRenderer {
  public:
