@@ -1,17 +1,10 @@
 #include "server/game/items/item_registry.h"
 
-#include <algorithm>
-#include <cctype>
 #include <stdexcept>
 #include <utility>
 
+#include "common/string_utils.h"
 #include "server/game/game_formulas.h"
-
-static std::string to_lower(const std::string& s) {
-    std::string r = s;
-    std::transform(r.begin(), r.end(), r.begin(), [](unsigned char c) { return std::tolower(c); });
-    return r;
-}
 #include "server/game/items/consumable_item.h"
 #include "server/game/items/defensive_item.h"
 #include "server/game/items/magic_weapon.h"
@@ -24,7 +17,7 @@ ItemRegistry& ItemRegistry::get_instance() {
 }
 
 void ItemRegistry::add_template(const std::string& name, const ItemTemplate& tpl) {
-    templates[to_lower(name)] = tpl;
+    templates[normalize_name(name)] = tpl;
     if (tpl.type == "consumable") {
         potion_keys.push_back(name);
     } else if (tpl.type == "magic_weapon") {
@@ -39,7 +32,7 @@ void ItemRegistry::add_template(const std::string& name, const ItemTemplate& tpl
 }
 
 std::unique_ptr<Item> ItemRegistry::create_item(const std::string& name) const {
-    auto it = templates.find(to_lower(name));
+    auto it = templates.find(normalize_name(name));
     if (it == templates.end()) {
         throw std::runtime_error("ItemRegistry: Ítem no encontrado: " + name);
     }
@@ -86,33 +79,38 @@ std::unique_ptr<Item> ItemRegistry::create_random_other_item() const {
 }
 
 bool ItemRegistry::exists(const std::string& name) const {
-    return templates.count(to_lower(name)) > 0;
+    return templates.count(normalize_name(name)) > 0;
 }
 
 bool ItemRegistry::is_potion(const std::string& name) const {
-    auto it = templates.find(to_lower(name));
+    auto it = templates.find(normalize_name(name));
     return it != templates.end() && it->second.type == "consumable";
 }
 
 bool ItemRegistry::is_magic_weapon(const std::string& name) const {
-    auto it = templates.find(to_lower(name));
+    auto it = templates.find(normalize_name(name));
     return it != templates.end() && it->second.type == "magic_weapon";
 }
 
 bool ItemRegistry::is_weapon(const std::string& name) const {
-    auto it = templates.find(to_lower(name));
+    auto it = templates.find(normalize_name(name));
     return it != templates.end() && it->second.type == "weapon";
 }
 
 bool ItemRegistry::is_defensive(const std::string& name) const {
-    auto it = templates.find(to_lower(name));
+    auto it = templates.find(normalize_name(name));
     return it != templates.end() && it->second.type == "defensive";
 }
 
 uint64_t ItemRegistry::get_price(const std::string& name) const {
-    auto it = templates.find(to_lower(name));
+    auto it = templates.find(normalize_name(name));
     if (it == templates.end()) {
-        return 0;  // o excepción
+        return 0;
     }
     return it->second.price;
+}
+
+std::string ItemRegistry::get_display_name(const std::string& name) const {
+    auto it = templates.find(normalize_name(name));
+    return (it != templates.end()) ? it->second.name : name;
 }

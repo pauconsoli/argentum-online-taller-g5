@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "common/npc_type.h"
+#include "server/world/zone_type.h"
 
 struct NPCTemplate {
     std::string id;
@@ -17,7 +18,7 @@ struct NPCTemplate {
     int min_damage;
     int max_damage;
     int attack_range;
-    std::vector<std::string> zones;
+    std::vector<ZoneType> zones;
 };
 
 #endif

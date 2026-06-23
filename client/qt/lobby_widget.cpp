@@ -112,7 +112,6 @@ void LobbyWidget::set_matches(const std::vector<MatchInfo>& matches) {
     int row = 0;
     for (const auto& m: matches) {
         auto* id_item = new QTableWidgetItem(QString::number(m.id));
-        // Guardamos el id como UserData para recuperarlo fácil al joinear.
         id_item->setData(Qt::UserRole, m.id);
         table->setItem(row, 0, id_item);
         table->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(m.name)));
@@ -140,6 +139,7 @@ void LobbyWidget::on_create_clicked() {
     }
     status_label->setVisible(false);
     emit createMatchRequested(name, static_cast<uint8_t>(new_max_input->value()));
+    new_name_input->clear();
 }
 
 void LobbyWidget::on_join_clicked() {

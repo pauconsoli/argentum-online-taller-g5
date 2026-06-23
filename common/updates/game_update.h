@@ -21,6 +21,7 @@ enum class UpdateType : uint8_t {
     DEATH,
     ATTACKED,
     REVIVE,
+    MEDITATE,
     INVENTORY,
     CLAN_RESULT,
     CLAN_REVIEW,

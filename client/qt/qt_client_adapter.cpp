@@ -65,10 +65,12 @@ void QtClientAdapter::poll_updates() {
             case UpdateType::MATCH_CREATED:
                 emit matchCreated();
                 break;
-            case UpdateType::MATCH_JOINED:
+            case UpdateType::MATCH_JOINED: {
+                const auto* x = static_cast<const MatchJoinedUpdate*>(u.get());
                 timer->stop();  // leave WORLD_MAP and snapshots in queue for SDL
-                emit matchJoined();
+                emit matchJoined(x->was_restored, x->restored_race, x->restored_klass);
                 return;
+            }
             case UpdateType::ERROR: {
                 const auto* x = static_cast<const ErrorUpdate*>(u.get());
                 emit errorReceived(x->code, QString::fromStdString(x->detail));

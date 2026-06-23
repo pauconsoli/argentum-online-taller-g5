@@ -46,6 +46,7 @@ class Client {
     void do_drop_item(uint8_t slot_index);
     void do_equip_item(uint8_t slot_index);
     void do_chat(const std::string& text);
+    void do_private_chat(const std::string& target_nick, const std::string& text);
     void do_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg, int32_t amount);
     void do_clan_action(ClanAction action, const std::string& arg);
     void do_cheat(CheatType cheat_type);

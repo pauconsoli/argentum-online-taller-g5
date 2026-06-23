@@ -1,5 +1,6 @@
 #include "server/game/npcs/hostile_npc.h"
 
+#include <algorithm>
 #include <cmath>
 #include <utility>
 
@@ -10,7 +11,7 @@
 
 HostileNPC::HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, int level,
                        int max_hp, int defense, int agility, int min_damage, int max_damage,
-                       int attack_range, const std::vector<std::string>& allowed_zones,
+                       int attack_range, const std::vector<ZoneType>& allowed_zones,
                        const Position& pos):
     NPC(id, name, npc_type, level, max_hp, defense, pos),
     agility(agility),
@@ -23,6 +24,11 @@ int HostileNPC::get_agility() const {
     return agility;
 }
 
+bool HostileNPC::can_enter_zone_type(ZoneType zone_type) const {
+    return std::any_of(allowed_zones.begin(), allowed_zones.end(),
+                       [zone_type](ZoneType allowed) { return allowed == zone_type; });
+}
+
 int HostileNPC::calculate_base_damage() const {
     return GameFormulas::calculate_base_damage_in_range(min_damage, max_damage);
 }
@@ -32,7 +38,9 @@ NPCBehavior HostileNPC::update(float time, const std::vector<Player*>& nearby_ta
     behavior.action = NPCAction::STILL;
 
     action_timer += time;
-    if (action_timer < 0.5f) {  // cooldown de 0.5s para no ser inmatables. extraer al config
+    if (action_timer <
+        GameConfig::get_instance()
+            .get_chase_cooldown()) {  // cooldown de 0.4s, se puede cambiar en el config
         return behavior;
     }
 

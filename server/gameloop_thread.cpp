@@ -12,6 +12,7 @@
 #include "common/updates/death_update.h"
 #include "common/updates/inventory_update.h"
 #include "common/updates/snapshot_update.h"
+#include "game/clan.h"
 #include "game/game_config.h"
 #include "game/match.h"
 #include "game/player.h"
@@ -29,29 +30,43 @@ void GameLoopThread::run() {
             sleep_ms /
             1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
 
-        // OPTIMIZACIÓN DEL GAMELOOP
         using Clock = std::chrono::steady_clock;
         using Ms = std::chrono::duration<double, std::milli>;
         const Ms rate(sleep_ms);
 
         auto t1 = Clock::now();
+        constexpr int AUTO_SAVE_INTERVAL_SEC = 30;
+        auto last_save_time = Clock::now();
 
         while (should_keep_running()) {
 
-            server.for_each_match([this, tick_seconds, tick_id](Match& match) {
+            server.for_each_match([tick_seconds, tick_id](Match& match) {
                 World& world = match.get_world();
                 world.reset_player_movement();
                 match.tick();
                 auto attack_results = world.update(tick_seconds);
 
                 for (const auto& result : attack_results) {
-                    // enviar el resultado del ataque solo al atacante y al objetivo
                     auto update_for_attacker =
                         std::make_shared<AttackUpdate>(result, result.attacker_id);
                     match.send_update_to_player(result.attacker_id, update_for_attacker);
                     auto update_for_target =
                         std::make_shared<AttackUpdate>(result, result.target_id);
                     match.send_update_to_player(result.target_id, update_for_target);
+
+                    if (result.damage > 0 && result.target_clan_id != 0) {
+                        Clan* target_clan = world.get_clan(result.target_clan_id);
+                        if (target_clan) {
+                            for (uint32_t member_id : target_clan->get_members()) {
+                                if (member_id != result.attacker_id &&
+                                    member_id != result.target_id) {
+                                    auto update_for_member =
+                                        std::make_shared<AttackUpdate>(result, member_id);
+                                    match.send_update_to_player(member_id, update_for_member);
+                                }
+                            }
+                        }
+                    }
                     if (result.target_died) {
                         auto death_update =
                             std::make_shared<DeathUpdate>(result.target_id, result.attacker_id);
@@ -142,16 +157,22 @@ void GameLoopThread::run() {
                     ground_snapshots.push_back(world_ground_item);
                 }
 
-                // esto habría que revisarlo, no se debería enviar de todos, a todos, todas la
-                // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo
-                // de los que cambiaron por ej
                 auto snapshot_update = std::make_shared<SnapshotUpdate>(
                     tick_id, std::move(snapshots), std::move(npc_snapshots),
                     std::move(ground_snapshots));
-                match.broadcast_update_to_all(snapshot_update);
+                match.broadcast_update_to_all(
+                    snapshot_update);  // broadcast a todos los jugadores del match (a mejorar)
             });
 
             tick_id++;
+            
+            auto now = Clock::now();
+            auto elapsed_since_save =
+                std::chrono::duration_cast<std::chrono::seconds>(now - last_save_time).count();
+            if (elapsed_since_save >= AUTO_SAVE_INTERVAL_SEC) {
+                server.save_state();
+                last_save_time = now;
+            }
 
             // OPTIMIZACIÓN DEL GAMELOOP: calculo lo que tardó el tick y sleep solo el tiempo restante
             auto t2 = Clock::now();

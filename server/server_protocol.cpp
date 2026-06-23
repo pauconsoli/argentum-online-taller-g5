@@ -34,6 +34,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/meditate_update.h"
 #include "common/updates/moved_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
@@ -253,6 +254,13 @@ std::unique_ptr<ClientCommand> ServerProtocol::recv_chat_payload(uint32_t player
     return std::make_unique<ChatCommand>(player_id, nick, std::move(text));
 }
 
+std::unique_ptr<ClientCommand> ServerProtocol::recv_private_chat_payload(uint32_t player_id,
+                                                                         const std::string& nick) {
+    std::string target_nick = recv_string();
+    std::string text = recv_string();
+    return std::make_unique<ChatCommand>(player_id, nick, std::move(text), std::move(target_nick));
+}
+
 std::unique_ptr<ClientCommand> ServerProtocol::recv_cheat_payload(uint32_t player_id) {
     uint8_t type_raw = recv_u8();
     CheatType cheat_type = static_cast<CheatType>(type_raw);
@@ -299,6 +307,9 @@ void ServerProtocol::send_update(const GameUpdate& update) {
             break;
         case UpdateType::REVIVE:
             send_revive(update);
+            break;
+        case UpdateType::MEDITATE:
+            send_meditate(update);
             break;
         case UpdateType::INVENTORY:
             send_inventory(update);
@@ -379,6 +390,9 @@ void ServerProtocol::send_match_joined(const GameUpdate& update) {
     put_u8(buf, ServerOpcode::MATCH_JOINED);
     put_u32(buf, u.match_id);
     put_u32(buf, u.your_player_id);
+    put_u8(buf, u.was_restored ? 1 : 0);
+    put_u8(buf, u.restored_race);
+    put_u8(buf, u.restored_klass);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_match_joined: client closed connection");
     }
@@ -404,6 +418,8 @@ void ServerProtocol::send_player_left(const GameUpdate& update) {
     std::vector<uint8_t> buf;
     put_u8(buf, ServerOpcode::PLAYER_LEFT);
     put_u32(buf, u.player_id);
+    put_string(buf, u.nick);
+    put_u32(buf, u.clan_id);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_player_left: client closed connection");
     }
@@ -453,11 +469,13 @@ void ServerProtocol::send_attacked(const GameUpdate& update) {
     put_i32(buf, r.damage);
     put_u8(buf, r.evaded ? 1 : 0);
     put_u8(buf, r.target_died ? 1 : 0);
+    put_u8(buf, r.is_critical ? 1 : 0);
     put_u8(buf, r.is_healing ? 1 : 0);
     put_i32(buf, r.heal_amount);
     put_u8(buf, static_cast<uint8_t>(r.type));
     put_string(buf, r.weapon_or_spell_name);
     put_u8(buf, static_cast<uint8_t>(r.status));
+    put_u32(buf, r.target_clan_id);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_attacked: client closed connection");
     }
@@ -471,6 +489,16 @@ void ServerProtocol::send_death(const GameUpdate& update) {
     put_u32(buf, u.get_killer_id());
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_death: client closed connection");
+    }
+}
+
+void ServerProtocol::send_meditate(const GameUpdate& update) {
+    const auto& u = static_cast<const MeditateUpdate&>(update);
+    std::vector<uint8_t> buf;
+    put_u8(buf, ServerOpcode::MEDITATE);
+    put_u8(buf, static_cast<uint8_t>(u.get_status()));
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ServerProtocol::send_meditate: client closed connection");
     }
 }
 
@@ -518,6 +546,7 @@ void ServerProtocol::send_catalog(const GameUpdate& update) {
         put_string(buf, item_name);
     }
     put_u64(buf, u.get_gold_in_bank());
+    put_u8(buf, u.is_vault() ? 1 : 0);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_catalog: client closed connection");
     }

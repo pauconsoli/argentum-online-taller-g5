@@ -24,6 +24,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/meditate_update.h"
 #include "common/updates/moved_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
@@ -235,6 +236,16 @@ void ClientProtocol::send_chat(const std::string& text) {
     }
 }
 
+void ClientProtocol::send_private_chat(const std::string& target_nick, const std::string& text) {
+    std::vector<uint8_t> buf;
+    put_u8(buf, ClientOpcode::PRIVATE_CHAT);
+    put_string(buf, target_nick);
+    put_string(buf, text);
+    if (skt.sendall(buf.data(), buf.size()) == 0) {
+        throw LibError(0, "%s", "ClientProtocol::send_private_chat: server closed connection");
+    }
+}
+
 void ClientProtocol::send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                                    int32_t amount) {
     std::vector<uint8_t> buf;
@@ -306,6 +317,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_death();
         case ServerOpcode::REVIVE:
             return recv_revive();
+        case ServerOpcode::MEDITATE:
+            return recv_meditate();
         case ServerOpcode::INVENTORY:
             return recv_inventory();
         case ServerOpcode::SNAPSHOT:
@@ -359,7 +372,11 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_match_created() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_match_joined() {
     uint32_t match_id = recv_u32();
     uint32_t your_pid = recv_u32();
-    return std::make_unique<MatchJoinedUpdate>(match_id, your_pid);
+    bool was_restored = (recv_u8() != 0);
+    uint8_t restored_race = recv_u8();
+    uint8_t restored_klass = recv_u8();
+    return std::make_unique<MatchJoinedUpdate>(match_id, your_pid, was_restored,
+                                               restored_race, restored_klass);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
@@ -374,7 +391,9 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_left() {
     uint32_t pid = recv_u32();
-    return std::make_unique<PlayerLeftUpdate>(pid, "", 0);
+    std::string nick = recv_string();
+    uint32_t clan_id = recv_u32();
+    return std::make_unique<PlayerLeftUpdate>(pid, std::move(nick), clan_id);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
@@ -384,11 +403,13 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.damage = recv_i32();
     r.evaded = (recv_u8() != 0);
     r.target_died = (recv_u8() != 0);
+    r.is_critical = (recv_u8() != 0);
     r.is_healing = (recv_u8() != 0);
     r.heal_amount = recv_i32();
     r.type = static_cast<AttackType>(recv_u8());
     r.weapon_or_spell_name = recv_string();
     r.status = static_cast<AttackStatus>(recv_u8());
+    r.target_clan_id = recv_u32();
     return std::make_unique<AttackUpdate>(r);
 }
 
@@ -401,6 +422,11 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_revive() {
     ResurrectStatus status = static_cast<ResurrectStatus>(recv_u8());
     return std::make_unique<ReviveUpdate>(0, status);
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_meditate() {
+    MeditateStatus status = static_cast<MeditateStatus>(recv_u8());
+    return std::make_unique<MeditateUpdate>(0, status);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {
@@ -600,5 +626,6 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_catalog() {
         catalog.push_back(recv_string());
     }
     uint64_t gold = recv_u64();
-    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold);
+    bool vault = recv_u8() != 0;
+    return std::make_unique<CatalogUpdate>(0, std::move(catalog), gold, vault);
 }

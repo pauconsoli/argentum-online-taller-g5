@@ -20,7 +20,6 @@
 #include "server/game/npcs/merchant.h"
 #include "server/game/npcs/npc_registry.h"
 #include "server/game/npcs/priest.h"
-#include "server/world/dungeon.h"
 
 World::World(int width, int height):
     map(width, height), occupied(height, std::vector<bool>(width, false)) {
@@ -152,9 +151,8 @@ bool World::is_in_range_for_attack(const Character* attacker, const Character* t
     return true;  // a dist, rango ilimitado (visibilidad del objetivo)
 }
 
-// devuelve la posición de spawn para un nuevo jugador, que es la posición configurada en GameConfig
-// pero si está ocupada, da la siguiente posición libre más cercana da la siguiente posición libre
-// más cercana
+// devuelve la posición de spawn para un nuevo jugador, que es la posición configurada en
+// GameConfig pero si está ocupada, da la siguiente posición libre más cercana
 Position World::get_spawn_position() const {
     const Position base_spawn = GameConfig::get_instance().get_spawn_position();
 
@@ -268,20 +266,21 @@ AttackStatus World::validate_attack_conditions(const Character* attacker,
         return AttackStatus::INVALID_TARGET;
     }
 
-    if (!target->validate_attack_from(attacker->get_level())) {
-        return AttackStatus::INVALID_TARGET;
+    AttackStatus level_status = target->validate_attack_from(attacker->get_level());
+    if (level_status != AttackStatus::SUCCESS) {
+        return level_status;
     }
 
     // zonas seguras
     if (map.is_safe(attacker->get_position()) || map.is_safe(target->get_position())) {
-        return AttackStatus::INVALID_TARGET;
+        return AttackStatus::SAFE_ZONE;
     }
 
     // mismo clan
     uint32_t attacker_clan = attacker->get_clan_id();
     uint32_t target_clan = target->get_clan_id();
     if (attacker_clan != 0 && attacker_clan == target_clan) {
-        return AttackStatus::INVALID_TARGET;
+        return AttackStatus::SAME_CLAN;
     }
 
     if (!is_in_range_for_attack(attacker, target)) {
@@ -315,7 +314,7 @@ int World::get_nearby_clan_members_count(const Character* character, int range) 
 int World::handle_successful_attack(Character* attacker, Character* target, int damage) {
     int defense = target->get_defense();
 
-    // bonus de clan
+    // bonus de defensa por compañeros de clan cercanos
     int clan_count =
         get_nearby_clan_members_count(target, GameConfig::get_instance().get_bonus_range());
     if (clan_count > 0) {
@@ -354,6 +353,10 @@ bool World::move_character(uint32_t character_id, Direction direction) {
     }
 
     if (map.is_safe(next) && !character->can_enter_safe_zones()) {
+        return false;
+    }
+
+    if (!character->can_enter_zone_type(map.get_zone_type(next))) {
         return false;
     }
 
@@ -421,10 +424,11 @@ CheatResult World::apply_cheat(uint32_t player_id, CheatType cheat) {
             if (player->is_dead())
                 return {};
             player->level_up();
+            player->set_experience(GameFormulas::calculate_level_up_limit(player->get_level() - 1));
             return {true, false};
 
         case CheatType::GIVE_GOLD:
-            player->add_gold(10000);
+            player->add_gold(GameFormulas::calculate_max_holdable_gold(*player));
             return {true, false};
     }
 
@@ -452,7 +456,8 @@ ResurrectStatus World::start_resurrection(uint32_t player_id) {
 
     const City* closest_city = map.get_closest_city(player->get_position());
     if (!closest_city) {
-        return ResurrectStatus::NOT_DEAD;  // caso interno, no debería ocurrir con un mapa válido
+        return ResurrectStatus::NOT_DEAD;  // caso interno, NO debería ocurrir con un mapa válido
+                                           // siempre hay ciudad
     }
 
     Position priest_pos = closest_city->get_priest_position();
@@ -516,9 +521,11 @@ InteractResult World::interact_with_npc(uint32_t player_id, uint32_t npc_id, NPC
     if (!player || !npc)
         return InteractResult{InteractStatus::INVALID_TARGET};
 
-    // el jugador tiene que estar en la ciudad (zona segura)
+    // el jugador tiene que estar en la ciudad (zona segura),
+    // excepto si está muerto y quiere ser resucitado por el sacerdote
     const Position& pp = player->get_position();
-    if (!map.is_safe(pp))
+    bool resurrect_as_ghost = player->is_dead() && type == NPCInteraction::RESURRECT;
+    if (!map.is_safe(pp) && !resurrect_as_ghost)
         return InteractResult{InteractStatus::OUT_OF_RANGE};
 
     return npc->interact(type, arg, amount, *player, bank);
@@ -555,7 +562,7 @@ Clan* World::get_clan_by_name(const std::string& name) {
     return nullptr;
 }
 
-
+// valida que el founder y el target existan y que el founder sea el fundador del clan
 bool World::resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
                                        Player** founder_out, Clan** clan_out, Player** target_out,
                                        ClanActionStatus* fail_status) {
@@ -614,6 +621,9 @@ ClanResult World::request_join_clan(uint32_t player_id, const std::string& clan_
     Clan* clan = get_clan_by_name(clan_name);
     if (!clan) {
         return ClanResult(ClanActionStatus::CLAN_NOT_FOUND, clan_name);
+    }
+    if (clan->is_banned(player_id)) {
+        return ClanResult(ClanActionStatus::PLAYER_BANNED, clan->get_name(), player->get_name());
     }
     if (!clan->request_join(player_id)) {
         ClanActionStatus status =
@@ -771,9 +781,18 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
-        return AttackResult{
-            attacker_id,        target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
-            AttackType::NORMAL, "",        0};
+        return AttackResult{attacker_id,
+                            target_id,
+                            0,
+                            false,
+                            false,
+                            false,
+                            false,
+                            0,
+                            AttackStatus::INVALID_TARGET,
+                            AttackType::NORMAL,
+                            "",
+                            0};
     }
 
     AttackType attack_type = AttackType::NORMAL;
@@ -786,21 +805,23 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     AttackStatus status = validate_attack_conditions(attacker, target);
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
-                            0,           status,    attack_type, attack_name, 0};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,       false,
+                            false,       0,         status, attack_type, attack_name, 0};
     }
     status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
-                            0,           status,    attack_type, attack_name, 0};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,       false,
+                            false,       0,         status, attack_type, attack_name, 0};
     }
 
     int base_damage = attacker->calculate_base_damage();
 
-    // Bonificación de ataque por compañeros de clan cercanos (ej. +10% por miembro, rango 5 tiles)
-    int clan_count = get_nearby_clan_members_count(attacker, 5.0f);
+    // bonus de ataque por compañeros de clan cercanos
+    int clan_count =
+        get_nearby_clan_members_count(attacker, GameConfig::get_instance().get_bonus_range());
     if (clan_count > 0) {
-        base_damage += static_cast<int>(base_damage * 0.1f * clan_count);
+        base_damage += static_cast<int>(base_damage *
+                                        GameConfig::get_instance().get_bonus_factor() * clan_count);
     }
 
     bool is_critical = GameFormulas::calculate_critical_attack();
@@ -821,17 +842,10 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id,
-                        target_id,
-                        real_damage,
-                        evaded,
-                        died,
-                        false,
-                        0,
-                        AttackStatus::SUCCESS,
-                        attack_type,
-                        attack_name,
-                        target->get_clan_id()};
+    return AttackResult{attacker_id, target_id,   real_damage,
+                        evaded,      died,        is_critical,
+                        false,       0,           AttackStatus::SUCCESS,
+                        attack_type, attack_name, target->get_clan_id()};
 }
 
 AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
@@ -839,36 +853,60 @@ AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!healer || !target) {
-        return AttackResult{
-            healer_id,         target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
-            AttackType::MAGIC, "",        0};
+        return AttackResult{healer_id,
+                            target_id,
+                            0,
+                            false,
+                            false,
+                            false,
+                            false,
+                            0,
+                            AttackStatus::INVALID_TARGET,
+                            AttackType::MAGIC,
+                            "",
+                            0};
     }
 
     AttackType attack_type = AttackType::MAGIC;
     std::string attack_name = healer->get_attack_name();
 
     if (healer->is_dead() || target->is_dead()) {
-        return AttackResult{healer_id, target_id,          0,           false,       false, false,
-                            0,         AttackStatus::DEAD, attack_type, attack_name, 0};
+        return AttackResult{
+            healer_id, target_id,          0,           false,       false, false, false,
+            0,         AttackStatus::DEAD, attack_type, attack_name, 0};
     }
 
     if (!is_in_range_for_attack(healer, target)) {
-        return AttackResult{healer_id,   target_id,   0, false,
-                            false,       false,       0, AttackStatus::OUT_OF_RANGE,
+        return AttackResult{
+            healer_id,   target_id,   0, false, false, false, false, 0, AttackStatus::OUT_OF_RANGE,
+            attack_type, attack_name, 0};
+    }
+
+    if (!get_player(target_id)) {
+        return AttackResult{healer_id,   target_id,   0,
+                            false,       false,       false,
+                            false,       0,           AttackStatus::CANNOT_HEAL_NPC,
                             attack_type, attack_name, 0};
+    }
+
+    if (target->get_current_hp() >= target->get_max_hp()) {
+        return AttackResult{
+            healer_id,   target_id,   0, false, false, false, false, 0, AttackStatus::FULL_HP,
+            attack_type, attack_name, 0};
     }
 
     AttackStatus status = healer->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{healer_id, target_id, 0,           false,       false, false,
-                            0,         status,    attack_type, attack_name, 0};
+        return AttackResult{healer_id, target_id, 0,      false,       false,       false,
+                            false,     0,         status, attack_type, attack_name, 0};
     }
 
     int potential_healing = healer->calculate_base_healing();
     int actual_healing = target->heal(potential_healing);
-    return AttackResult{
-        healer_id,   target_id,   0, false, false, true, actual_healing, AttackStatus::SUCCESS,
-        attack_type, attack_name, 0};
+    return AttackResult{healer_id,   target_id,      0,
+                        false,       false,          false,
+                        true,        actual_healing, AttackStatus::SUCCESS,
+                        attack_type, attack_name,    0};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
@@ -984,6 +1022,7 @@ AttackResult World::npc_attack(NPC* npc, Character* target) {
                         evaded,
                         died,
                         false,
+                        false,
                         0,
                         AttackStatus::SUCCESS,
                         AttackType::NORMAL,
@@ -992,7 +1031,7 @@ AttackResult World::npc_attack(NPC* npc, Character* target) {
 }
 
 std::optional<Position> World::find_random_spawn_position(
-    const std::vector<std::string>& allowed_zones) const {
+    const std::vector<ZoneType>& allowed_zones) const {
     static constexpr int MAX_ATTEMPTS =
         50;  // para evitar loops infinitos si el mapa está muy lleno o no hay zonas válidas
 
@@ -1001,21 +1040,13 @@ std::optional<Position> World::find_random_spawn_position(
         int y = GameFormulas::get_random_int(0, map.get_height() - 1);
         Position pos{x, y};
 
-        // descartar posiciones inválidas
         if (map.is_position_blocked(pos) || is_position_occupied(pos) || map.is_safe(pos))
             continue;
 
-        const Zone* zone = map.get_zone(pos);
-        bool is_dungeon = (dynamic_cast<const Dungeon*>(zone) != nullptr);
-
-        // all no incluye dungeons (ni zonas seguras obviamente)
-        // dungeon es solo mazmorras
-        for (const std::string& z : allowed_zones) {
-            if (z == "all" && !is_dungeon)
-                return pos;
-            if (z == "dungeon" && is_dungeon)
-                return pos;
-        }
+        ZoneType pos_type = map.get_zone_type(pos);
+        if (std::any_of(allowed_zones.begin(), allowed_zones.end(),
+                        [pos_type](ZoneType z) { return z == pos_type; }))
+            return pos;
     }
     return std::nullopt;
 }
@@ -1045,7 +1076,9 @@ void World::try_spawn_npc() {
     }
 }
 
-
+// se maneja en la creación del mundo, en cada ciudad hay exactamente un sacerdote, un comerciante y
+// un banquero que spawnean en posiciones fijas. puede cambiarse en el futuro para que spawneen en
+// posiciones aleatorias dentro de la ciudad o que no sean solo 3 fijos
 void World::spawn_city_npcs() {
     for (const City* city : map.get_cities()) {
         auto priest =

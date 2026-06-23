@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "client/client.h"
+#include "client/sdl/core/sdl_config.h"
 #include "client/sdl/game_client.h"
 #include "common/attack_result.h"
 #include "common/updates/match_list_update.h"
@@ -115,8 +116,9 @@ int main(int argc, char* argv[]) {
     app.exec();
 
     if (pending_client) {
-        GameClient game(800, 600, std::move(pending_client), pending_race, pending_klass,
-                        pending_player_id);
+        SdlConfig config = SdlConfig::load("client/config/sdl_config.toml");
+        GameClient game(config.window_width, config.window_height, config.fullscreen,
+                        std::move(pending_client), pending_race, pending_klass, pending_player_id);
         game.run();
     }
 

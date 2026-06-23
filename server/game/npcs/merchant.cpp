@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "server/game/game_config.h"
 #include "server/game/inventory.h"
@@ -37,8 +38,9 @@ InteractResult Merchant::on_buy(const std::string& item_name, Player& player) {
         return InteractResult{InteractStatus::INVENTORY_FULL};
     }
 
+    const std::string real_name = item->get_name();
     player.get_inventory().add_item(std::move(item), 1);
-    return InteractResult{InteractStatus::SUCCESS, item_name, price};
+    return InteractResult{InteractStatus::SUCCESS, real_name, price};
 }
 
 InteractResult Merchant::on_sell(const std::string& item_name, Player& player) {
@@ -51,15 +53,17 @@ InteractResult Merchant::on_sell(const std::string& item_name, Player& player) {
         return InteractResult{InteractStatus::PLAYER_DEAD};
     }
 
-    auto item = player.get_inventory().remove_item_by_name(item_name);
-    if (!item) {
+    if (!player.get_inventory().has_item_by_name(item_name)) {
         return InteractResult{InteractStatus::ITEM_NOT_FOUND};
     }
+    auto item = player.get_inventory().remove_item_by_name(item_name);
+    const std::string real_name = item ? item->get_name() : registry.get_display_name(item_name);
+
     uint64_t sell_price =
         registry.get_price(item_name) / GameConfig::get_instance().get_npc_buy_item_factor();
     player.add_gold(sell_price);
 
-    return InteractResult{InteractStatus::SUCCESS, item_name, sell_price};
+    return InteractResult{InteractStatus::SUCCESS, real_name, sell_price};
 }
 
 // para una primera instancia estoy considerando que todos los merchants venden pociones
@@ -71,13 +75,14 @@ InteractResult Merchant::on_list(Player& player, Bank& /*bank*/) {
     const ItemRegistry& registry = ItemRegistry::get_instance();
     InteractResult result{InteractStatus::SUCCESS};
 
-    const auto& weapons = registry.get_weapon_keys();
-    const auto& defensive = registry.get_defensive_keys();
-    const auto& potions = registry.get_potion_keys();
+    auto add_with_price = [&](const std::vector<std::string>& keys) {
+        for (const auto& name : keys)
+            result.catalog.push_back(name + " - $" + std::to_string(registry.get_price(name)));
+    };
 
-    result.catalog.insert(result.catalog.end(), weapons.begin(), weapons.end());
-    result.catalog.insert(result.catalog.end(), defensive.begin(), defensive.end());
-    result.catalog.insert(result.catalog.end(), potions.begin(), potions.end());
+    add_with_price(registry.get_weapon_keys());
+    add_with_price(registry.get_defensive_keys());
+    add_with_price(registry.get_potion_keys());
 
     return result;
 }

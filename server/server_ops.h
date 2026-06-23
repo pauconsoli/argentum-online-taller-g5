@@ -3,10 +3,12 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "common/updates/match_list_update.h"
+#include "persistence/player_save.h"
 
 class PlayerConnection;
 class Match;
@@ -32,6 +34,9 @@ class ServerOps {
     virtual void send_world_map_to(PlayerConnection& conn) = 0;
 
     virtual void disconnect(PlayerConnection& conn) = 0;
+
+    virtual std::optional<PlayerSave> find_player_save(const std::string& nick,
+                                                       const std::string& match_name) = 0;
 };
 
 #endif

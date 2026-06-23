@@ -1,8 +1,8 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
-// Idea actual: hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones.
-// Cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal)
+// hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones.
+// cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal)
 // tiene sus propias características (ej si es segura o no, si se puede spawnear ahí, etc).
 
 #include <memory>
@@ -13,6 +13,7 @@
 #include "common/position.h"
 #include "dungeon.h"
 #include "zone.h"
+#include "zone_type.h"
 
 class WorldMap {
  private:
@@ -49,6 +50,8 @@ class WorldMap {
     const std::vector<Dungeon*>& get_dungeons() const;
 
     bool is_safe(const Position& pos) const;
+
+    ZoneType get_zone_type(const Position& pos) const;
 
     int get_width() const;
     int get_height() const;

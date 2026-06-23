@@ -44,6 +44,7 @@ class ClientProtocol {
     std::unique_ptr<GameUpdate> recv_attacked();
     std::unique_ptr<GameUpdate> recv_death();
     std::unique_ptr<GameUpdate> recv_revive();
+    std::unique_ptr<GameUpdate> recv_meditate();
     std::unique_ptr<GameUpdate> recv_inventory();
     std::unique_ptr<GameUpdate> recv_chat_msg();
     std::unique_ptr<GameUpdate> recv_system_msg();
@@ -69,6 +70,7 @@ class ClientProtocol {
     void send_drop_item(uint8_t slot_index);
     void send_equip_item(uint8_t slot_index);
     void send_chat(const std::string& text);
+    void send_private_chat(const std::string& target_nick, const std::string& text);
     void send_interact(uint32_t npc_id, NPCInteraction type, const std::string& arg,
                        int32_t amount);
     void send_clan_action(ClanAction action, const std::string& arg);

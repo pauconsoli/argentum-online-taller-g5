@@ -164,9 +164,10 @@ TEST_F(PlayerTest, WarriorCannotRestoreOrConsumeMana) {
 
 TEST_F(PlayerTest, ValidateAttackFrom) {
     // mage nivel 5 (newbie)
-    EXPECT_FALSE(mage.validate_attack_from(15));
+    EXPECT_EQ(mage.validate_attack_from(15), AttackStatus::NEWBIE_PROTECTION);
 
     mage.set_level(20);
-    EXPECT_TRUE(mage.validate_attack_from(25));   // Válido
-    EXPECT_FALSE(mage.validate_attack_from(35));  // Diferencia de nivel > 10
+    EXPECT_EQ(mage.validate_attack_from(25), AttackStatus::SUCCESS);  // Válido
+    EXPECT_EQ(mage.validate_attack_from(35),
+              AttackStatus::LEVEL_DIFFERENCE);  // Diferencia de nivel > 10
 }
