@@ -73,7 +73,7 @@ std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
 
     for (int row = bounds.start_row; row <= bounds.end_row; ++row) {
         for (int col = bounds.start_col; col <= bounds.end_col; ++col) {
-            if (col < 0 || col >= map.get_width() || row < 0 || row >= map.get_height())
+            if (!map.in_bounds(col, row))
                 continue;
             const auto& tile = map.at(col, row);
             if (tile.blocking && tile.terrain == TerrainType::GRASS)
@@ -95,6 +95,26 @@ std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
     return fringe;
 }
 
+// Dibuja un item tirado en el suelo (sombra + sprite con outline).
+// Selección de textura: oro → item por nombre → sprite de fallback.
+void WorldRenderer::draw_ground_item(const GroundItemSnapshot& gi) {
+    SDL_Texture* tex = gi.is_gold ?
+                           sprite_manager.get_gold() :
+                           sprite_manager.get_item(SpriteManager::item_key_for_name(gi.name));
+    if (tex == nullptr)
+        tex = sprite_manager.get_item(FALLBACK_ITEM_SPRITE);
+    if (tex == nullptr)
+        return;
+
+    int gx = camera.get_screen_x(gi.x * config.tile_width);
+    int gy = camera.get_screen_y(gi.y * config.tile_height);
+    int tw = config.tile_width;
+    int th = config.tile_height;
+    renderer.draw_shadow(gx + tw / 2, gy + th, static_cast<int>(tw * Renderer::SHADOW_WIDTH_RATIO));
+    renderer.draw_frame_scaled_outlined(tex, 0, 0, tw, th, gx, gy, tw, th,
+                                        Renderer::OUTLINE_THICKNESS);
+}
+
 void WorldRenderer::draw_fringe(const std::vector<FringeEntry>& fringe, const GameState& state,
                                 int direction, int current_frame) {
     for (const auto& e : fringe) {
@@ -102,29 +122,9 @@ void WorldRenderer::draw_fringe(const std::vector<FringeEntry>& fringe, const Ga
             case FringeType::TREE:
                 terrain_renderer.draw_tree(e.col, e.y_row, config.tile_width, config.tile_height);
                 break;
-            case FringeType::ITEM: {
-                const auto& gi = *e.item;
-                SDL_Texture* item_tex = nullptr;
-                if (gi.is_gold) {
-                    item_tex = sprite_manager.get_gold();
-                } else {
-                    std::string item_key = SpriteManager::item_key_for_name(gi.name);
-                    item_tex = sprite_manager.get_item(item_key);
-                }
-                if (item_tex == nullptr)
-                    item_tex = sprite_manager.get_item("item_espada");
-                if (item_tex != nullptr) {
-                    int gx = camera.get_screen_x(gi.x * config.tile_width);
-                    int gy = camera.get_screen_y(gi.y * config.tile_height);
-                    int tw = config.tile_width;
-                    int th = config.tile_height;
-                    renderer.draw_shadow(gx + tw / 2, gy + th,
-                                         static_cast<int>(tw * Renderer::SHADOW_WIDTH_RATIO));
-                    renderer.draw_frame_scaled_outlined(item_tex, 0, 0, tw, th, gx, gy, tw, th,
-                                                        Renderer::OUTLINE_THICKNESS);
-                }
+            case FringeType::ITEM:
+                draw_ground_item(*e.item);
                 break;
-            }
             case FringeType::PLAYER:
                 player_renderer.render_single(e.id, *e.ps, state.player_id(), state.clan_id(),
                                               direction, current_frame, state.inventory_slots(),

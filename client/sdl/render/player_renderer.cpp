@@ -74,17 +74,14 @@ void PlayerRenderer::render_single(uint32_t player_id, const PlayerSnapshot& pla
     character_renderer_->draw_character(body_texture, head_texture, body_x, body_y,
                                         player_direction, player_xframe, player_snapshoot.is_ghost);
 
-    // Solo se dibujan los ítems equipados del jugador local (los remotos no tienen ese dato).
     if (player_id == my_player_id) {
         for (const auto& islot : inventory_slots) {
-            if (!islot.is_equipped ||
-                islot.item_name.empty())  // Saltea slots no equipados o vacíos.
+            if (!islot.is_equipped || islot.item_name.empty())
                 continue;
-            ItemType item_type =
-                get_item_type(islot.item_name);  // Determina el tipo visual del ítem.
+            ItemType item_type = get_item_type(islot.item_name);
             SDL_Texture* item_texture =
                 sprite_manager_->get_item(SpriteManager::item_key_for_name(islot.item_name));
-            if (!item_texture)  // Si no hay textura para el ítem, no se dibuja.
+            if (!item_texture)
                 continue;
             character_renderer_->draw_equipped_item(body_x, body_y, item_texture, item_type,
                                                     tile_w);

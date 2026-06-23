@@ -11,42 +11,65 @@ TerrainRenderer::~TerrainRenderer() {
         SDL_DestroyTexture(terrain_cache_);
 }
 
-// Punto de entrada del renderizado de terreno.
-// Hace dos pasadas sobre la región visible, pero solo cuando la cámara cruzó un tile boundary.
-// Si la posición en tiles no cambió, salta ambas pasadas y blitea la textura cacheada.
-void TerrainRenderer::draw(int start_col, int end_col, int start_row, int end_row, int tile_w,
-                           int tile_h, const ClientMap& client_map, int screen_w, int screen_h) {
-    SDL_Renderer* sdl_r = renderer_->get_sdl_renderer();
-
-    bool size_changed = (cache_w_ != screen_w || cache_h_ != screen_h);
-    bool pos_changed = (cache_col_ != start_col || cache_row_ != start_row);
-
-    if (terrain_cache_ == nullptr || size_changed || pos_changed) {
-        if (terrain_cache_ == nullptr || size_changed) {
-            if (terrain_cache_)
-                SDL_DestroyTexture(terrain_cache_);
-            terrain_cache_ = SDL_CreateTexture(sdl_r, SDL_PIXELFORMAT_RGBA8888,
-                                               SDL_TEXTUREACCESS_TARGET, screen_w, screen_h);
-        }
-
-        SDL_SetRenderTarget(sdl_r, terrain_cache_);
-        SDL_SetRenderDrawColor(sdl_r, 0, 0, 0, 255);
-        SDL_RenderClear(sdl_r);
-        draw_base_tiles(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
-        draw_terrain_transitions(start_col, end_col, start_row, end_row, tile_w, tile_h,
-                                 client_map);
-        SDL_SetRenderTarget(sdl_r, nullptr);
-
-        cache_col_ = start_col;
-        cache_row_ = start_row;
-        cache_w_ = screen_w;
-        cache_h_ = screen_h;
-    }
-
-    SDL_RenderCopy(sdl_r, terrain_cache_, nullptr, nullptr);
+// Retorna qué vecinos cardinales (N/S/E/W) de (col,row) son del terreno `t`.
+// Centraliza el patrón de "mirar los 4 vecinos" que antes se repetía en cada overlay.
+TerrainRenderer::Cardinals TerrainRenderer::cardinals_of(const ClientMap& map, int col, int row,
+                                                         TerrainType t) {
+    return {has_terrain(map, col, row - 1, t), has_terrain(map, col, row + 1, t),
+            has_terrain(map, col + 1, row, t), has_terrain(map, col - 1, row, t)};
 }
 
-// se pinta el tile base
+// Punto de entrada del renderizado de terreno.
+// Si la posición/tamaño no cambiaron, reusa la textura cacheada; si no, la reconstruye.
+void TerrainRenderer::draw(int start_col, int end_col, int start_row, int end_row, int tile_w,
+                           int tile_h, const ClientMap& client_map, int screen_w, int screen_h) {
+    if (cache_is_stale(start_col, start_row, screen_w, screen_h))
+        rebuild_cache(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map, screen_w,
+                      screen_h);
+
+    SDL_RenderCopy(renderer_->get_sdl_renderer(), terrain_cache_, nullptr, nullptr);
+}
+
+// El cache se invalida si no existe, si cambió el tamaño de pantalla,
+// o si la cámara cruzó un tile boundary (cambió la celda superior-izquierda visible).
+bool TerrainRenderer::cache_is_stale(int start_col, int start_row, int screen_w,
+                                     int screen_h) const {
+    bool size_changed = (cache_w_ != screen_w || cache_h_ != screen_h);
+    bool pos_changed = (cache_col_ != start_col || cache_row_ != start_row);
+    return terrain_cache_ == nullptr || size_changed || pos_changed;
+}
+
+// Reconstruye la textura cacheada en dos pasadas (tiles base + overlays de transición).
+// Solo re-crea la SDL_Texture cuando no existe o cambió el tamaño de pantalla.
+void TerrainRenderer::rebuild_cache(int start_col, int end_col, int start_row, int end_row,
+                                    int tile_w, int tile_h, const ClientMap& client_map,
+                                    int screen_w, int screen_h) {
+    SDL_Renderer* sdl_r = renderer_->get_sdl_renderer();
+
+    if (terrain_cache_ == nullptr || cache_w_ != screen_w || cache_h_ != screen_h) {
+        if (terrain_cache_)
+            SDL_DestroyTexture(terrain_cache_);
+        terrain_cache_ = SDL_CreateTexture(sdl_r, SDL_PIXELFORMAT_RGBA8888,
+                                           SDL_TEXTUREACCESS_TARGET, screen_w, screen_h);
+    }
+
+    SDL_SetRenderTarget(sdl_r, terrain_cache_);
+    SDL_SetRenderDrawColor(sdl_r, 0, 0, 0, 255);
+    SDL_RenderClear(sdl_r);
+    draw_base_tiles(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
+    draw_terrain_transitions(start_col, end_col, start_row, end_row, tile_w, tile_h, client_map);
+    SDL_SetRenderTarget(sdl_r, nullptr);
+
+    cache_col_ = start_col;
+    cache_row_ = start_row;
+    cache_w_ = screen_w;
+    cache_h_ = screen_h;
+}
+
+// Pasada 1: pinta el tile base de toda la región visible (incluye el fallback GRASS del borde).
+// Debe completarse ANTES de cualquier overlay: un overlay de tipo (p. ej. muro de ciudad) puede
+// ser más ancho/alto que su tile y desbordar al vecino; si los base tiles no están todos abajo,
+// un tile dibujado después taparía ese desborde.
 void TerrainRenderer::draw_base_tiles(int start_col, int end_col, int start_row, int end_row,
                                       int tile_w, int tile_h, const ClientMap& client_map) {
     for (int row = start_row; row <= end_row; row++) {
@@ -148,11 +171,8 @@ void TerrainRenderer::draw_transition(int col, int row, int tile_w, int tile_h, 
     if (client_map.at(col, row).terrain != sobre)
         return;
 
-    // Paso 2: comprueba los cuatro vecinos cardinales.
-    bool v_n = has_terrain(client_map, col, row - 1, vecino);
-    bool v_s = has_terrain(client_map, col, row + 1, vecino);
-    bool v_e = has_terrain(client_map, col + 1, row, vecino);
-    bool v_w = has_terrain(client_map, col - 1, row, vecino);
+    // Paso 2: vecinos cardinales del tipo `vecino`.
+    Cardinals v = cardinals_of(client_map, col, row, vecino);
 
     // Paso 3: carga las dos texturas base (edge y corner).
     // Se usan dos PNGs base con rotación clockwise para cubrir las 8 direcciones:
@@ -169,31 +189,30 @@ void TerrainRenderer::draw_transition(int col, int row, int tile_w, int tile_h, 
         if (edge_tex)
             renderer_->draw_frame_rotated(edge_tex, 0, 0, tile_w, tile_h, tx, ty, angulo);
     };
-    auto draw_corner = [&](double angulo) {
-        if (corner_tex)
+
+    // Esquina interior: vecino en la diagonal (dcol,drow) y SIN vecino en los dos cardinales
+    // adyacentes a esa diagonal (así no se pisa con un borde ya dibujado).
+    auto corner_if = [&](bool side_a, bool side_b, int dcol, int drow, double angulo) {
+        if (!side_a && !side_b && has_terrain(client_map, col + dcol, row + drow, vecino) &&
+            corner_tex)
             renderer_->draw_frame_rotated(corner_tex, 0, 0, tile_w, tile_h, tx, ty, angulo);
     };
 
     // Paso 4a: overlays de borde para cada cardinal con vecino.
-    if (v_n)
+    if (v.n)
         draw_edge(0.0);
-    if (v_e)
+    if (v.e)
         draw_edge(90.0);
-    if (v_s)
+    if (v.s)
         draw_edge(180.0);
-    if (v_w)
+    if (v.w)
         draw_edge(270.0);
 
-    // Paso 4b: esquinas interiores — vecino solo en diagonal, sin vecino en los lados adyacentes.
-    // Si ya hay borde en un cardinal no se dibuja corner sobre esa diagonal (evita doble overlay).
-    if (!v_n && !v_w && has_terrain(client_map, col - 1, row - 1, vecino))
-        draw_corner(0.0);
-    if (!v_n && !v_e && has_terrain(client_map, col + 1, row - 1, vecino))
-        draw_corner(90.0);
-    if (!v_s && !v_e && has_terrain(client_map, col + 1, row + 1, vecino))
-        draw_corner(180.0);
-    if (!v_s && !v_w && has_terrain(client_map, col - 1, row + 1, vecino))
-        draw_corner(270.0);
+    // Paso 4b: esquinas interiores (NW, NE, SE, SW).
+    corner_if(v.n, v.w, -1, -1, 0.0);
+    corner_if(v.n, v.e, +1, -1, 90.0);
+    corner_if(v.s, v.e, +1, +1, 180.0);
+    corner_if(v.s, v.w, -1, +1, 270.0);
 }
 
 // Dibuja un árbol en la celda (col, row):
@@ -210,40 +229,48 @@ void TerrainRenderer::draw_tree(int col, int row, int tile_w, int tile_h) {
 
 // Dibuja el overlay de costa AO para la celda (col, row) si es WATER con vecinos SAND.
 // La pieza se dibuja sobre el tile de agua, cubriendo la línea dura agua→arena con la espuma.
-// Bitmask N/S/E/O de vecinos SAND: elige la pieza correcta entre las 6 disponibles.
-// Las combinaciones sin pieza (ej. NO, SE, 3+ cardinales) no dibujan nada.
+// Se arma un bitmask N/S/E/O de vecinos SAND y se elige la pieza por tabla (switch).
+// Las combinaciones sin pieza (0 cardinales, o 3+) caen en el default y no dibujan nada.
 void TerrainRenderer::draw_ao_costa_overlay(int col, int row, int tile_w, int tile_h, int tx,
                                             int ty, const ClientMap& client_map) {
-    // Actúa sobre tiles de AGUA con vecinos ARENA:
-    // la pieza se dibuja sobre el tile de agua, cubriendo la línea dura agua→arena.
     if (client_map.at(col, row).terrain != TerrainType::WATER)
         return;
 
-    bool s_n = has_terrain(client_map, col, row - 1, TerrainType::SAND);
-    bool s_s = has_terrain(client_map, col, row + 1, TerrainType::SAND);
-    bool s_e = has_terrain(client_map, col + 1, row, TerrainType::SAND);
-    bool s_o = has_terrain(client_map, col - 1, row, TerrainType::SAND);
+    Cardinals s = cardinals_of(client_map, col, row, TerrainType::SAND);
+    int mask = (s.n << 3) | (s.s << 2) | (s.e << 1) | s.w;
 
     const char* key = nullptr;
-    // Ángulos convexos del lago (esquina de agua con dos cardinales de arena adyacentes)
-    if (s_s && s_o && !s_n && !s_e)
-        key = "ao_angulo_ne";  // esquina NE del lago
-    else if (s_n && s_e && !s_s && !s_o)
-        key = "ao_angulo_so";  // esquina SO del lago
-    else if (s_s && s_e && !s_n && !s_o)
-        key = "ao_angulo_se";  // esquina NW del lago
-    else if (s_n && s_o && !s_s && !s_e)
-        key = "ao_angulo_nw";  // esquina SE del lago
-    // Bordes rectos (exactamente un cardinal con arena)
-    else if (s_s && !s_n && !s_e && !s_o)
-        key = "ao_costa_norte";
-    else if (s_n && !s_s && !s_e && !s_o)
-        key = "ao_costa_sur";
-    else if (s_o && !s_n && !s_s && !s_e)
-        key = "ao_costa_este";
-    else if (s_e && !s_n && !s_s && !s_o)
-        key = "ao_costa_oeste";
-    // Resto (NO, SE, 3+ cardinales de arena): sin pieza todavía, no se dibuja nada.
+    switch (mask) {
+        // Ángulos convexos del lago (dos cardinales de arena adyacentes).
+        case 0b0101:
+            key = "ao_angulo_ne";
+            break;  // S + O
+        case 0b1010:
+            key = "ao_angulo_so";
+            break;  // N + E
+        case 0b0110:
+            key = "ao_angulo_se";
+            break;  // S + E
+        case 0b1001:
+            key = "ao_angulo_nw";
+            break;  // N + O
+        // Bordes rectos (exactamente un cardinal con arena).
+        case 0b0100:
+            key = "ao_costa_norte";
+            break;  // S
+        case 0b1000:
+            key = "ao_costa_sur";
+            break;  // N
+        case 0b0001:
+            key = "ao_costa_este";
+            break;  // O
+        case 0b0010:
+            key = "ao_costa_oeste";
+            break;  // E
+        // Resto (0 cardinales, 2 opuestos, 3+): sin pieza todavía.
+        default:
+            break;
+    }
 
     if (!key)
         return;
@@ -254,56 +281,52 @@ void TerrainRenderer::draw_ao_costa_overlay(int col, int row, int tile_w, int ti
 
 // Dibuja los overlays de transición arena→pasto sobre tiles de SAND con vecinos GRASS.
 // Bordes rectos: piezas AO (ao_pasto_sur/este + espejado). Cada cardinal es independiente;
-// si hay 2+ cardinales se acumulan, cubriendo el caso convexa sin pieza especial.
+// si hay 2+ cardinales se acumulan, cubriendo el caso convexo sin pieza especial.
 // Esquinas cóncavas (pasto solo en diagonal): overlay sintético viejo rotado.
 void TerrainRenderer::draw_ao_pasto_overlay(int col, int row, int tile_w, int tile_h, int tx,
                                             int ty, const ClientMap& client_map) {
     if (client_map.at(col, row).terrain != TerrainType::SAND)
         return;
 
-    bool g_n = has_terrain(client_map, col, row - 1, TerrainType::GRASS);
-    bool g_s = has_terrain(client_map, col, row + 1, TerrainType::GRASS);
-    bool g_e = has_terrain(client_map, col + 1, row, TerrainType::GRASS);
-    bool g_o = has_terrain(client_map, col - 1, row, TerrainType::GRASS);
+    Cardinals g = cardinals_of(client_map, col, row, TerrainType::GRASS);
 
-    // Bordes rectos AO — if independientes: se acumulan cuando hay 2+ cardinales con pasto.
-    if (g_s) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_sur");
-        if (tex)
+    // Blitea una pieza de transición por su key, opcionalmente espejada.
+    auto blit = [&](const char* key, SDL_RendererFlip flip) {
+        SDL_Texture* tex = sprite_manager_->get_transition_overlay(key);
+        if (!tex)
+            return;
+        if (flip == SDL_FLIP_NONE)
             renderer_->draw_frame(tex, 0, 0, tile_w, tile_h, tx, ty);
-    }
-    if (g_n) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_sur");
-        if (tex)
-            renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_VERTICAL);
-    }
-    if (g_e) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_este");
-        if (tex)
-            renderer_->draw_frame(tex, 0, 0, tile_w, tile_h, tx, ty);
-    }
-    if (g_o) {
-        SDL_Texture* tex = sprite_manager_->get_transition_overlay("ao_pasto_este");
-        if (tex)
-            renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, SDL_FLIP_HORIZONTAL);
-    }
+        else
+            renderer_->draw_frame_flipped(tex, 0, 0, tile_w, tile_h, tx, ty, flip);
+    };
+
+    // Bordes rectos AO — independientes: se acumulan cuando hay 2+ cardinales con pasto.
+    if (g.s)
+        blit("ao_pasto_sur", SDL_FLIP_NONE);
+    if (g.n)
+        blit("ao_pasto_sur", SDL_FLIP_VERTICAL);
+    if (g.e)
+        blit("ao_pasto_este", SDL_FLIP_NONE);
+    if (g.w)
+        blit("ao_pasto_este", SDL_FLIP_HORIZONTAL);
 
     // Esquinas cóncavas: pasto solo en diagonal, sin cardinal adyacente que lo cubra.
     // Usa el overlay sintético viejo en vez de ao_pasto_concava (set 6017, verde muy oscuro).
-    // Condición: igual que draw_transition — solo exige que los dos cardinales ADYACENTES
-    // a esa diagonal no tengan pasto (puede haber pasto en el cardinal opuesto).
     SDL_Texture* corner =
         sprite_manager_->get_transition_overlay("terrain_overlay_grass_sand_corner");
-    if (corner) {
-        if (!g_n && !g_o && has_terrain(client_map, col - 1, row - 1, TerrainType::GRASS))
-            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 0.0);
-        if (!g_n && !g_e && has_terrain(client_map, col + 1, row - 1, TerrainType::GRASS))
-            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 90.0);
-        if (!g_s && !g_e && has_terrain(client_map, col + 1, row + 1, TerrainType::GRASS))
-            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 180.0);
-        if (!g_s && !g_o && has_terrain(client_map, col - 1, row + 1, TerrainType::GRASS))
-            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, 270.0);
-    }
+    if (!corner)
+        return;
+
+    auto corner_if = [&](bool side_a, bool side_b, int dcol, int drow, double angulo) {
+        if (!side_a && !side_b &&
+            has_terrain(client_map, col + dcol, row + drow, TerrainType::GRASS))
+            renderer_->draw_frame_rotated(corner, 0, 0, tile_w, tile_h, tx, ty, angulo);
+    };
+    corner_if(g.n, g.w, -1, -1, 0.0);
+    corner_if(g.n, g.e, +1, -1, 90.0);
+    corner_if(g.s, g.e, +1, +1, 180.0);
+    corner_if(g.s, g.w, -1, +1, 270.0);
 }
 
 // Retorna true si la celda (col, row) está dentro del mapa y su terreno es `expected`.

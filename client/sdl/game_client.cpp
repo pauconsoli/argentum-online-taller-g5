@@ -113,7 +113,7 @@ void GameClient::run() {
     audio_manager->play_background_music(get_base_asset_dir() + "/audio/music/background.mp3",
                                          MIX_MAX_VOLUME / 2);
 
-    ClientMap client_map = build_sample_client_map();
+    ClientMap client_map(0, 0, {});
 
     state.reset_position();
 

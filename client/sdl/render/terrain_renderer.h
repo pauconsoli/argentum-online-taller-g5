@@ -28,6 +28,22 @@ class TerrainRenderer {
     int cache_w_ = 0;
     int cache_h_ = 0;
 
+    // Estado de los cuatro vecinos cardinales de una celda respecto de un terreno dado.
+    struct Cardinals {
+        bool n, s, e, w;
+    };
+
+    // Retorna qué vecinos cardinales (N/S/E/W) de (col,row) son del terreno `t`.
+    static Cardinals cardinals_of(const ClientMap& map, int col, int row, TerrainType t);
+
+    // ¿La textura cacheada quedó obsoleta? (no existe, cambió el tamaño de pantalla,
+    // o la cámara cruzó un tile boundary). Si es false, basta con blitear el cache.
+    bool cache_is_stale(int start_col, int start_row, int screen_w, int screen_h) const;
+
+    // Re-crea la textura si hace falta y vuelve a pintar las dos pasadas de terreno en ella.
+    void rebuild_cache(int start_col, int end_col, int start_row, int end_row, int tile_w,
+                       int tile_h, const ClientMap& client_map, int screen_w, int screen_h);
+
     void draw_base_tiles(int start_col, int end_col, int start_row, int end_row, int tile_w,
                          int tile_h, const ClientMap& client_map);
     void draw_terrain_transitions(int start_col, int end_col, int start_row, int end_row,

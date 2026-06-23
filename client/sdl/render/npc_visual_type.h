@@ -18,8 +18,6 @@ enum class NPCVisualType : uint8_t {
     GOLEM_INFERNAL = 11,
 };
 
-// Adapta el npc_type recibido por red (uint32_t, valores de NPCType del servidor)
-// al tipo visual SDL. No hacer static_cast directo: los valores no coinciden.
 inline NPCVisualType npc_visual_type_from_network(uint32_t npc_type) {
     switch (npc_type) {
         case 1:
