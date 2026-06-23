@@ -1,7 +1,7 @@
 #include "server/world/cell.h"
 
+#include "common/world/terrain_type.h"
 #include "gtest/gtest.h"
-#include "server/world/terrain_type.h"
 
 class CellTest: public ::testing::Test {
  protected:

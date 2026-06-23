@@ -1,8 +1,8 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
-// Idea actual: hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones.
-// Cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal)
+// hay dos grillas paralelas, una de celdas y otra de zonas, con las mismas dimensiones.
+// cada celda tiene un tipo de terreno y si es bloqueante o no, y cada zona (city/dungeon/normal)
 // tiene sus propias características (ej si es segura o no, si se puede spawnear ahí, etc).
 
 #include <memory>

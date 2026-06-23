@@ -8,9 +8,9 @@
 #include "common/direction.h"
 #include "common/npc_interact_result.h"
 #include "common/npc_interaction.h"
+#include "common/npc_type.h"
 #include "common/position.h"
 #include "server/game/character.h"
-#include "server/game/npcs/npc_type.h"
 
 class Bank;
 class Player;

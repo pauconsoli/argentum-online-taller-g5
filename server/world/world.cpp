@@ -151,9 +151,8 @@ bool World::is_in_range_for_attack(const Character* attacker, const Character* t
     return true;  // a dist, rango ilimitado (visibilidad del objetivo)
 }
 
-// devuelve la posición de spawn para un nuevo jugador, que es la posición configurada en GameConfig
-// pero si está ocupada, da la siguiente posición libre más cercana da la siguiente posición libre
-// más cercana
+// devuelve la posición de spawn para un nuevo jugador, que es la posición configurada en
+// GameConfig pero si está ocupada, da la siguiente posición libre más cercana
 Position World::get_spawn_position() const {
     const Position base_spawn = GameConfig::get_instance().get_spawn_position();
 
@@ -314,7 +313,7 @@ int World::get_nearby_clan_members_count(const Character* character, int range) 
 int World::handle_successful_attack(Character* attacker, Character* target, int damage) {
     int defense = target->get_defense();
 
-    // bonus de clan
+    // bonus de defensa por compañeros de clan cercanos
     int clan_count =
         get_nearby_clan_members_count(target, GameConfig::get_instance().get_bonus_range());
     if (clan_count > 0) {
@@ -456,7 +455,8 @@ ResurrectStatus World::start_resurrection(uint32_t player_id) {
 
     const City* closest_city = map.get_closest_city(player->get_position());
     if (!closest_city) {
-        return ResurrectStatus::NOT_DEAD;  // caso interno, no debería ocurrir con un mapa válido
+        return ResurrectStatus::NOT_DEAD;  // caso interno, NO debería ocurrir con un mapa válido
+                                           // siempre hay ciudad
     }
 
     Position priest_pos = closest_city->get_priest_position();
@@ -561,7 +561,7 @@ Clan* World::get_clan_by_name(const std::string& name) {
     return nullptr;
 }
 
-
+// valida que el founder y el target existan y que el founder sea el fundador del clan
 bool World::resolve_founder_and_target(uint32_t founder_id, const std::string& target_nick,
                                        Player** founder_out, Clan** clan_out, Player** target_out,
                                        ClanActionStatus* fail_status) {
@@ -806,10 +806,12 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     int base_damage = attacker->calculate_base_damage();
 
-    // Bonificación de ataque por compañeros de clan cercanos (ej. +10% por miembro, rango 5 tiles)
-    int clan_count = get_nearby_clan_members_count(attacker, 5.0f);
+    // bonus de ataque por compañeros de clan cercanos
+    int clan_count =
+        get_nearby_clan_members_count(attacker, GameConfig::get_instance().get_bonus_range());
     if (clan_count > 0) {
-        base_damage += static_cast<int>(base_damage * 0.1f * clan_count);
+        base_damage += static_cast<int>(base_damage *
+                                        GameConfig::get_instance().get_bonus_factor() * clan_count);
     }
 
     bool is_critical = GameFormulas::calculate_critical_attack();
@@ -1058,7 +1060,9 @@ void World::try_spawn_npc() {
     }
 }
 
-
+// se maneja en la creación del mundo, en cada ciudad hay exactamente un sacerdote, un comerciante y
+// un banquero que spawnean en posiciones fijas. puede cambiarse en el futuro para que spawneen en
+// posiciones aleatorias dentro de la ciudad o que no sean solo 3 fijos
 void World::spawn_city_npcs() {
     for (const City* city : map.get_cities()) {
         auto priest =

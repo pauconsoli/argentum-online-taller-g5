@@ -1,9 +1,6 @@
 #ifndef CITY_NPC_H
 #define CITY_NPC_H
 
-// planteo inicial: uso una especie de template method, cada subclase sobreescribe los métodos que
-// le corresponden siendo interact() el método que maneja la interacción
-
 #include <string>
 #include <vector>
 

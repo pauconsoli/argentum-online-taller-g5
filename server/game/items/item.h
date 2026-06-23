@@ -6,7 +6,7 @@
 
 #include "server/game/items/equipment_slot.h"
 
-class Player;  // o character? no recuerdo si los npcs pueden tener equipamiento
+class Player;
 
 class Item {
  protected:
@@ -20,8 +20,7 @@ class Item {
 
     virtual void use(Player& player) = 0;  // consumir, equipar, etc
 
-    virtual std::optional<EquipmentSlot> get_slot()
-        const = 0;  // no se si es lo mejor. nullopt si no es equipable
+    virtual std::optional<EquipmentSlot> get_slot() const = 0;
 };
 
 #endif

@@ -28,7 +28,7 @@
 #include "server/game/player.h"
 #include "world_map.h"
 
-struct GroundItem {  // por ahora así, no se si es lo mejor
+struct GroundItem {
     uint64_t gold = 0;
     std::unique_ptr<Item> item = nullptr;
     int quantity = 0;
@@ -154,9 +154,7 @@ class World {
     Clan* get_clan(uint32_t clan_id);
     Clan* get_clan_by_name(const std::string& name);
 
-    // Orquestación de comandos de clan: resuelven Player(s) por id/nombre,
-    // delegan la regla de negocio en Clan, y sincronizan Player::clan_id.
-    // Devuelven datos crudos (no GameUpdate); el Command los traduce a updates.
+    // para orquestar los clan commands
     ClanResult found_clan(uint32_t founder_id, const std::string& clan_name);
     ClanResult request_join_clan(uint32_t player_id, const std::string& clan_name);
     ClanResult accept_clan_member(uint32_t founder_id, const std::string& target_nick);
