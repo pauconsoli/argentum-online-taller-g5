@@ -867,6 +867,18 @@ AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
                             attack_type, attack_name, 0};
     }
 
+    if (!get_player(target_id)) {
+        return AttackResult{healer_id,   target_id,   0, false,
+                            false,       false,       0, AttackStatus::CANNOT_HEAL_NPC,
+                            attack_type, attack_name, 0};
+    }
+
+    if (target->get_current_hp() >= target->get_max_hp()) {
+        return AttackResult{healer_id,   target_id,   0, false,
+                            false,       false,       0, AttackStatus::FULL_HP,
+                            attack_type, attack_name, 0};
+    }
+
     AttackStatus status = healer->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
         return AttackResult{healer_id, target_id, 0,           false,       false, false,

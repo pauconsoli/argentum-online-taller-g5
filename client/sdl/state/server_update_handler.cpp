@@ -462,6 +462,12 @@ void ServerUpdateHandler::show_attack_error(AttackStatus status) {
         case AttackStatus::NO_MANA:
             notifier.message("No tenés maná suficiente para atacar");
             break;
+        case AttackStatus::FULL_HP:
+            notifier.message("El objetivo ya tiene toda la vida");
+            break;
+        case AttackStatus::CANNOT_HEAL_NPC:
+            notifier.message("No podés curar a un NPC");
+            break;
         default:
             break;
     }
