@@ -34,18 +34,20 @@ void Renderer::load_font(const std::string& path, int size) {
     font = TTF_OpenFont(path.c_str(), size);
 }
 
+// recorta spritesheet y dibuja
 void Renderer::draw_frame(SDL_Texture* texture, int frame_x, int frame_y, int frame_w, int frame_h,
-                          int x, int y) {
-    SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
-    SDL_Rect dst = {x, y, frame_w, frame_h};
-    SDL_RenderCopy(sdl_renderer, texture, &src, &dst);
+                          int window_x, int window_y) {
+    SDL_Rect wanted_frame = {frame_x, frame_y, frame_w, frame_h};  // QUÉ recorto de la textura
+    SDL_Rect destination_window = {window_x, window_y, frame_w,
+                                   frame_h};  // DÓNDE lo dibujo en pantalla
+    SDL_RenderCopy(sdl_renderer, texture, &wanted_frame, &destination_window);
 }
 
 void Renderer::draw_frame_scaled(SDL_Texture* texture, int frame_x, int frame_y, int frame_w,
                                  int frame_h, int x, int y, int draw_w, int draw_h) {
-    SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
-    SDL_Rect dst = {x, y, draw_w, draw_h};
-    SDL_RenderCopy(sdl_renderer, texture, &src, &dst);
+    SDL_Rect wanted_frame = {frame_x, frame_y, frame_w, frame_h};
+    SDL_Rect destination_window = {x, y, draw_w, draw_h};
+    SDL_RenderCopy(sdl_renderer, texture, &wanted_frame, &destination_window);
 }
 
 void Renderer::draw_frame_scaled_outlined(SDL_Texture* texture, int frame_x, int frame_y,
@@ -74,16 +76,17 @@ void Renderer::draw_frame_scaled_outlined(SDL_Texture* texture, int frame_x, int
 
 void Renderer::draw_frame_rotated(SDL_Texture* texture, int frame_x, int frame_y, int frame_w,
                                   int frame_h, int x, int y, double angle_deg) {
-    SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
-    SDL_Rect dst = {x, y, frame_w, frame_h};
-    SDL_RenderCopyEx(sdl_renderer, texture, &src, &dst, angle_deg, nullptr, SDL_FLIP_NONE);
+    SDL_Rect wanted_frame = {frame_x, frame_y, frame_w, frame_h};
+    SDL_Rect destination_window = {x, y, frame_w, frame_h};
+    SDL_RenderCopyEx(sdl_renderer, texture, &wanted_frame, &destination_window, angle_deg, nullptr,
+                     SDL_FLIP_NONE);
 }
 
 void Renderer::draw_frame_flipped(SDL_Texture* texture, int frame_x, int frame_y, int frame_w,
                                   int frame_h, int x, int y, SDL_RendererFlip flip) {
-    SDL_Rect src = {frame_x, frame_y, frame_w, frame_h};
-    SDL_Rect dst = {x, y, frame_w, frame_h};
-    SDL_RenderCopyEx(sdl_renderer, texture, &src, &dst, 0.0, nullptr, flip);
+    SDL_Rect wanted_frame = {frame_x, frame_y, frame_w, frame_h};
+    SDL_Rect destination_window = {x, y, frame_w, frame_h};
+    SDL_RenderCopyEx(sdl_renderer, texture, &wanted_frame, &destination_window, 0.0, nullptr, flip);
 }
 
 void Renderer::clear() {
@@ -146,6 +149,6 @@ void Renderer::draw_label(const std::string& text, int center_x, int y, SDL_Colo
 
     int w, h;
     SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
-    SDL_Rect dst = {center_x - w / 2, y, w, h};
-    SDL_RenderCopy(sdl_renderer, texture, nullptr, &dst);
+    SDL_Rect destination_window = {center_x - w / 2, y, w, h};
+    SDL_RenderCopy(sdl_renderer, texture, nullptr, &destination_window);
 }

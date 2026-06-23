@@ -98,6 +98,7 @@ void SpriteManager::load_terrain_textures(const std::string& dir) {
                     terrain_dir + "terrain_overlay_dungeon_entrance_1.png");
     try_load_cached("terrain_overlay_dungeon_entrance_2",
                     terrain_dir + "terrain_overlay_dungeon_entrance_2.png");
+    try_load_cached("terrain_overlay_city_wall_1", terrain_dir + "terrain_overlay_city_wall_1.png");
     try_load_cached("terrain_overlay_city_wall_2", terrain_dir + "terrain_overlay_city_wall_2.png");
     // Todos los items con clave de nombre conocida (precarga eager completa).
     const std::string items_dir = assets_dir + sep + "sprites/items/";
@@ -133,6 +134,8 @@ const char* SpriteManager::terrain_overlay_key(TerrainType t) {
             return "terrain_overlay_dungeon_entrance_1";
         case TerrainType::DUNGEON_ENTRANCE_2:
             return "terrain_overlay_dungeon_entrance_2";
+        case TerrainType::CITY_WALL_1:
+            return "terrain_overlay_city_wall_1";
         case TerrainType::CITY_WALL_2:
             return "terrain_overlay_city_wall_2";
         default:
@@ -205,9 +208,9 @@ SDL_Texture* SpriteManager::try_load(const std::string& key, const std::string& 
 }
 
 SDL_Texture* SpriteManager::try_load_cached(const std::string& key, const std::string& path) {
-    auto it = textures.find(key);
-    if (it != textures.end()) {
-        return it->second;  // puede ser nullptr si se intentó y el PNG no existía
+    auto texture_find = textures.find(key);
+    if (texture_find != textures.end()) {
+        return texture_find->second;  // puede ser nullptr si se intentó y el PNG no existía
     }
     SDL_Texture* tex = try_load(key, path);
     if (!tex) {
@@ -217,16 +220,11 @@ SDL_Texture* SpriteManager::try_load_cached(const std::string& key, const std::s
 }
 
 SDL_Texture* SpriteManager::get_head(uint16_t head_index) {
-    if (head_index == 0)
-        head_index = 1;
     std::string key = head_key(head_index);
-    // Busca en cache; debería estar precargado por load_head_textures.
-    auto it = textures.find(key);
-    if (it != textures.end())
-        return it->second;
-    // Fallback: cabeza no precargada → devolver head_1 si está disponible.
-    auto it2 = textures.find(head_key(1));
-    return (it2 != textures.end()) ? it2->second : nullptr;
+    auto texture_find = textures.find(key);
+    if (texture_find != textures.end())
+        return texture_find->second;
+    return nullptr;
 }
 
 std::string SpriteManager::item_key_for_name(const std::string& name) {

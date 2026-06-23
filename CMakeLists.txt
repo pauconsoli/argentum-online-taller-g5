@@ -234,24 +234,24 @@ if(ARGENTUM_CLIENT_QT)
             client/client.h
             client/client_protocol.cpp
             client/sdl/game_client.cpp
-            client/sdl/sdl_game_state.cpp
-            client/sdl/server_update_handler.cpp
-            client/sdl/sdl_config.cpp
-            client/sdl/renderer.cpp
-            client/sdl/character_renderer.cpp
-            client/sdl/input_handler.cpp
-            client/sdl/camera.cpp
-            client/sdl/hud.cpp
-            client/sdl/mini_chat.cpp
-            client/sdl/help_menu.cpp
-            client/sdl/clan_panel.cpp
-            client/sdl/sprite_manager.cpp
-            client/sdl/client_map.cpp
-            client/sdl/audio_manager.cpp
-            client/sdl/terrain_renderer.cpp
-            client/sdl/npc_renderer.cpp
-            client/sdl/player_renderer.cpp
-            client/sdl/world_renderer.cpp
+            client/sdl/assets/audio_manager.cpp
+            client/sdl/assets/sprite_manager.cpp
+            client/sdl/core/camera.cpp
+            client/sdl/core/input_handler.cpp
+            client/sdl/core/sdl_config.cpp
+            client/sdl/render/character_renderer.cpp
+            client/sdl/render/npc_renderer.cpp
+            client/sdl/render/player_renderer.cpp
+            client/sdl/render/renderer.cpp
+            client/sdl/render/terrain_renderer.cpp
+            client/sdl/render/world_renderer.cpp
+            client/sdl/state/client_map.cpp
+            client/sdl/state/sdl_game_state.cpp
+            client/sdl/state/server_update_handler.cpp
+            client/sdl/ui/clan_panel.cpp
+            client/sdl/ui/help_menu.cpp
+            client/sdl/ui/hud.cpp
+            client/sdl/ui/mini_chat.cpp
         )
 
         add_dependencies(argentum_client_qt taller_common SDL2pp::SDL2pp)

@@ -7,8 +7,8 @@
 
 #include <SDL2/SDL.h>
 
-#include "camera.h"
 #include "common/updates/snapshot_update.h"
+#include "core/camera.h"
 #include "npc_visual_type.h"
 #include "renderer.h"
 #include "sprite_manager.h"

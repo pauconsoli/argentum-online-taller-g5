@@ -3,15 +3,15 @@
 
 #include <string>
 
-#include "camera.h"
 #include "clan_panel.h"
+#include "core/camera.h"
+#include "core/sdl_config.h"
 #include "help_menu.h"
 #include "hud.h"
 #include "mini_chat.h"
 #include "npc_renderer.h"
 #include "player_renderer.h"
 #include "renderer.h"
-#include "sdl_config.h"
 #include "sprite_manager.h"
 #include "terrain_renderer.h"
 
