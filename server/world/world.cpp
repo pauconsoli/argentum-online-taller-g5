@@ -780,9 +780,18 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!attacker || !target) {
-        return AttackResult{
-            attacker_id,        target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
-            AttackType::NORMAL, "",        0};
+        return AttackResult{attacker_id,
+                            target_id,
+                            0,
+                            false,
+                            false,
+                            false,
+                            false,
+                            0,
+                            AttackStatus::INVALID_TARGET,
+                            AttackType::NORMAL,
+                            "",
+                            0};
     }
 
     AttackType attack_type = AttackType::NORMAL;
@@ -795,13 +804,13 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
 
     AttackStatus status = validate_attack_conditions(attacker, target);
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
-                            0,           status,    attack_type, attack_name, 0};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,       false,
+                            false,       0,         status, attack_type, attack_name, 0};
     }
     status = attacker->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{attacker_id, target_id, 0,           false,       false, false,
-                            0,           status,    attack_type, attack_name, 0};
+        return AttackResult{attacker_id, target_id, 0,      false,       false,       false,
+                            false,       0,         status, attack_type, attack_name, 0};
     }
 
     int base_damage = attacker->calculate_base_damage();
@@ -832,17 +841,10 @@ AttackResult World::attack(uint32_t attacker_id, uint32_t target_id) {
         handle_target_death(attacker, target);
     }
 
-    return AttackResult{attacker_id,
-                        target_id,
-                        real_damage,
-                        evaded,
-                        died,
-                        false,
-                        0,
-                        AttackStatus::SUCCESS,
-                        attack_type,
-                        attack_name,
-                        target->get_clan_id()};
+    return AttackResult{attacker_id, target_id,   real_damage,
+                        evaded,      died,        is_critical,
+                        false,       0,           AttackStatus::SUCCESS,
+                        attack_type, attack_name, target->get_clan_id()};
 }
 
 AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
@@ -850,48 +852,60 @@ AttackResult World::heal(uint32_t healer_id, uint32_t target_id) {
     Character* target = get_character(target_id);
 
     if (!healer || !target) {
-        return AttackResult{
-            healer_id,         target_id, 0, false, false, false, 0, AttackStatus::INVALID_TARGET,
-            AttackType::MAGIC, "",        0};
+        return AttackResult{healer_id,
+                            target_id,
+                            0,
+                            false,
+                            false,
+                            false,
+                            false,
+                            0,
+                            AttackStatus::INVALID_TARGET,
+                            AttackType::MAGIC,
+                            "",
+                            0};
     }
 
     AttackType attack_type = AttackType::MAGIC;
     std::string attack_name = healer->get_attack_name();
 
     if (healer->is_dead() || target->is_dead()) {
-        return AttackResult{healer_id, target_id,          0,           false,       false, false,
-                            0,         AttackStatus::DEAD, attack_type, attack_name, 0};
+        return AttackResult{
+            healer_id, target_id,          0,           false,       false, false, false,
+            0,         AttackStatus::DEAD, attack_type, attack_name, 0};
     }
 
     if (!is_in_range_for_attack(healer, target)) {
-        return AttackResult{healer_id,   target_id,   0, false,
-                            false,       false,       0, AttackStatus::OUT_OF_RANGE,
-                            attack_type, attack_name, 0};
+        return AttackResult{
+            healer_id,   target_id,   0, false, false, false, false, 0, AttackStatus::OUT_OF_RANGE,
+            attack_type, attack_name, 0};
     }
 
     if (!get_player(target_id)) {
-        return AttackResult{healer_id,   target_id,   0, false,
-                            false,       false,       0, AttackStatus::CANNOT_HEAL_NPC,
+        return AttackResult{healer_id,   target_id,   0,
+                            false,       false,       false,
+                            false,       0,           AttackStatus::CANNOT_HEAL_NPC,
                             attack_type, attack_name, 0};
     }
 
     if (target->get_current_hp() >= target->get_max_hp()) {
-        return AttackResult{healer_id,   target_id,   0, false,
-                            false,       false,       0, AttackStatus::FULL_HP,
-                            attack_type, attack_name, 0};
+        return AttackResult{
+            healer_id,   target_id,   0, false, false, false, false, 0, AttackStatus::FULL_HP,
+            attack_type, attack_name, 0};
     }
 
     AttackStatus status = healer->consume_attack_resources();
     if (status != AttackStatus::SUCCESS) {
-        return AttackResult{healer_id, target_id, 0,           false,       false, false,
-                            0,         status,    attack_type, attack_name, 0};
+        return AttackResult{healer_id, target_id, 0,      false,       false,       false,
+                            false,     0,         status, attack_type, attack_name, 0};
     }
 
     int potential_healing = healer->calculate_base_healing();
     int actual_healing = target->heal(potential_healing);
-    return AttackResult{
-        healer_id,   target_id,   0, false, false, true, actual_healing, AttackStatus::SUCCESS,
-        attack_type, attack_name, 0};
+    return AttackResult{healer_id,   target_id,      0,
+                        false,       false,          false,
+                        true,        actual_healing, AttackStatus::SUCCESS,
+                        attack_type, attack_name,    0};
 }
 
 // para agarrar item TENGO QUE PARARME ARRIBA, uso la pos
@@ -1006,6 +1020,7 @@ AttackResult World::npc_attack(NPC* npc, Character* target) {
                         real_damage,
                         evaded,
                         died,
+                        false,
                         false,
                         0,
                         AttackStatus::SUCCESS,
