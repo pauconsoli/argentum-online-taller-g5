@@ -424,6 +424,7 @@ CheatResult World::apply_cheat(uint32_t player_id, CheatType cheat) {
             if (player->is_dead())
                 return {};
             player->level_up();
+            player->set_experience(GameFormulas::calculate_level_up_limit(player->get_level() - 1));
             return {true, false};
 
         case CheatType::GIVE_GOLD:

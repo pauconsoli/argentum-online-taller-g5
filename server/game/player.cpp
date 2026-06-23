@@ -234,6 +234,10 @@ uint64_t Player::get_experience() const {
     return experience;
 }
 
+void Player::set_experience(uint64_t amount) {
+    experience = amount;
+}
+
 int Player::get_current_mana() const {
     return current_mana;
 }
