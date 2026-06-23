@@ -59,7 +59,6 @@ class WorldRenderer {
     Camera& camera;
     const SdlConfig& config;
 
-    // Sprite por defecto cuando no se encuentra la textura de un item en el suelo.
     static constexpr const char* FALLBACK_ITEM_SPRITE = "item_espada";
 
     TileBounds draw_terrain(const ClientMap& map, int screen_w, int screen_h);

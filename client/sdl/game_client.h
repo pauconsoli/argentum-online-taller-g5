@@ -110,7 +110,7 @@ class GameClient: public Notifier {
     void process_keyword_input();
     void update_animation();
     void update_camera(const ClientMap& client_map);
-    void cap_framerate();
+    void verify_frame_duration();
 };
 
 #endif

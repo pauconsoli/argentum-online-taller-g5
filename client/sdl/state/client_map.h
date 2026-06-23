@@ -14,7 +14,7 @@ class ClientMap {
  private:
     int width;
     int height;
-    std::vector<MapCell> cells;  // row-major: cells[row * width + col]
+    std::vector<MapCell> cells;
 
  public:
     ClientMap(int width, int height, std::vector<MapCell> cells);

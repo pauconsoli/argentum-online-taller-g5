@@ -37,9 +37,9 @@ void Renderer::load_font(const std::string& path, int size) {
 // recorta spritesheet y dibuja
 void Renderer::draw_frame(SDL_Texture* texture, int frame_x, int frame_y, int frame_w, int frame_h,
                           int window_x, int window_y) {
-    SDL_Rect wanted_frame = {frame_x, frame_y, frame_w, frame_h};  // QUÉ recorto de la textura
+    SDL_Rect wanted_frame = {frame_x, frame_y, frame_w, frame_h};  // que recorto de la textura
     SDL_Rect destination_window = {window_x, window_y, frame_w,
-                                   frame_h};  // DÓNDE lo dibujo en pantalla
+                                   frame_h};  // donde lo dibujo en pantalla
     SDL_RenderCopy(sdl_renderer, texture, &wanted_frame, &destination_window);
 }
 
