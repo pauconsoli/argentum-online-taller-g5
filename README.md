@@ -164,6 +164,15 @@ La identidad del save es la combinación `(nick, match_name)`. El
 `match_id` es runtime y no sobrevive entre runs, por eso usamos el nombre
 del match (que es estable).
 
+## Documentación
+
+A continuación, se incluyen enlaces a la documentación del proyecto
+
+- [Manual de Usuario](https://direccion-del-sitio.com)
+- [Manual del Proyecto](https://direccion-del-sitio.com)
+- [Documentación Técnica](https://direccion-del-sitio.com)
+- [Video Promocional](https://direccion-del-sitio.com)
+
 ## Licencias
 
 La implementación de las clases `Queue`, `Thread`, `Socket`, `Resolver`, `LibError` y `ResolverError` está basada en el código provisto por la cátedra: https://github.com/eldipa/hands-on-threads y https://github.com/eldipa/sockets-en-cpp 

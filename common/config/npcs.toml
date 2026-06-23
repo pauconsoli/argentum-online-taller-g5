@@ -10,7 +10,7 @@
 [goblin]
 name = "Goblin"
 level = 4
-max_hp = 200
+max_hp = 100
 defense = 1         
 agility = 3
 min_damage = 15
@@ -32,7 +32,7 @@ zones = ["all"]
 [orc]
 name = "Orco"
 level = 4
-max_hp = 260        
+max_hp = 150        
 defense = 4
 agility = 0       
 min_damage = 20    
@@ -43,7 +43,7 @@ zones = ["all"]
 [golem]
 name = "Golem de Piedra"
 level = 6
-max_hp = 450       
+max_hp = 200       
 defense = 9       
 agility = 0
 min_damage = 20     
@@ -58,7 +58,7 @@ zones = ["all"]
 [spider]
 name = "Araña"
 level = 1
-max_hp = 80         
+max_hp = 100         
 defense = 0
 agility = 0
 min_damage = 5     
@@ -91,7 +91,7 @@ zones = ["dungeon"]
 [skeleton_warrior]
 name = "Esqueleto Guerrero"
 level = 5
-max_hp = 380
+max_hp = 200
 defense = 8
 agility = 3        
 min_damage = 22
@@ -102,7 +102,7 @@ zones = ["dungeon"]
 [goblin_executioner]
 name = "Goblin Verdugo"
 level = 8
-max_hp = 500
+max_hp = 200
 defense = 8
 agility = 6         
 min_damage = 30   
@@ -113,7 +113,7 @@ zones = ["dungeon"]
 [golem_iron]
 name = "Golem de Hierro"
 level = 10
-max_hp = 1000       
+max_hp = 300       
 defense = 12       
 agility = 5
 min_damage = 50    

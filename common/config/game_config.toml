@@ -88,9 +88,9 @@ constitution_bonus = 3
 # ---------------------------------
 
 [world]
-spawn_x = 22
-spawn_y = 10
-resurrect_still_factor = 0.4  #no especificado, valor arbitrario
+spawn_x = 11
+spawn_y = 27
+resurrect_still_factor = 0.3  #no especificado, valor arbitrario
 
 [level]
 initial_player_level = 1
@@ -156,7 +156,7 @@ drop_potion_prob = 0.01
 drop_item_prob = 0.01  
 gold_drop_min_factor = 0.01  
 gold_drop_max_factor = 0.20 
-population_limit = 30     # no especificado, tomo 25
+population_limit = 25     # no especificado, tomo 25
 spawn_time_seconds = 15     # no especificado, tomo 15s
 chase_cooldown = 0.4   # no especificado
 
