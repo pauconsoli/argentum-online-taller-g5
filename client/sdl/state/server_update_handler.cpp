@@ -130,7 +130,7 @@ void ServerUpdateHandler::on_attack(const AttackUpdate& attack_updated) {
         } else if (!result.target_died) {
             std::string prefix = (result.is_critical && result.damage > 0) ? "[CRÍTICO] " : "";
             notifier.message(prefix + result.weapon_or_spell_name + ": causaste " +
-                             std::to_string(result.damage) + " de daño a " + target_name);
+                             std::to_string(result.damage) + " de daño a " + victim_name);
         }
     } else if (result.target_id == state.player_id()) {
         if (result.is_healing) {

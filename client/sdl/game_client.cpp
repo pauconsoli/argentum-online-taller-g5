@@ -12,6 +12,25 @@
 #include "render/world_renderer.h"
 #include "state/client_map.h"
 
+static std::string get_base_asset_dir() {
+    if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
+        return std::string(env_dir);
+    }
+    return "assets";
+}
+
+GameClient::GameClient(int width, int height, bool fullscreen, const std::string& host,
+                       const std::string& port):
+    config(SdlConfig::load("client/config/sdl_config.toml")),
+    client(std::make_unique<Client>(host, port)),
+    camera(width, height),
+    width(width),
+    height(height),
+    state(1, 1, 1),
+    update_handler(state, *this) {
+    client->start();
+    init_subsystems(fullscreen, true);
+}
 
 GameClient::GameClient(int width, int height, bool fullscreen, std::unique_ptr<Client> c,
                        uint8_t race, uint8_t klass, uint32_t player_id):
@@ -531,11 +550,4 @@ void GameClient::play(const std::string& sound, int vol) {
 
 void GameClient::show_clan_review(const ClanReviewUpdate& clan_review_updated) {
     clan_panel->set_data(clan_review_updated);
-}
-
-static std::string get_base_asset_dir() {
-    if (const char* env_dir = std::getenv("ARGENTUM_DATA_DIR")) {
-        return std::string(env_dir);
-    }
-    return "assets";
 }
