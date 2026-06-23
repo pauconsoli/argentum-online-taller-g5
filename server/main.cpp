@@ -47,7 +47,6 @@ int main(int argc, char* argv[]) {
             map_config_filepath = config_dir + "/map.toml";
             npcs_config_filepath = config_dir + "/npcs.toml";
         } else {
-            // Entorno de desarrollo: usamos las rutas relativas hardcodeadas como fallback.
             game_config_filepath = DEFAULT_GAME_CONFIG_PATH;
             items_config_filepath = DEFAULT_ITEMS_CONFIG_PATH;
             map_config_filepath = DEFAULT_MAP_CONFIG_PATH;

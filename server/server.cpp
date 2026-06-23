@@ -13,6 +13,8 @@
 #include "common/updates/player_left_update.h"
 #include "common/updates/world_map_update.h"
 #include "game/basic_match.h"
+#include "game/inventory.h"
+#include "game/items/item.h"
 #include "game/player.h"
 #include "gameloop_thread.h"
 #include "player_connection.h"
@@ -24,7 +26,8 @@ constexpr char SERVER_STOP_COMMAND = 'q';
 
 
 Server::Server(const std::string& service_name_,
-               std::function<std::unique_ptr<World>()> world_factory_):
+               std::function<std::unique_ptr<World>()> world_factory_,
+               const std::string& save_path):
     service_name(service_name_),
     clients(),
     nicks_in_use(),
@@ -32,7 +35,21 @@ Server::Server(const std::string& service_name_,
     next_match_id(1),
     next_player_id(1),
     keep_running(false),
-    world_factory(std::move(world_factory_)) {}
+    world_factory(std::move(world_factory_)),
+    persister(save_path) {
+    auto loaded = persister.try_load();
+
+    if (loaded.has_value()) {
+        for (const auto& ms: loaded->matches) {
+            uint32_t match_id = next_match_id.fetch_add(1);
+            auto match = std::make_unique<BasicMatch>(match_id, ms.name, ms.max_players,
+                                                      world_factory());
+            matches.emplace(match_id, std::move(match));
+            std::cerr << "[PERSIST] Match '" << ms.name << "' recreado (max "
+                      << static_cast<int>(ms.max_players) << ").\n";
+        }
+    }
+}
 
 Server::~Server() = default;
 
@@ -258,6 +275,9 @@ void Server::run() {
             }
         }
 
+        std::cerr << "[SERVER] Persistiendo estado final...\n";
+        save_state();
+
         keep_running = false;
 
         gameloop.stop();
@@ -272,4 +292,88 @@ void Server::run() {
         throw;
     }
     std::cerr << "[SERVER] Shutdown complete\n";
+}
+
+WorldSnapshot Server::snapshot() {
+    WorldSnapshot snap;
+
+    std::vector<Match*> active_matches;
+    {
+        std::lock_guard<std::mutex> lk(matches_mutex);
+        active_matches.reserve(matches.size());
+        std::transform(matches.begin(), matches.end(), std::back_inserter(active_matches),
+                       [](const auto& kv) { return kv.second.get(); });
+    }
+
+    for (Match* match: active_matches) {
+        const std::string& match_name = match->get_name();
+        World& world = match->get_world();
+
+        // Persistimos también la identidad del match (nombre + capacidad) para
+        // poder recrearlo al arrancar el server.
+        MatchSave ms;
+        ms.name = match_name;
+        ms.max_players = match->get_max_players();
+        snap.matches.push_back(std::move(ms));
+
+        for (Player* player: world.get_players()) {
+            if (player == nullptr)
+                continue;
+
+            PlayerSave ps;
+            ps.nick = player->get_name();
+            ps.match_name = match_name;
+            ps.race = static_cast<uint8_t>(player->get_race());
+            ps.klass = static_cast<uint8_t>(player->get_class());
+            ps.level = static_cast<uint16_t>(player->get_level());
+            ps.xp = player->get_experience();
+            ps.hp = player->get_current_hp();
+            ps.max_hp = player->get_max_hp();
+            ps.mp = player->get_current_mana();
+            ps.max_mp = player->get_max_mana();
+            ps.gold = player->get_gold();
+            ps.pos_x = player->get_position().x;
+            ps.pos_y = player->get_position().y;
+
+            for (const auto& slot: player->get_inventory().get_slots()) {
+                InventorySlotSave saved_slot;
+                if (slot.item) {
+                    saved_slot.item_name = slot.item->get_name();
+                    saved_slot.quantity = static_cast<uint32_t>(slot.quantity);
+                    saved_slot.is_equipped = slot.equipped_slot.has_value();
+                }
+                ps.inventory.push_back(std::move(saved_slot));
+            }
+
+            snap.players.push_back(std::move(ps));
+        }
+    }
+
+    return snap;
+}
+
+void Server::save_state() {
+    try {
+        auto snap = snapshot();
+        // Si no hay players, no escribimos: preservamos el save anterior
+        // (que SÍ tenía estado válido). Esto pasa típicamente cuando el
+        // server arranca y nadie todavía joineó un match, o cuando todos
+        // se desconectaron antes del save final.
+        if (snap.players.empty()) {
+            std::cerr << "[PERSIST] Snapshot vacío, no se escribe save "
+                      << "(preservando el archivo anterior).\n";
+            return;
+        }
+        persister.save(snap);
+        std::cerr << "[PERSIST] Estado guardado (" << snap.players.size()
+                  << " jugador(es)).\n";
+    } catch (const std::exception& e) {
+        // Loggeamos pero no propagamos: un fallo de IO no debe matar al server.
+        std::cerr << "[PERSIST] Error guardando estado: " << e.what() << "\n";
+    }
+}
+
+std::optional<PlayerSave> Server::find_player_save(const std::string& nick,
+                                                   const std::string& match_name) {
+    return persister.find_player_save(nick, match_name);
 }

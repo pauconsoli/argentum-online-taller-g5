@@ -197,10 +197,22 @@ void MainWindow::connect_adapter_signals() {
     connect(adapter.get(), &QtClientAdapter::matchCreated, this,
             [this]() { handle_refresh_requested(); });
 
-    connect(adapter.get(), &QtClientAdapter::matchJoined, this, [this]() {
-        stack->setCurrentIndex(PAGE_RACE_CLASS);
-        update_status_bar();
-    });
+    connect(adapter.get(), &QtClientAdapter::matchJoined, this,
+            [this](bool was_restored, uint8_t restored_race, uint8_t restored_klass) {
+                if (was_restored) {
+                    if (!client) {
+                        return;
+                    }
+                    adapter->stop();
+                    adapter.reset();
+                    emit gameStartRequested(client.release(), restored_race, restored_klass,
+                                            current_player_id);
+                    close();
+                    return;
+                }
+                stack->setCurrentIndex(PAGE_RACE_CLASS);
+                update_status_bar();
+            });
 
     connect(
         adapter.get(), &QtClientAdapter::errorReceived, this,

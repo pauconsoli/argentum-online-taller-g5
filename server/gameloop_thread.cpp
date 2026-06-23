@@ -30,16 +30,17 @@ void GameLoopThread::run() {
             sleep_ms /
             1000.0f;  // convierto a segundos para usarlo en los cálculos de fórmulas (ver esto)
 
-        // OPTIMIZACIÓN DEL GAMELOOP
         using Clock = std::chrono::steady_clock;
         using Ms = std::chrono::duration<double, std::milli>;
         const Ms rate(sleep_ms);
 
         auto t1 = Clock::now();
+        constexpr int AUTO_SAVE_INTERVAL_SEC = 30;
+        auto last_save_time = Clock::now();
 
         while (should_keep_running()) {
 
-            server.for_each_match([this, tick_seconds, tick_id](Match& match) {
+            server.for_each_match([tick_seconds, tick_id](Match& match) {
                 World& world = match.get_world();
                 world.reset_player_movement();
                 match.tick();
@@ -164,6 +165,14 @@ void GameLoopThread::run() {
             });
 
             tick_id++;
+            
+            auto now = Clock::now();
+            auto elapsed_since_save =
+                std::chrono::duration_cast<std::chrono::seconds>(now - last_save_time).count();
+            if (elapsed_since_save >= AUTO_SAVE_INTERVAL_SEC) {
+                server.save_state();
+                last_save_time = now;
+            }
 
             // OPTIMIZACIÓN DEL GAMELOOP: calculo lo que tardó el tick y sleep solo el tiempo restante
             auto t2 = Clock::now();

@@ -23,6 +23,10 @@ target_sources(argentum_server
     commands/chat_command.cpp
     commands/clan_command.cpp
     commands/cheat_command.cpp
+    commands/restore_player_command.cpp
+    # persistence
+    persistence/persister.cpp
+    persistence/world_serializer.cpp
     # loaders
     loader/world_map_loader.cpp
     loader/game_config_loader.cpp
@@ -46,4 +50,8 @@ target_sources(argentum_server
     loader/item_registry_loader.h
     loader/world_item_loader.h
     loader/npc_registry_loader.h
+    # persistence headers
+    persistence/player_save.h
+    persistence/persister.h
+    persistence/world_serializer.h
 )

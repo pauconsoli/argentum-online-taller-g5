@@ -37,7 +37,7 @@ class QtClientAdapter: public QObject {
     void loginOk(uint32_t player_id);
     void matchListReceived(const std::vector<MatchInfo>& matches);
     void matchCreated();
-    void matchJoined();
+    void matchJoined(bool was_restored, uint8_t restored_race, uint8_t restored_klass);
     void errorReceived(uint8_t code, QString detail);
     void disconnectedFromServer();
 

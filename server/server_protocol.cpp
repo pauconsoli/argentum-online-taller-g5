@@ -390,6 +390,9 @@ void ServerProtocol::send_match_joined(const GameUpdate& update) {
     put_u8(buf, ServerOpcode::MATCH_JOINED);
     put_u32(buf, u.match_id);
     put_u32(buf, u.your_player_id);
+    put_u8(buf, u.was_restored ? 1 : 0);
+    put_u8(buf, u.restored_race);
+    put_u8(buf, u.restored_klass);
     if (skt.sendall(buf.data(), buf.size()) == 0) {
         throw LibError(0, "%s", "ServerProtocol::send_match_joined: client closed connection");
     }
