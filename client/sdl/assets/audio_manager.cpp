@@ -59,10 +59,6 @@ void AudioManager::play_background_music(const std::string& path, int volume) {
     }
 }
 
-void AudioManager::stop_music() {
-    Mix_HaltMusic();
-}
-
 void AudioManager::toggle_music() {
     if (Mix_PausedMusic()) {
         Mix_ResumeMusic();

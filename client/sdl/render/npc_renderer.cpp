@@ -109,10 +109,6 @@ void NPCRenderer::render_single(uint32_t nid, [[maybe_unused]] const NPCSnapshot
     }
 }
 
-void NPCRenderer::render(const std::map<uint32_t, NPCSnapshot>& npcs, int tile_w, int tile_h) {
-    for (const auto& [nid, ns] : npcs) render_single(nid, ns, tile_w, tile_h);
-}
-
 NPCRenderer::NPCSpriteInfo NPCRenderer::npc_sprite_info(NPCVisualType t) {
     // fw/fh medidos del PNG: PNG_W/ncols y PNG_H/4filas.
     // draw_w/draw_h: tamaño de dibujo en pantalla (0 = sin escalar).

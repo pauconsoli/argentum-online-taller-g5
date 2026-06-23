@@ -30,7 +30,6 @@ class HelpMenu {
     HelpMenu& operator=(const HelpMenu&) = delete;
 
     void toggle();
-    bool is_visible() const;
     void draw();
 };
 

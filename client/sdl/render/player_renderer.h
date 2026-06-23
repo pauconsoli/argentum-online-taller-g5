@@ -2,7 +2,6 @@
 #define PLAYER_RENDERER_H
 
 #include <cstdint>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -16,10 +15,6 @@ class PlayerRenderer {
  public:
     PlayerRenderer(CharacterRenderer* character_renderer, SpriteManager* sprite_manager,
                    const Camera& camera);
-
-    void render(const std::map<uint32_t, PlayerSnapshot>& players, uint32_t my_player_id,
-                uint32_t my_clan_id, int direction, int current_frame,
-                const std::vector<InventorySlotData>& inventory_slots, int tile_w, int tile_h);
 
     void render_single(uint32_t pid, const PlayerSnapshot& ps, uint32_t my_player_id,
                        uint32_t my_clan_id, int direction, int current_frame,

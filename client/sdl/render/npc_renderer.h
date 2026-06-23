@@ -17,7 +17,6 @@ class NPCRenderer {
  public:
     NPCRenderer(Renderer* renderer, SpriteManager* sprite_manager, const Camera& camera);
 
-    void render(const std::map<uint32_t, NPCSnapshot>& npcs, int tile_w, int tile_h);
     void render_single(uint32_t nid, const NPCSnapshot& ns, int tile_w, int tile_h);
     void sync_from_snapshot(const std::vector<NPCSnapshot>& npcs);
 

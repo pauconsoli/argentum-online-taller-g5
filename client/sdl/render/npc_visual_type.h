@@ -28,6 +28,8 @@ inline NPCVisualType npc_visual_type_from_network(uint32_t npc_type) {
             return NPCVisualType::MERCHANT;
         case 3:
             return NPCVisualType::BANKER;
+        case 9:
+            return NPCVisualType::GOLEM_INFERNAL;
         case 10:
             return NPCVisualType::GOBLIN;  // GOBLIN
         case 11:
