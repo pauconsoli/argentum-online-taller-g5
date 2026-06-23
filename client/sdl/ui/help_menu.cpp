@@ -60,7 +60,7 @@ HelpMenu::HelpMenu(SDL_Renderer* renderer, const std::string& font_path, int win
     cheats = {
         {"Cheats (para probar)", ""},   {"Ctrl + 1", "Vida al máximo"},
         {"Ctrl + 2", "Maná al máximo"}, {"Ctrl + 3", "Morir"},
-        {"Ctrl + 4", "Subir de nivel"}, {"Ctrl + 5", "+10000 de oro"},
+        {"Ctrl + 4", "Subir de nivel"}, {"Ctrl + 5", "Oro al máximo"},
     };
 }
 

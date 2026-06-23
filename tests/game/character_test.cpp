@@ -17,8 +17,8 @@ class TestCharacter: public Character {
         return 0;
     }
 
-    bool validate_attack_from(int) const override {  // DUMMY
-        return true;
+    AttackStatus validate_attack_from(int) const override {  // DUMMY
+        return AttackStatus::SUCCESS;
     }
 
     int get_agility() const override {

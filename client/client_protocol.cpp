@@ -24,6 +24,7 @@
 #include "common/updates/match_created_update.h"
 #include "common/updates/match_joined_update.h"
 #include "common/updates/match_list_update.h"
+#include "common/updates/meditate_update.h"
 #include "common/updates/moved_update.h"
 #include "common/updates/npc_interact_update.h"
 #include "common/updates/player_joined_update.h"
@@ -316,6 +317,8 @@ std::unique_ptr<GameUpdate> ClientProtocol::receive_update() {
             return recv_death();
         case ServerOpcode::REVIVE:
             return recv_revive();
+        case ServerOpcode::MEDITATE:
+            return recv_meditate();
         case ServerOpcode::INVENTORY:
             return recv_inventory();
         case ServerOpcode::SNAPSHOT:
@@ -396,6 +399,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.damage = recv_i32();
     r.evaded = (recv_u8() != 0);
     r.target_died = (recv_u8() != 0);
+    r.is_critical = (recv_u8() != 0);
     r.is_healing = (recv_u8() != 0);
     r.heal_amount = recv_i32();
     r.type = static_cast<AttackType>(recv_u8());
@@ -414,6 +418,11 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_death() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_revive() {
     ResurrectStatus status = static_cast<ResurrectStatus>(recv_u8());
     return std::make_unique<ReviveUpdate>(0, status);
+}
+
+std::unique_ptr<GameUpdate> ClientProtocol::recv_meditate() {
+    MeditateStatus status = static_cast<MeditateStatus>(recv_u8());
+    return std::make_unique<MeditateUpdate>(0, status);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_inventory() {

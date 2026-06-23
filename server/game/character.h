@@ -1,10 +1,6 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
-// Character: clase base para Player y NPC, contiene atributos comunes a ambos
-// "tipos" de personajes, como HP, mana, fuerza, etc. También tiene métodos
-// para recibir daño, curarse, etc
-
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -13,6 +9,7 @@
 #include "common/direction.h"
 #include "common/position.h"
 #include "server/game/loot.h"
+#include "server/world/zone_type.h"
 
 class Character {
  protected:
@@ -41,7 +38,7 @@ class Character {
         const = 0;  // para NPCs que no tengan inventario valor fijo, para Players se calcula con el
                     // inventario equipado usando la formula de GameFormulas
 
-    virtual bool validate_attack_from(int attacker_level) const = 0;
+    virtual AttackStatus validate_attack_from(int attacker_level) const = 0;
 
     virtual int get_agility() const = 0;
 
@@ -72,6 +69,10 @@ class Character {
     virtual const std::string& get_name() const = 0;
 
     virtual bool can_enter_safe_zones() const = 0;
+
+    virtual bool can_enter_zone_type(ZoneType /*zone_type*/) const {
+        return true;
+    }
 
     void receive_damage(int damage);
 

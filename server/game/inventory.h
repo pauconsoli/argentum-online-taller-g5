@@ -13,7 +13,7 @@ class Player;
 
 // InventorySlot: item con cantidad y flag de si está equipado
 struct InventorySlot {
-    std::unique_ptr<Item> item;                  // template/referencia del item
+    std::unique_ptr<Item> item;                  // referencia del item
     int quantity = 1;                            // cantidad de este item (stackable)
     std::optional<EquipmentSlot> equipped_slot;  // nullopt si no está equipado,
                                                  // tiene el slot si está equipado (solo 1 equipado)

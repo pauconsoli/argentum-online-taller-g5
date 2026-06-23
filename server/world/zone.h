@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "zone_type.h"
+
 class Zone {
  public:
     virtual ~Zone() = default;
@@ -12,6 +14,8 @@ class Zone {
     virtual bool can_spawn() const = 0;
 
     virtual const std::string& get_name() const = 0;
+
+    virtual ZoneType get_type() const = 0;
 };
 
 #endif

@@ -5,9 +5,6 @@
 
 #include "zone.h"
 
-// TODO(Pau): implementar excepciones para casos de posición inválida, etc. (ej algo fuera del mapa)
-// y usarlas en vez de retornar nullptr, true o return vacío. Más fácil detectaar errores
-
 WorldMap::WorldMap(int width, int height):
     cells(height, std::vector<Cell>(width)),
     zones(height, std::vector<Zone*>(width, nullptr)),
@@ -104,6 +101,13 @@ const Cell& WorldMap::get_cell(const Position& pos) const {
 bool WorldMap::is_safe(const Position& pos) const {
     const Zone* zone = get_zone(pos);
     return zone != nullptr && zone->is_safe();
+}
+
+ZoneType WorldMap::get_zone_type(const Position& pos) const {
+    const Zone* zone = get_zone(pos);
+    if (!zone)
+        return ZoneType::ALL;
+    return zone->get_type();
 }
 
 int WorldMap::get_width() const {

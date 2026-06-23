@@ -65,6 +65,13 @@ int GameFormulas::calculate_max_gold(const Player& player) {
                             std::pow(player.get_level(), config.get_gold_max_safe_exp()));
 }
 
+// OroMaxEnMano = OroMax * (1 + excess_factor)
+uint64_t GameFormulas::calculate_max_holdable_gold(const Player& player) {
+    const GameConfig& config = GameConfig::get_instance();
+    return static_cast<uint64_t>(calculate_max_gold(player) *
+                                 (1.0f + config.get_gold_excess_factor()));
+}
+
 // Limite = 1000 * Nivel^1.8
 uint64_t GameFormulas::calculate_level_up_limit(int level) {
     const GameConfig& config = GameConfig::get_instance();
@@ -138,16 +145,20 @@ std::unique_ptr<Player> GameFormulas::create_initial_player(uint32_t id, const s
 
 // ATAQUE
 
-bool GameFormulas::can_attack_by_level(int attacker_level, int target_level) {
+AttackStatus GameFormulas::check_level_attack(int attacker_level, int target_level) {
     const GameConfig& config = GameConfig::get_instance();
     int newbie_max_level = config.get_newbie_max_level();
     int max_level_difference = config.get_max_level_difference();
 
     if (attacker_level <= newbie_max_level || target_level <= newbie_max_level) {
-        return false;
+        return AttackStatus::NEWBIE_PROTECTION;
     }
 
-    return std::abs(attacker_level - target_level) <= max_level_difference;
+    if (std::abs(attacker_level - target_level) > max_level_difference) {
+        return AttackStatus::LEVEL_DIFFERENCE;
+    }
+
+    return AttackStatus::SUCCESS;
 }
 
 // esta fórmula es inventada

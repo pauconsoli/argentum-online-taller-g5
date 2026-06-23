@@ -62,6 +62,9 @@ void ServerUpdateHandler::apply_pending(UpdateQueue& queue, ClientMap& map, int 
             case UpdateType::REVIVE:
                 on_revive(static_cast<const ReviveUpdate&>(*update));
                 break;
+            case UpdateType::MEDITATE:
+                on_meditate(static_cast<const MeditateUpdate&>(*update));
+                break;
             default:
                 break;
         }
@@ -444,8 +447,20 @@ void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
 
 void ServerUpdateHandler::show_attack_error(AttackStatus status) {
     switch (status) {
-        case AttackStatus::INVALID_TARGET:
+        case AttackStatus::SAFE_ZONE:
+            notifier.message("No podés atacar en una zona segura");
+            break;
+        case AttackStatus::SAME_CLAN:
             notifier.message("No podés atacar a un miembro de tu clan");
+            break;
+        case AttackStatus::NEWBIE_PROTECTION:
+            notifier.message("Fair play: el nivel de alguno de los dos es < 12 ");
+            break;
+        case AttackStatus::LEVEL_DIFFERENCE:
+            notifier.message("La diferencia de nivel es demasiado grande para un ataque");
+            break;
+        case AttackStatus::INVALID_TARGET:
+            notifier.message("Objetivo inválido");
             break;
         case AttackStatus::OUT_OF_RANGE:
             notifier.message("Estás muy lejos para atacar");
@@ -455,6 +470,12 @@ void ServerUpdateHandler::show_attack_error(AttackStatus status) {
             break;
         case AttackStatus::NO_MANA:
             notifier.message("No tenés maná suficiente para atacar");
+            break;
+        case AttackStatus::FULL_HP:
+            notifier.message("El objetivo ya tiene toda la vida");
+            break;
+        case AttackStatus::CANNOT_HEAL_NPC:
+            notifier.message("No podés curar a un NPC");
             break;
         default:
             break;
@@ -495,6 +516,20 @@ void ServerUpdateHandler::show_interact_error(InteractStatus status) {
             notifier.message("NPC no válido");
             break;
         default:
+            break;
+    }
+}
+
+void ServerUpdateHandler::on_meditate(const MeditateUpdate& mu) {
+    switch (mu.get_status()) {
+        case MeditateStatus::SUCCESS:
+            notifier.message("Meditando...");
+            break;
+        case MeditateStatus::PLAYER_DEAD:
+            notifier.message("Estás muerto, no podés meditar");
+            break;
+        case MeditateStatus::NO_MANA:
+            notifier.message("Tu clase no tiene maná");
             break;
     }
 }

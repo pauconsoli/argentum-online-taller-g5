@@ -56,7 +56,7 @@ class Player: public Character {
 
     int get_defense() const override;
 
-    bool validate_attack_from(int attacker_level) const override;
+    AttackStatus validate_attack_from(int attacker_level) const override;
 
     int get_agility() const override;
 
@@ -108,6 +108,7 @@ class Player: public Character {
     uint64_t get_gold() const;
 
     uint64_t get_experience() const;
+    void set_experience(uint64_t amount);
 
     int get_current_mana() const;
 

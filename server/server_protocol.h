@@ -45,6 +45,7 @@ class ServerProtocol {
     void send_attacked(const GameUpdate& update);
     void send_death(const GameUpdate& update);
     void send_revive(const GameUpdate& update);
+    void send_meditate(const GameUpdate& update);
     void send_inventory(const GameUpdate& update);
     void send_chat_msg(const GameUpdate& update);
     void send_system_msg(const GameUpdate& update);

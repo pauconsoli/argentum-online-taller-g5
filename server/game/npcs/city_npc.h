@@ -1,9 +1,6 @@
 #ifndef CITY_NPC_H
 #define CITY_NPC_H
 
-// planteo inicial: uso una especie de template method, cada subclase sobreescribe los métodos que
-// le corresponden siendo interact() el método que maneja la interacción
-
 #include <string>
 #include <vector>
 
@@ -42,8 +39,8 @@ class CityNPC: public NPC {
     }
 
     // no pueden ser atacados
-    bool validate_attack_from(int /*attacker_level*/) const override {
-        return false;
+    AttackStatus validate_attack_from(int /*attacker_level*/) const override {
+        return AttackStatus::INVALID_TARGET;
     }
 
     Loot drop_loot() override {

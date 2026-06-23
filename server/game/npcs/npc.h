@@ -8,9 +8,9 @@
 #include "common/direction.h"
 #include "common/npc_interact_result.h"
 #include "common/npc_interaction.h"
+#include "common/npc_type.h"
 #include "common/position.h"
 #include "server/game/character.h"
-#include "server/game/npcs/npc_type.h"
 
 class Bank;
 class Player;
@@ -38,8 +38,8 @@ class NPC: public Character {
     bool can_cast_magic() const override {
         return false;
     }
-    bool validate_attack_from(int /*attacker_level*/) const override {
-        return true;
+    AttackStatus validate_attack_from(int /*attacker_level*/) const override {
+        return AttackStatus::SUCCESS;
     }
     int get_defense() const override;
     int get_agility() const override;

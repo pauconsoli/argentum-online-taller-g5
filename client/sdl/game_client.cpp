@@ -203,7 +203,6 @@ static std::string arg_of(const std::string& input, const std::string& prefix) {
 void GameClient::dispatch_chat_command(const std::string& input) {
     if (input == "/meditar") {
         client->do_meditate();
-        client->do_chat("Te encuentras en estado de meditacion");
         return;
     }
     if (starts_with(input, "/tomar")) {

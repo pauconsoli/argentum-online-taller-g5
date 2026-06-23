@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "server/game/npcs/npc.h"
+#include "server/world/zone_type.h"
 
 class HostileNPC: public NPC {
  private:
@@ -13,12 +14,12 @@ class HostileNPC: public NPC {
     int max_damage;
     int attack_range;
     float action_timer = 0.0f;
-    std::vector<std::string> allowed_zones;
+    std::vector<ZoneType> allowed_zones;
 
  public:
     HostileNPC(uint32_t id, const std::string& name, NPCType npc_type, int level, int max_hp,
                int defense, int agility, int min_damage, int max_damage, int attack_range,
-               const std::vector<std::string>& allowed_zones, const Position& pos);
+               const std::vector<ZoneType>& allowed_zones, const Position& pos);
 
     ~HostileNPC() override = default;
 
@@ -30,6 +31,8 @@ class HostileNPC: public NPC {
     bool is_hostile() const override {
         return true;
     }
+
+    bool can_enter_zone_type(ZoneType zone_type) const override;
 
     Loot drop_loot() override;
 

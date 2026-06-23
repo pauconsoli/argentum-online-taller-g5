@@ -21,6 +21,7 @@ class City: public Zone {
     bool can_spawn() const override;
 
     const std::string& get_name() const override;
+    ZoneType get_type() const override;
     Position get_priest_position() const;
     Position get_merchant_position() const;
     Position get_banker_position() const;

@@ -37,6 +37,7 @@ GameConfig::GameConfig():
     npc_gold_drop_max_factor(0.0f),
     npc_population_limit(0),
     npc_spawn_time_seconds(0),
+    chase_cooldown(0.0f),
     server_game_loop_sleep_ms(0) {}
 
 static float lookup(const std::map<PlayerRace, float>& m, PlayerRace key, const char* field) {
@@ -283,6 +284,11 @@ int GameConfig::get_npc_population_limit() const {
 int GameConfig::get_npc_spawn_time_seconds() const {
     check_loaded(loaded);
     return npc_spawn_time_seconds;
+}
+
+float GameConfig::get_chase_cooldown() const {
+    check_loaded(loaded);
+    return chase_cooldown;
 }
 
 int GameConfig::get_server_game_loop_sleep_ms() const {
