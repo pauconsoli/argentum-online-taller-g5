@@ -108,6 +108,15 @@ target_include_directories(taller_common PUBLIC .)
 target_include_directories(taller_game PUBLIC .)
 target_include_directories(taller_world PUBLIC .)
 
+# Persistencia: nlohmann/json (header-only). Se descarga via FetchContent.
+if(ARGENTUM_SERVER)
+    include(FetchContent)
+    FetchContent_Declare(json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    )
+    FetchContent_MakeAvailable(json)
+endif()
+
 # HEY!! TODO XXX: you need to install some runtime and dev libraries *before*
 # compiling the client code.
 #
@@ -297,7 +306,7 @@ if(ARGENTUM_SERVER)
     taller_apply_sanitizers(argentum_server)
 
     # Link the taller_common, taller_game and taller_world lib targets
-    target_link_libraries(argentum_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus)
+    target_link_libraries(argentum_server taller_common taller_game taller_world spdlog::spdlog tomlplusplus::tomlplusplus nlohmann_json::nlohmann_json)
 endif()
 
 # Testing section

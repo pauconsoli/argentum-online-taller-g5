@@ -9,6 +9,7 @@
 
 #include "common/commands/select_race_class_command.h"
 #include "common/liberror.h"
+#include "commands/restore_player_command.h"
 #include "common/protocol_constants.h"
 #include "common/updates/error_update.h"
 #include "common/updates/login_ok_update.h"
@@ -164,14 +165,28 @@ void ReceiverThread::handle_join_match() {
     }
     player_conn.set_current_match_id(match_id);
     player_conn.set_state(PlayerConnection::State::IN_MATCH);
-    player_conn.enqueue_update(
-        std::make_unique<MatchJoinedUpdate>(match_id, player_conn.get_player_id()));
+
+    auto saved = server_ops.find_player_save(player_conn.get_nick(), m->get_name());
+    bool was_restored = saved.has_value();
+    uint8_t restored_race = was_restored ? saved->race : 0;
+    uint8_t restored_klass = was_restored ? saved->klass : 0;
+
+    player_conn.enqueue_update(std::make_unique<MatchJoinedUpdate>(
+        match_id, player_conn.get_player_id(), was_restored, restored_race, restored_klass));
 
     try {
         server_ops.send_world_map_to(player_conn);
     } catch (const std::exception& e) {
         std::cerr << "[RECEIVER] No se pudo mandar el mapa a " << player_conn.get_nick() << ": "
                   << e.what() << "\n";
+    }
+
+    if (was_restored) {
+        std::cerr << "[PERSIST] Restaurando " << player_conn.get_nick() << " en match '"
+                  << m->get_name() << "' (nivel " << saved->level << ").\n";
+        auto cmd = std::make_unique<RestorePlayerCommand>(player_conn.get_player_id(),
+                                                          std::move(*saved));
+        server_ops.push_command_to_match(match_id, std::move(cmd));
     }
 }
 

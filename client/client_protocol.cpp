@@ -372,7 +372,11 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_match_created() {
 std::unique_ptr<GameUpdate> ClientProtocol::recv_match_joined() {
     uint32_t match_id = recv_u32();
     uint32_t your_pid = recv_u32();
-    return std::make_unique<MatchJoinedUpdate>(match_id, your_pid);
+    bool was_restored = (recv_u8() != 0);
+    uint8_t restored_race = recv_u8();
+    uint8_t restored_klass = recv_u8();
+    return std::make_unique<MatchJoinedUpdate>(match_id, your_pid, was_restored,
+                                               restored_race, restored_klass);
 }
 
 std::unique_ptr<GameUpdate> ClientProtocol::recv_player_joined() {
