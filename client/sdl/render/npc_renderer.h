@@ -17,14 +17,14 @@ class NPCRenderer {
  public:
     NPCRenderer(Renderer* renderer, SpriteManager* sprite_manager, const Camera& camera);
 
-    void render_single(uint32_t nid, const NPCSnapshot& ns, int tile_w, int tile_h);
+    void render_single(uint32_t npc_id, const NPCSnapshot& npc_snapshoot, int tile_w, int tile_h);
     void sync_from_snapshot(const std::vector<NPCSnapshot>& npcs);
 
  private:
     struct NPCSpriteInfo {
-        int fw;
-        int fh;
-        int fpd[4];
+        int frame_sprite_w;
+        int frame_sprite_h;
+        int frame_direction[4];
         int draw_w = 0;
         int draw_h = 0;
         int head_index = 0;
@@ -48,11 +48,13 @@ class NPCRenderer {
         bool position_initialized = false;
     };
 
+    // dado un tipo de criatura, devuelve su NPCSpriteInfo
     static NPCSpriteInfo npc_sprite_info(NPCVisualType t);
-
     Renderer* renderer_;
     SpriteManager* sprite_manager_;
     const Camera& camera_;
+
+    // El contenedor central: un mapa de id de NPC → su estado de animación
     std::map<uint32_t, NPCAnimState> npc_anim_states_;
 };
 
