@@ -6,7 +6,7 @@ std::vector<InputAction> InputHandler::poll_events(const InputContext& context) 
 
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
-            actions.push_back({InputActionType::Quit});
+            actions.push_back(InputAction(InputActionType::Quit));
             continue;
         }
 
@@ -14,7 +14,7 @@ std::vector<InputAction> InputHandler::poll_events(const InputContext& context) 
         if (context.overlay_visible &&
             ((event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) ||
              (event.type == SDL_MOUSEBUTTONDOWN))) {
-            actions.push_back({InputActionType::DismissOverlay});
+            actions.push_back(InputAction(InputActionType::DismissOverlay));
             continue;
         }
 
@@ -27,13 +27,13 @@ std::vector<InputAction> InputHandler::poll_events(const InputContext& context) 
                 switch (event.key.keysym.sym) {
                     case SDLK_RETURN:
                     case SDLK_RETURN2:
-                        actions.push_back({InputActionType::ChatSubmit});
+                        actions.push_back(InputAction(InputActionType::ChatSubmit));
                         break;
                     case SDLK_BACKSPACE:
-                        actions.push_back({InputActionType::ChatBackspace});
+                        actions.push_back(InputAction(InputActionType::ChatBackspace));
                         break;
                     case SDLK_ESCAPE:
-                        actions.push_back({InputActionType::ChatCancel});
+                        actions.push_back(InputAction(InputActionType::ChatCancel));
                         break;
                     default:
                         break;
@@ -44,15 +44,15 @@ std::vector<InputAction> InputHandler::poll_events(const InputContext& context) 
 
         // presionar teclas
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
-            actions.push_back({InputActionType::OpenChat});
+            actions.push_back(InputAction(InputActionType::OpenChat));
             continue;
         }
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h) {
-            actions.push_back({InputActionType::ToggleHelp});
+            actions.push_back(InputAction(InputActionType::ToggleHelp));
             continue;
         }
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_m) {
-            actions.push_back({InputActionType::ToggleMusic});
+            actions.push_back(InputAction(InputActionType::ToggleMusic));
             continue;
         }
         // cheats

@@ -23,17 +23,6 @@ static std::string get_base_asset_dir() {
 }
 
 
-GameClient::GameClient(int width, int height, bool fullscreen, const std::string& host,
-                       const std::string& port):
-    client(std::make_unique<Client>(host, port)),
-    camera(width, height),
-    width(width),
-    height(height),
-    state(1, 1, 1),
-    update_handler(state, *this) {
-    init_subsystems(fullscreen, false);
-}
-
 GameClient::GameClient(int width, int height, bool fullscreen, std::unique_ptr<Client> c,
                        uint8_t race, uint8_t klass, uint32_t player_id):
     config(SdlConfig::load("client/config/sdl_config.toml")),
@@ -74,9 +63,9 @@ void GameClient::init_subsystems(bool fullscreen, bool load_font) {
 
     sprite_manager = std::make_unique<SpriteManager>(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
-    sprite_manager->load_terrain_textures(base_assets);  // también carga items y overlays fijos
-    sprite_manager->load_head_textures();                // 6 cabezas usadas por el cliente
-    sprite_manager->load_npc_textures();                 // 11 tipos de NPC
+    sprite_manager->load_terrain_textures(base_assets);
+    sprite_manager->load_head_textures();
+    sprite_manager->load_npc_textures();
 
     terrain_renderer =
         std::make_unique<TerrainRenderer>(renderer.get(), sprite_manager.get(), camera);

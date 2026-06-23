@@ -391,12 +391,12 @@ void ServerUpdateHandler::on_clan_result(const ClanResultUpdate& cu) {
     }
 }
 
-void ServerUpdateHandler::on_clan_review(const ClanReviewUpdate& cru) {
-    notifier.show_clan_review(cru);
+void ServerUpdateHandler::on_clan_review(const ClanReviewUpdate& clan_review_updates) {
+    notifier.show_clan_review(clan_review_updates);
 }
 
-void ServerUpdateHandler::on_system_msg(const SystemMsgUpdate& su) {
-    notifier.message(su.get_message());
+void ServerUpdateHandler::on_system_msg(const SystemMsgUpdate& system_msg_updated) {
+    notifier.message(system_msg_updated.get_message());
 }
 
 void ServerUpdateHandler::on_interact(const NpcInteractUpdate& update) {
