@@ -26,13 +26,6 @@ class ClanPanel {
     std::vector<ClanMemberInfo> pending_;
 
     void draw_text(const std::string& text, int x, int y, SDL_Color color);
-    void draw_line(const std::string& text, int x, int& y, SDL_Color color);
-    void draw_separator(int x1, int x2, int y, Uint8 alpha);
-    int count_content_rows() const;
-    int compute_panel_height() const;
-    void draw_background(const SDL_Rect& panel);
-    void draw_members(int x, int& y);
-    void draw_pending(int x, int& y);
 
  public:
     ClanPanel(SDL_Renderer* renderer, const std::string& font_path, int win_width, int win_height);
