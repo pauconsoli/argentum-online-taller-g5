@@ -25,13 +25,13 @@ class CharacterRenderer {
  public:
     explicit CharacterRenderer(Renderer* renderer);
 
-    void draw_character(SDL_Texture* body_tex, SDL_Texture* head_tex, int px, int py, int direction,
-                        int frame, bool is_ghost);
-    void draw_equipped_item(int px, int py, SDL_Texture* itex, ItemType itype, int tile_w);
-    void draw_nickname(const std::string& nickname, int px, int py,
+    void draw_character(SDL_Texture* body_tex, SDL_Texture* head_tex, int position_x,
+                        int position_y, int direction, int frame, bool is_ghost);
+    void draw_equipped_item(int position_x, int position_y, SDL_Texture* itex, ItemType itype,
+                            int tile_w);
+    void draw_nickname(const std::string& nickname, int position_x, int position_y,
                        SDL_Color color = {255, 255, 255, 255});
-    // Forwarding a Renderer::draw_shadow; permite que PlayerRenderer dibuje sombras
-    // sin necesitar un Renderer* propio.
+
     void draw_shadow(int center_x, int foot_y, int width);
 };
 

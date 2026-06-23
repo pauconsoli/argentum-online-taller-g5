@@ -1,9 +1,9 @@
 #ifndef TERRAIN_RENDERER_H
 #define TERRAIN_RENDERER_H
 
-#include "camera.h"
 #include "client_map.h"
 #include "common/world/terrain_type.h"
+#include "core/camera.h"
 #include "renderer.h"
 #include "sprite_manager.h"
 

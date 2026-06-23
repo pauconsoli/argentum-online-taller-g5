@@ -106,8 +106,8 @@ void ServerUpdateHandler::on_inventory(const InventoryUpdate& iu) {
     state.apply_inventory(iu);
 }
 
-void ServerUpdateHandler::on_attack(const AttackUpdate& au) {
-    const AttackResult& result = au.get_result();
+void ServerUpdateHandler::on_attack(const AttackUpdate& attack_updated) {
+    const AttackResult& result = attack_updated.get_result();
     if (result.attacker_id == state.player_id() && result.status != AttackStatus::SUCCESS) {
         show_attack_error(result.status);
         return;
@@ -115,28 +115,30 @@ void ServerUpdateHandler::on_attack(const AttackUpdate& au) {
     if (result.evaded) {
         notifier.message("Ataque esquivado");
     } else if (result.attacker_id == state.player_id()) {
-        std::string target_name;
-        auto player_it = state.players().find(result.target_id);
-        if (player_it != state.players().end()) {
-            target_name = player_it->second.nick;
+        std::string victim_name;
+        auto victim = state.players().find(result.target_id);
+        if (victim != state.players().end()) {
+            victim_name = victim->second.nick;
         } else {
             auto npc_it = state.npcs().find(result.target_id);
             if (npc_it != state.npcs().end())
-                target_name = npc_it->second.name;
+                victim_name = npc_it->second.name;
         }
         if (result.is_healing) {
-            notifier.message(result.weapon_or_spell_name + ": curaste a " + target_name + " por " +
+            notifier.message(result.weapon_or_spell_name + ": curaste a " + victim_name + " por " +
                              std::to_string(result.heal_amount) + " puntos");
-        } else if (!result.target_died) {
+        } else if (!result.target_died && result.damage > 0) {
             notifier.message(result.weapon_or_spell_name + ": causaste " +
-                             std::to_string(result.damage) + " de daño a " + target_name);
+                             std::to_string(result.damage) + " de daño a " + victim_name);
+        } else if (!result.target_died && result.damage <= 0) {
+            notifier.message(victim_name + " se defendió. No causaste daño");
         }
     } else if (result.target_id == state.player_id()) {
         if (result.is_healing) {
             std::string healer_name;
-            auto player_it = state.players().find(result.attacker_id);
-            if (player_it != state.players().end()) {
-                healer_name = player_it->second.nick;
+            auto victim = state.players().find(result.attacker_id);
+            if (victim != state.players().end()) {
+                healer_name = victim->second.nick;
             } else {
                 auto npc_it = state.npcs().find(result.attacker_id);
                 if (npc_it != state.npcs().end())
@@ -145,22 +147,26 @@ void ServerUpdateHandler::on_attack(const AttackUpdate& au) {
             notifier.message(healer_name + " te curó " + std::to_string(result.heal_amount) +
                              " puntos de vida");
         } else if (!result.target_died) {
-            notifier.message("Recibiste " + std::to_string(result.damage) + " de daño");
+            if (result.damage > 0) {
+                notifier.message("Recibiste " + std::to_string(result.damage) + " de daño");
+            } else {
+                notifier.message("Te defendiste del ataque");
+            }
         }
     } else if (result.damage > 0 && result.target_clan_id != 0 &&
                result.target_clan_id == state.clan_id()) {
         std::string victim_name = "un compañero";
-        auto vit = state.players().find(result.target_id);
-        if (vit != state.players().end())
-            victim_name = vit->second.nick;
+        auto victim = state.players().find(result.target_id);
+        if (victim != state.players().end())
+            victim_name = victim->second.nick;
         std::string attacker_name = "Alguien";
-        auto ait = state.players().find(result.attacker_id);
-        if (ait != state.players().end()) {
-            attacker_name = ait->second.nick;
+        auto attacker = state.players().find(result.attacker_id);
+        if (attacker != state.players().end()) {
+            attacker_name = attacker->second.nick;
         } else {
-            auto nit = state.npcs().find(result.attacker_id);
-            if (nit != state.npcs().end())
-                attacker_name = nit->second.name;
+            auto npc_attacker = state.npcs().find(result.attacker_id);
+            if (npc_attacker != state.npcs().end())
+                attacker_name = npc_attacker->second.name;
         }
         notifier.message("[Clan] ¡" + victim_name + " está siendo atacado por " + attacker_name +
                          "!");

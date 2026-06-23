@@ -84,22 +84,23 @@ const std::vector<InventorySlotData>& GameState::inventory_slots() const {
 
 void GameState::apply_snapshot(const SnapshotUpdate& snap, int tile_w, int tile_h) {
     players_.clear();
-    for (const auto& ps : snap.players) {
-        players_[ps.player_id] = ps;
-        if (ps.player_id == player_id_) {
-            player_x_ = ps.x * tile_w;
-            player_y_ = ps.y * tile_h;
-            race_ = ps.race;
-            klass_ = ps.klass;
-            hp_ = ps.hp;
-            mp_ = ps.mp;
-            max_hp_ = ps.max_hp;
-            max_mp_ = ps.max_mp;
-            level_ = ps.level;
-            gold_ = ps.gold;
-            xp_ = ps.xp;
-            is_ghost_ = ps.is_ghost;
-            clan_id_ = ps.clan_id;
+    for (const auto& player_updated : snap.players) {
+        players_[player_updated.player_id] = player_updated;
+
+        if (player_updated.player_id == player_id_) {
+            player_x_ = player_updated.x * tile_w;
+            player_y_ = player_updated.y * tile_h;
+            race_ = player_updated.race;
+            klass_ = player_updated.klass;
+            hp_ = player_updated.hp;
+            mp_ = player_updated.mp;
+            max_hp_ = player_updated.max_hp;
+            max_mp_ = player_updated.max_mp;
+            level_ = player_updated.level;
+            gold_ = player_updated.gold;
+            xp_ = player_updated.xp;
+            is_ghost_ = player_updated.is_ghost;
+            clan_id_ = player_updated.clan_id;
         }
     }
     ground_items_ = snap.ground_items;
@@ -112,9 +113,9 @@ void GameState::remove_player(uint32_t pid) {
     players_.erase(pid);
 }
 
-void GameState::apply_inventory(const InventoryUpdate& iu) {
-    inventory_slots_ = iu.get_items();
-    gold_ = iu.get_gold();
+void GameState::apply_inventory(const InventoryUpdate& inventory_updated) {
+    inventory_slots_ = inventory_updated.get_items();
+    gold_ = inventory_updated.get_gold();
 }
 
 void GameState::select_npc(uint32_t npc_id) {

@@ -85,5 +85,27 @@ ClientMap build_sample_client_map() {
     set_rect(20, 0, 1, 1, TerrainType::SAND, false);
     set_rect(20, 1, 1, 1, TerrainType::WATER, true);  // agua al sur → solo south edge
 
+    // === Bloque de ciudad (filas 30-50, cols 30-55) ===
+    // Piso de adoquines en el interior.
+    set_rect(30, 30, 26, 21, TerrainType::CITY_FLOOR_2, false);
+    // Paredes exteriores (CITY_WALL_1, overlay de 32×160 — 5 tiles de alto), bloqueantes.
+    set_rect(30, 30, 26, 1, TerrainType::CITY_WALL_1, true);  // borde norte
+    set_rect(30, 50, 26, 1, TerrainType::CITY_WALL_1, true);  // borde sur
+    set_rect(30, 31, 1, 19, TerrainType::CITY_WALL_1, true);  // borde oeste
+    set_rect(55, 31, 1, 19, TerrainType::CITY_WALL_1, true);  // borde este
+    // Casas individuales dentro del bloque (CITY_WALL_2 usa overlay distinto).
+    set_rect(33, 33, 3, 1, TerrainType::CITY_WALL_2, true);  // casa A — pared norte
+    set_rect(33, 36, 3, 1, TerrainType::CITY_WALL_2, true);  // casa A — pared sur
+    set_rect(33, 34, 1, 2, TerrainType::CITY_WALL_2, true);  // casa A — pared oeste
+    set_rect(35, 34, 1, 2, TerrainType::CITY_WALL_2, true);  // casa A — pared este
+    set_rect(42, 33, 4, 1, TerrainType::CITY_WALL_2, true);  // casa B — pared norte
+    set_rect(42, 37, 4, 1, TerrainType::CITY_WALL_2, true);  // casa B — pared sur
+    set_rect(42, 34, 1, 3, TerrainType::CITY_WALL_2, true);  // casa B — pared oeste
+    set_rect(45, 34, 1, 3, TerrainType::CITY_WALL_2, true);  // casa B — pared este
+    set_rect(33, 42, 5, 1, TerrainType::CITY_WALL_2, true);  // casa C — pared norte
+    set_rect(33, 47, 5, 1, TerrainType::CITY_WALL_2, true);  // casa C — pared sur
+    set_rect(33, 43, 1, 4, TerrainType::CITY_WALL_2, true);  // casa C — pared oeste
+    set_rect(37, 43, 1, 4, TerrainType::CITY_WALL_2, true);  // casa C — pared este
+
     return ClientMap(W, H, std::move(cells));
 }
