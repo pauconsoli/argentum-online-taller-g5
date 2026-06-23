@@ -156,13 +156,11 @@ void GameLoopThread::run() {
                     ground_snapshots.push_back(world_ground_item);
                 }
 
-                // esto habría que revisarlo, no se debería enviar de todos, a todos, todas la
-                // iteraciones del gameloop, por ahora lo dejo así. podria ser un statsupdate solo
-                // de los que cambiaron por ej
                 auto snapshot_update = std::make_shared<SnapshotUpdate>(
                     tick_id, std::move(snapshots), std::move(npc_snapshots),
                     std::move(ground_snapshots));
-                match.broadcast_update_to_all(snapshot_update);
+                match.broadcast_update_to_all(
+                    snapshot_update);  // broadcast a todos los jugadores del match (a mejorar)
             });
 
             tick_id++;

@@ -1,7 +1,6 @@
 #include "server/game/npcs/city_npc.h"
 
-// estos son valores arbitrarios porque que no afectan el juego por las restrcciones sobre los npc
-// de ciudad ver si extraerlos al config, si en algun momento se necesitan para algo
+// estos son valores arbitrarios que no afectan el juego por las restrcciones sobre los npc
 static constexpr int CITY_NPC_HP = 9999;
 static constexpr int CITY_NPC_DEFENSE = 9999;
 static constexpr int CITY_NPC_LEVEL = 100;

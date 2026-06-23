@@ -14,7 +14,6 @@ void Character::receive_damage(int damage) {
     if (damage <= 0 || dead) {
         return;
     }
-
     current_hp -= damage;
 
     if (current_hp <= 0) {
@@ -27,7 +26,6 @@ int Character::heal(int amount) {
     if (amount <= 0 || dead) {
         return 0;
     }
-
     int old_hp = current_hp;
     current_hp += amount;
 

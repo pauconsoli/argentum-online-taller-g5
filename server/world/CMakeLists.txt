@@ -2,7 +2,6 @@ target_sources(taller_world
     PRIVATE
     # .cpp files
     cell.cpp
-    zone.cpp
     zone_type.cpp
     city.cpp
     dungeon.cpp
@@ -17,5 +16,4 @@ target_sources(taller_world
     dungeon.h
     world.h
     world_map.h
-    terrain_type.h
     )

@@ -1,10 +1,6 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
-// Character: clase base para Player y NPC, contiene atributos comunes a ambos
-// "tipos" de personajes, como HP, mana, fuerza, etc. También tiene métodos
-// para recibir daño, curarse, etc
-
 #include <cstdint>
 #include <string>
 #include <utility>
