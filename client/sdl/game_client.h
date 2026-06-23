@@ -9,6 +9,7 @@ class WorldRenderer;
 #include <string>
 
 #include <SDL2/SDL.h>
+#include <SDL_ttf.h>
 
 #include "../client.h"
 #include "assets/audio_manager.h"
@@ -40,7 +41,22 @@ class GameClient: public Notifier {
         }
     };
 
+    // RAII context para SDL_ttf: inicializa en constructor y cierra en destructor.
+    // Declarado antes que los UI components (Hud, ClanPanel, MiniChat, HelpMenu)
+    // para que se destruya despues, garantizando que TTF_Quit() se llame al final.
+    struct TtfContext {
+        TtfContext() noexcept {
+            TTF_Init();
+        }
+        ~TtfContext() noexcept {
+            TTF_Quit();
+        }
+        TtfContext(const TtfContext&) = delete;
+        TtfContext& operator=(const TtfContext&) = delete;
+    };
+
     SdlConfig config;
+    TtfContext ttf_context;
     std::unique_ptr<SDL_Window, SdlWindowDeleter> window;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<CharacterRenderer> character_renderer;
