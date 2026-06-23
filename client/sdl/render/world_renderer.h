@@ -59,11 +59,15 @@ class WorldRenderer {
     Camera& camera;
     const SdlConfig& config;
 
+    // Sprite por defecto cuando no se encuentra la textura de un item en el suelo.
+    static constexpr const char* FALLBACK_ITEM_SPRITE = "item_espada";
+
     TileBounds draw_terrain(const ClientMap& map, int screen_w, int screen_h);
     static std::vector<FringeEntry> build_fringe(const TileBounds& bounds, const GameState& state,
                                                  const ClientMap& map);
     void draw_fringe(const std::vector<FringeEntry>& fringe, const GameState& state, int direction,
                      int current_frame);
+    void draw_ground_item(const GroundItemSnapshot& gi);
     void draw_ui(const GameState& state, bool chat_active, const std::string& chat_input,
                  bool music_paused, int screen_h);
 

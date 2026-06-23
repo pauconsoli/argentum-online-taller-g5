@@ -24,7 +24,4 @@ class ClientMap {
     int get_height() const;
 };
 
-// TODO(chiaradelaurentis): reemplazar por construcción desde MapUpdate.
-ClientMap build_sample_client_map();
-
 #endif
