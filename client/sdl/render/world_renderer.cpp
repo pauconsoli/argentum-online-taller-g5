@@ -10,34 +10,34 @@
 #include "../state/sdl_game_state.h"
 
 FringeEntry FringeEntry::make_tree(int col, int row) {
-    FringeEntry e{};
-    e.y_row = row;
-    e.type = FringeType::TREE;
-    e.col = col;
-    return e;
+    FringeEntry entry{};
+    entry.y_row = row;
+    entry.type = FringeType::TREE;
+    entry.col = col;
+    return entry;
 }
-FringeEntry FringeEntry::make_item(const GroundItemSnapshot& gi) {
-    FringeEntry e{};
-    e.y_row = gi.y;
-    e.type = FringeType::ITEM;
-    e.item = &gi;
-    return e;
+FringeEntry FringeEntry::make_item(const GroundItemSnapshot& ground_item) {
+    FringeEntry entry{};
+    entry.y_row = ground_item.y;
+    entry.type = FringeType::ITEM;
+    entry.item = &ground_item;
+    return entry;
 }
-FringeEntry FringeEntry::make_player(uint32_t pid, const PlayerSnapshot& p) {
-    FringeEntry e{};
-    e.y_row = p.y;
-    e.type = FringeType::PLAYER;
-    e.id = pid;
-    e.ps = &p;
-    return e;
+FringeEntry FringeEntry::make_player(uint32_t player_id, const PlayerSnapshot& player_snapshot) {
+    FringeEntry entry{};
+    entry.y_row = player_snapshot.y;
+    entry.type = FringeType::PLAYER;
+    entry.id = player_id;
+    entry.ps = &player_snapshot;
+    return entry;
 }
-FringeEntry FringeEntry::make_npc(uint32_t nid, const NPCSnapshot& n) {
-    FringeEntry e{};
-    e.y_row = n.y;
-    e.type = FringeType::NPC;
-    e.id = nid;
-    e.ns = &n;
-    return e;
+FringeEntry FringeEntry::make_npc(uint32_t npc_id, const NPCSnapshot& npc_snapshot) {
+    FringeEntry entry{};
+    entry.y_row = npc_snapshot.y;
+    entry.type = FringeType::NPC;
+    entry.id = npc_id;
+    entry.ns = &npc_snapshot;
+    return entry;
 }
 
 WorldRenderer::WorldRenderer(Renderer& r, SpriteManager& sm, TerrainRenderer& tr, NPCRenderer& nr,
@@ -55,15 +55,18 @@ WorldRenderer::WorldRenderer(Renderer& r, SpriteManager& sm, TerrainRenderer& tr
     camera(cam),
     config(cfg) {}
 
+
 TileBounds WorldRenderer::draw_terrain(const ClientMap& map, int screen_w, int screen_h) {
-    TileBounds b;
-    b.start_col = camera.get_x() / config.tile_width;
-    b.end_col = b.start_col + screen_w / config.tile_width + 1;
-    b.start_row = camera.get_y() / config.tile_height;
-    b.end_row = b.start_row + screen_h / config.tile_height + 1;
-    terrain_renderer.draw(b.start_col, b.end_col, b.start_row, b.end_row, config.tile_width,
-                          config.tile_height, map, screen_w, screen_h);
-    return b;
+    TileBounds bounds;
+    bounds.start_col = camera.get_x() / config.tile_width;
+    bounds.end_col = bounds.start_col + screen_w / config.tile_width + 1;
+    bounds.start_row = camera.get_y() / config.tile_height;
+    bounds.end_row = bounds.start_row + screen_h / config.tile_height + 1;
+
+    terrain_renderer.draw(bounds.start_col, bounds.end_col, bounds.start_row, bounds.end_row,
+                          config.tile_width, config.tile_height, map, screen_w, screen_h);
+
+    return bounds;
 }
 
 std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
@@ -73,7 +76,7 @@ std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
 
     for (int row = bounds.start_row; row <= bounds.end_row; ++row) {
         for (int col = bounds.start_col; col <= bounds.end_col; ++col) {
-            if (!map.in_bounds(col, row))
+            if (col < 0 || row < 0 || col >= map.get_width() || row >= map.get_height())
                 continue;
             const auto& tile = map.at(col, row);
             if (tile.blocking && tile.terrain == TerrainType::GRASS)
@@ -84,10 +87,11 @@ std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
     std::transform(state.ground_items().begin(), state.ground_items().end(),
                    std::back_inserter(fringe), FringeEntry::make_item);
 
-    for (const auto& [pid, ps] : state.players())
-        fringe.push_back(FringeEntry::make_player(pid, ps));
+    for (const auto& [player_id, ps] : state.players())
+        fringe.push_back(FringeEntry::make_player(player_id, ps));
 
-    for (const auto& [nid, ns] : state.npcs()) fringe.push_back(FringeEntry::make_npc(nid, ns));
+    for (const auto& [npc_id, ns] : state.npcs())
+        fringe.push_back(FringeEntry::make_npc(npc_id, ns));
 
     std::stable_sort(fringe.begin(), fringe.end(),
                      [](const FringeEntry& a, const FringeEntry& b) { return a.y_row < b.y_row; });
@@ -97,19 +101,21 @@ std::vector<FringeEntry> WorldRenderer::build_fringe(const TileBounds& bounds,
 
 // Dibuja un item tirado en el suelo (sombra + sprite con outline).
 // Selección de textura: oro → item por nombre → sprite de fallback.
-void WorldRenderer::draw_ground_item(const GroundItemSnapshot& gi) {
-    SDL_Texture* tex = gi.is_gold ?
-                           sprite_manager.get_gold() :
-                           sprite_manager.get_item(SpriteManager::item_key_for_name(gi.name));
+void WorldRenderer::draw_ground_item(const GroundItemSnapshot& ground_item) {
+    SDL_Texture* tex =
+        ground_item.is_gold ?
+            sprite_manager.get_gold() :
+            sprite_manager.get_item(SpriteManager::item_key_for_name(ground_item.name));
     if (tex == nullptr)
         tex = sprite_manager.get_item(FALLBACK_ITEM_SPRITE);
     if (tex == nullptr)
         return;
 
-    int gx = camera.get_screen_x(gi.x * config.tile_width);
-    int gy = camera.get_screen_y(gi.y * config.tile_height);
+    int gx = camera.get_screen_x(ground_item.x * config.tile_width);
+    int gy = camera.get_screen_y(ground_item.y * config.tile_height);
     int tw = config.tile_width;
     int th = config.tile_height;
+
     renderer.draw_shadow(gx + tw / 2, gy + th, static_cast<int>(tw * Renderer::SHADOW_WIDTH_RATIO));
     renderer.draw_frame_scaled_outlined(tex, 0, 0, tw, th, gx, gy, tw, th,
                                         Renderer::OUTLINE_THICKNESS);

@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "common/cheat_type.h"
 #include "common/clan/clan_action.h"
@@ -50,30 +51,14 @@ GameClient::~GameClient() {
     client->join();
 }
 
-void GameClient::message(const std::string& text) {
-    mini_chat->add_message(text);
-}
-
-void GameClient::play(const std::string& sound, int vol) {
-    if (vol < 0)
-        audio_manager->play_sound(sound);
-    else
-        audio_manager->play_sound(sound, vol);
-}
-
-void GameClient::show_clan_review(const ClanReviewUpdate& clan_review_updated) {
-    clan_panel->set_data(clan_review_updated);
-}
-
 void GameClient::init_subsystems(bool fullscreen, bool load_font) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throw std::runtime_error(SDL_GetError());
     Uint32 flags = SDL_WINDOW_SHOWN;
-
-    // if (fullscreen)
-    //     flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    // window.reset(SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
-    //                               SDL_WINDOWPOS_CENTERED, width, height, flags));
+    if (fullscreen)
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    window.reset(SDL_CreateWindow("Argentum Online - G5", SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED, width, height, flags));
     if (!window) {
         SDL_Quit();
         throw std::runtime_error(SDL_GetError());
@@ -83,13 +68,16 @@ void GameClient::init_subsystems(bool fullscreen, bool load_font) {
     character_renderer = std::make_unique<CharacterRenderer>(renderer.get());
     std::string base_assets = get_base_asset_dir();
     std::string font_path = base_assets + "/fonts/font.ttf";
+
     if (load_font)
         renderer->load_font(font_path, 12);
+
     sprite_manager = std::make_unique<SpriteManager>(renderer->get_sdl_renderer());
     sprite_manager->load_body_textures(base_assets);
     sprite_manager->load_terrain_textures(base_assets);  // también carga items y overlays fijos
     sprite_manager->load_head_textures();                // 6 cabezas usadas por el cliente
     sprite_manager->load_npc_textures();                 // 11 tipos de NPC
+
     terrain_renderer =
         std::make_unique<TerrainRenderer>(renderer.get(), sprite_manager.get(), camera);
     npc_renderer = std::make_unique<NPCRenderer>(renderer.get(), sprite_manager.get(), camera);
@@ -113,17 +101,13 @@ void GameClient::run() {
     audio_manager->play_background_music(get_base_asset_dir() + "/audio/music/background.mp3",
                                          MIX_MAX_VOLUME / 2);
     ClientMap client_map(0, 0, {});
-    state.reset_position();  // por que se hace reset position?
+    state.reset_position();
 
-    // por que hay variables declaradas aca?
-    direction = 0;
-    current_frame = 0;
-    total_frames = 6;
     last_frame_time = SDL_GetTicks();
-    last_move_time = 0;
 
     while (running) {
         frame_start = SDL_GetTicks();
+
         process_sdl_events();
         process_keyword_input();
         update_handler.apply_pending(client->get_received_updates(), client_map, config.tile_width,
@@ -134,7 +118,7 @@ void GameClient::run() {
         update_camera(client_map);
         world_renderer->draw(state, client_map, direction, current_frame, chat_active, chat_input,
                              music_paused, width, height);
-        cap_framerate();
+        verify_frame_duration();
     }
 }
 
@@ -151,8 +135,12 @@ void GameClient::load_audio_assets() {
 
 
 void GameClient::process_sdl_events() {
-    InputContext ctx{chat_active, clan_panel->is_visible()};
-    for (const auto& action : input_handler.poll_events(ctx)) dispatch_action(action);
+    InputContext context{chat_active, clan_panel->is_visible()};
+    std::vector<InputAction> actions = InputHandler::poll_events(context);
+
+    for (const auto& action : actions) {
+        dispatch_action(action);
+    }
 }
 
 void GameClient::dispatch_action(const InputAction& action) {
@@ -478,7 +466,8 @@ void GameClient::handle_right_click(int screen_x, int screen_y) {
 void GameClient::process_keyword_input() {
     moving = false;
     bool can_move = (frame_start - last_move_time >= config.move_interval_ms);
-    switch (input_handler.poll_movement(chat_active)) {
+
+    switch (InputHandler::poll_movement(chat_active)) {
         case MoveDir::Down:
             direction = 0;
             total_frames = 6;
@@ -540,9 +529,27 @@ void GameClient::update_camera(const ClientMap& client_map) {
     }
 }
 
-void GameClient::cap_framerate() {
-    Uint32 elapsed = SDL_GetTicks() - frame_start;
-    if (elapsed < config.frame_time_ms()) {
-        SDL_Delay(config.frame_time_ms() - elapsed);
+void GameClient::verify_frame_duration() {
+    Uint32 frame_duration = SDL_GetTicks() - frame_start;
+    Uint32 target_frame_duration = config.frame_time_ms();
+
+    if (frame_duration < target_frame_duration) {
+        Uint32 time_to_sleep = target_frame_duration - frame_duration;
+        SDL_Delay(time_to_sleep);
     }
+}
+
+void GameClient::message(const std::string& text) {
+    mini_chat->add_message(text);
+}
+
+void GameClient::play(const std::string& sound, int vol) {
+    if (vol < 0)
+        audio_manager->play_sound(sound);
+    else
+        audio_manager->play_sound(sound, vol);
+}
+
+void GameClient::show_clan_review(const ClanReviewUpdate& clan_review_updated) {
+    clan_panel->set_data(clan_review_updated);
 }
