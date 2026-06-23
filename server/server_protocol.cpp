@@ -466,6 +466,7 @@ void ServerProtocol::send_attacked(const GameUpdate& update) {
     put_i32(buf, r.damage);
     put_u8(buf, r.evaded ? 1 : 0);
     put_u8(buf, r.target_died ? 1 : 0);
+    put_u8(buf, r.is_critical ? 1 : 0);
     put_u8(buf, r.is_healing ? 1 : 0);
     put_i32(buf, r.heal_amount);
     put_u8(buf, static_cast<uint8_t>(r.type));

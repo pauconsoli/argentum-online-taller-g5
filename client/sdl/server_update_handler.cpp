@@ -128,7 +128,8 @@ void ServerUpdateHandler::on_attack(const AttackUpdate& au) {
             notifier.message(result.weapon_or_spell_name + ": curaste a " + target_name + " por " +
                              std::to_string(result.heal_amount) + " puntos");
         } else if (!result.target_died) {
-            notifier.message(result.weapon_or_spell_name + ": causaste " +
+            std::string prefix = (result.is_critical && result.damage > 0) ? "[CRÍTICO] " : "";
+            notifier.message(prefix + result.weapon_or_spell_name + ": causaste " +
                              std::to_string(result.damage) + " de daño a " + target_name);
         }
     } else if (result.target_id == state.player_id()) {
@@ -145,7 +146,8 @@ void ServerUpdateHandler::on_attack(const AttackUpdate& au) {
             notifier.message(healer_name + " te curó " + std::to_string(result.heal_amount) +
                              " puntos de vida");
         } else if (!result.target_died) {
-            notifier.message("Recibiste " + std::to_string(result.damage) + " de daño");
+            std::string prefix = (result.is_critical && result.damage > 0) ? "[CRÍTICO] " : "";
+            notifier.message(prefix + "Recibiste " + std::to_string(result.damage) + " de daño");
         }
     } else if (result.damage > 0 && result.target_clan_id != 0 &&
                result.target_clan_id == state.clan_id()) {

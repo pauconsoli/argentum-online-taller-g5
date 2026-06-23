@@ -399,6 +399,7 @@ std::unique_ptr<GameUpdate> ClientProtocol::recv_attacked() {
     r.damage = recv_i32();
     r.evaded = (recv_u8() != 0);
     r.target_died = (recv_u8() != 0);
+    r.is_critical = (recv_u8() != 0);
     r.is_healing = (recv_u8() != 0);
     r.heal_amount = recv_i32();
     r.type = static_cast<AttackType>(recv_u8());
