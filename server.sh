@@ -14,6 +14,7 @@ PORT=8080
 
 export ARGENTUM_SERVER_CONFIG_FILE="/etc/${GAME_NAME}/game_config.toml"
 export ARGENTUM_DATA_DIR="/var/${GAME_NAME}"
+export ARGENTUM_SAVE_FILE="/var/${GAME_NAME}/save.json"
 
 echo -e "${BLUE}[Argentum] Iniciando servidor en el puerto ${PORT}...${NC}"
 
