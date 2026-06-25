@@ -39,6 +39,20 @@ Para compilar localmente en modo Debug, podes utilizar el `Makefile` incluido:
 ```bash
 make compile-debug
 ```
+Para levantar Server y Client (en la raíz, después de compilar):
+
+```bash
+./build/argentum_server 8080
+
+./build/argentum_client_qt
+```
+Para levantar Server con Valgrind:
+
+```bash
+valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/argentum_server 8080
+```
+
+## Tests
 
 Para correr los tests unitarios:
 
@@ -66,18 +80,7 @@ Los tests del protocolo cubren round-trip de los mensajes principales
 (login, chat, attack con tipo de arma, snapshot, match_joined con restore,
 inventory con uint64 grandes, etc.) usando `socketpair()` para simular un
 par cliente-servidor sin abrir red real.
-Para levantar Server y Client (en la raíz):
 
-```bash
-./build/argentum_server 8080
-
-./build/argentum_client_qt
-```
-Para levantar Server con Valgrind:
-
-```bash
-valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/argentum_server 8080
-```
 
 ### Comandos de cierre:
 
@@ -122,15 +125,15 @@ valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/arg
 | Comando de NPC de ciudad | Descripción |
 |------------------|-------------|
 | **Click izquierdo** sobre NPC | Selecciona al NPC para dirigirle comandos
-| `/curar` | Te restaura HP y maná al máximo. Debe estár dirigido a un sacerdote 
-| `/resucitar` | Te devuelve a la vida. Debe estár dirigido a un sacerdote 
-| `/comprar <objeto>` | Comprar un item (pociones, armas, armaduras, etc). Debe estár dirigido a un sacerdote o a un comerciante 
+| `/curar` | Te restaura HP y maná al máximo. Debe estar dirigido a un sacerdote 
+| `/resucitar` | Te devuelve a la vida. Debe estar dirigido a un sacerdote 
+| `/comprar <objeto>` | Comprar un item (pociones, armas, armaduras, etc). Debe estar dirigido a un sacerdote o a un comerciante 
 | `/vender <objeto>` | Vende un objeto de tu inventario. Debe estar dirigido a un comerciante 
 | `/listar` | Muestra el catálogo de objetos que tienen para vender sacerdote/comerciante o la bóveda del jugador (si se selecciona el banquero)
-| `/depositar <objeto>` | Guarda un objeto de tu inventario en el banco. Debe estár dirigido a un banquero
-| `/depositar oro <cantidad>` | Guarda oro en el banco. Debe estár dirigido a un banquero
-| `/retirar <objeto>` | Recupera un objeto del banco a tu inventario. Debe estár dirigido a un banquero
-| `/retirar oro <cantidad>` | Retira oro del banco. Debe estár dirigido a un banquero
+| `/depositar <objeto>` | Guarda un objeto de tu inventario en el banco. Debe estar dirigido a un banquero
+| `/depositar oro <cantidad>` | Guarda oro en el banco. Debe estar dirigido a un banquero
+| `/retirar <objeto>` | Recupera un objeto del banco a tu inventario. Debe estar dirigido a un banquero
+| `/retirar oro <cantidad>` | Retira oro del banco. Debe estar dirigido a un banquero
 
 ### Cheats útiles 😉
 
@@ -166,12 +169,18 @@ del match (que es estable).
 
 ## Documentación
 
-A continuación, se incluyen enlaces a la documentación del proyecto
+A continuación, se incluyen enlaces a la documentación del proyecto. También podes encontrar los archivos en la carpeta `docs` del repositorio
 
-- [Manual de Usuario](https://direccion-del-sitio.com)
-- [Manual del Proyecto](https://direccion-del-sitio.com)
+- [Manual de Usuario](https://drive.google.com/file/d/1HA_kMJd8HVcvrmLafm_gUsA2qt70PIC_/view?usp=sharing)
+- [Manual del Proyecto](https://drive.google.com/file/d/1SaWLO-5NguFP9atgPi3JufmEQvKSOHv-/view?usp=drive_link)
 - [Documentación Técnica](https://direccion-del-sitio.com)
-- [Video Promocional](https://direccion-del-sitio.com)
+
+## Video Promocional
+
+[Link al video en YouTube](https://www.youtube.com/watch?v=oLn4zWYuGpo&t=47s)
+
+[También disponible acá!](linkaldrive)
+
 
 ## Licencias
 
