@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <SDL2/SDL.h>
+
 #include "../assets/sprite_manager.h"
 #include "../core/camera.h"
 #include "character_renderer.h"
@@ -19,7 +21,7 @@ class PlayerRenderer {
     void render_single(uint32_t pid, const PlayerSnapshot& ps, uint32_t my_player_id,
                        uint32_t my_clan_id, int direction, int current_frame,
                        const std::vector<InventorySlotData>& inventory_slots, int tile_w,
-                       int tile_h);
+                       int tile_h, Uint32 frame_delay_ms, int total_frames);
 
  private:
     static ItemType get_item_type(const std::string& name);

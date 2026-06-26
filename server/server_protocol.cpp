@@ -583,6 +583,8 @@ void ServerProtocol::send_snapshot(const GameUpdate& update) {
         for (const auto& eq_name : p.equipment) {
             put_string(buf, eq_name);
         }
+        put_u8(buf, p.direction);
+        put_u8(buf, p.is_moving ? 1 : 0);
     }
 
     if (u.npcs.size() > UINT16_MAX) {

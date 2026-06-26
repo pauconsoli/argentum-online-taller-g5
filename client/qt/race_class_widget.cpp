@@ -9,14 +9,19 @@
 #include <QVBoxLayout>
 
 RaceClassWidget::RaceClassWidget(QWidget* parent):
-        QWidget(parent),
-        race_combo(new QComboBox(this)),
-        class_combo(new QComboBox(this)),
-        confirm_button(new QPushButton(tr("CONFIRMAR"), this)),
-        back_button(new QPushButton(tr("← Volver al lobby"), this)) {
+    QWidget(parent),
+    race_combo(new QComboBox(this)),
+    class_combo(new QComboBox(this)),
+    confirm_button(new QPushButton(tr("CONFIRMAR"), this)),
+    back_button(new QPushButton(tr("← Volver al lobby"), this)) {
 
     race_combo->addItems({tr("Humano"), tr("Elfo"), tr("Enano"), tr("Gnomo")});
     class_combo->addItems({tr("Mago"), tr("Clérigo"), tr("Paladín"), tr("Guerrero")});
+
+    race_combo->setMinimumWidth(160);
+    class_combo->setMinimumWidth(160);
+    race_combo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    class_combo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
     auto* title = new QLabel(tr("Elegí tu personaje"), this);
     title->setAlignment(Qt::AlignCenter);
@@ -39,10 +44,9 @@ RaceClassWidget::RaceClassWidget(QWidget* parent):
         confirm_button->setFont(f);
     }
 
-    back_button->setStyleSheet(
-            "QPushButton { background: transparent; border: 1px solid #8a6a2f;"
-            "color: #c89b3c; font-weight: normal; }"
-            "QPushButton:hover { background-color: #3a2618; }");
+    back_button->setStyleSheet("QPushButton { background: transparent; border: 1px solid #8a6a2f;"
+                               "color: #c89b3c; font-weight: normal; }"
+                               "QPushButton:hover { background-color: #3a2618; }");
 
     auto* bottom = new QHBoxLayout;
     bottom->addWidget(back_button);
@@ -68,4 +72,6 @@ void RaceClassWidget::on_confirm_clicked() {
                           static_cast<uint8_t>(class_combo->currentIndex()));
 }
 
-void RaceClassWidget::on_back_clicked() { emit backToLobbyRequested(); }
+void RaceClassWidget::on_back_clicked() {
+    emit backToLobbyRequested();
+}

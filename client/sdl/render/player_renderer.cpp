@@ -49,7 +49,8 @@ void PlayerRenderer::render_single(uint32_t player_id, const PlayerSnapshot& pla
                                    uint32_t my_player_id, uint32_t my_clan_id, int direction,
                                    int current_frame,
                                    const std::vector<InventorySlotData>& inventory_slots,
-                                   int tile_w, int tile_h) {
+                                   int tile_w, int tile_h, Uint32 frame_delay_ms,
+                                   int total_frames) {
 
     int player_position_x = camera_.get_screen_x(player_snapshoot.x * tile_w);
     int player_position_y = camera_.get_screen_y(player_snapshoot.y * tile_h);
@@ -62,8 +63,22 @@ void PlayerRenderer::render_single(uint32_t player_id, const PlayerSnapshot& pla
     SDL_Texture* head_texture =
         sprite_manager_->get_head(head_index_for_race(player_snapshoot.race));
 
-    int player_direction = (player_id == my_player_id) ? direction : 0;
-    int player_xframe = (player_id == my_player_id) ? current_frame : 0;
+    // Spritesheet rows: 0=DOWN, 1=UP, 2=LEFT, 3=RIGHT
+    // Direction enum:   UP=0,   DOWN=1, LEFT=2, RIGHT=3
+    static const int dir_to_row[] = {1, 0, 2, 3};
+
+    int player_direction, player_xframe;
+    if (player_id == my_player_id) {
+        player_direction = direction;
+        player_xframe = current_frame;
+    } else {
+        uint8_t raw = player_snapshoot.direction;
+        player_direction = (raw < 4) ? dir_to_row[raw] : 0;
+        player_xframe = player_snapshoot.is_moving ?
+                            static_cast<int>((SDL_GetTicks() / frame_delay_ms) %
+                                             static_cast<Uint32>(total_frames)) :
+                            0;
+    }
 
     if (!player_snapshoot.is_ghost) {
         int shadow_w = static_cast<int>(tile_w * Renderer::SHADOW_WIDTH_RATIO);
@@ -81,6 +96,18 @@ void PlayerRenderer::render_single(uint32_t player_id, const PlayerSnapshot& pla
             ItemType item_type = get_item_type(islot.item_name);
             SDL_Texture* item_texture =
                 sprite_manager_->get_item(SpriteManager::item_key_for_name(islot.item_name));
+            if (!item_texture)
+                continue;
+            character_renderer_->draw_equipped_item(body_x, body_y, item_texture, item_type,
+                                                    tile_w);
+        }
+    } else {
+        for (const auto& item_name : player_snapshoot.equipment) {
+            if (item_name.empty())
+                continue;
+            ItemType item_type = get_item_type(item_name);
+            SDL_Texture* item_texture =
+                sprite_manager_->get_item(SpriteManager::item_key_for_name(item_name));
             if (!item_texture)
                 continue;
             character_renderer_->draw_equipped_item(body_x, body_y, item_texture, item_type,
