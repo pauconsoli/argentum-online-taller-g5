@@ -173,7 +173,7 @@ A continuación, se incluyen enlaces a la documentación del proyecto. También 
 
 - [Manual de Usuario](https://drive.google.com/file/d/1HA_kMJd8HVcvrmLafm_gUsA2qt70PIC_/view?usp=sharing)
 - [Manual de Proyecto](https://drive.google.com/file/d/1ZH_RnKX2uRycTr-s3qA6atPRRE1vic1w/view?usp=drive_link)
-- [Documentación Técnica](https://direccion-del-sitio.com)
+- [Documentación Técnica](https://drive.google.com/file/d/1n6HwyeQsRFMRUQbgROLcM_1G0btojaEH/view?usp=drive_link)
 
 ## Video Promocional
 
