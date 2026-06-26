@@ -67,13 +67,13 @@ Es el núcleo del juego. Sus componentes más importantes son:
 
 - `Server`: coordina clientes, matches, ids, ciclo de vida y persistencia
 - `AcceptorThread`: acepta conexiones entrantes
-- `ClientHandler`: encapsula la atencion de un cliente
-- `ReceiverThread`: lee el socket del cliente y transforma bytes en operaciones del dominio.
-- `SenderThread`: toma updates desde una cola y los envia por red.
-- `GameLoopThread`: ejecuta ticks periodicos, procesa comandos y genera snapshots.
-- `Match` / `BasicMatch`: representa una partida y su cola de comandos.
-- `World`: modelo del mundo de juego para una partida.
-- `Persister`: guarda y restaura el estado persistente.
+- `ReceiverThread`: lee el socket del cliente y transforma bytes en operaciones del dominio
+- `SenderThread`: toma updates desde una cola y los envía por red
+- `ClientHandler`: encapsula lo que compone a un cliente (socket, PlayerConnection, sus threads Sender/Receiver)
+- `GameLoopThread`: ejecuta ticks periódicos, procesa comandos y genera snapshots/updates
+- `Match` / `BasicMatch`: representa una partida y su cola de comandos
+- `World`: modelo del mundo de juego para una partida
+- `Persister`: guarda y restaura el estado persistente
 
 
 ## Arquitectura del Servidor
@@ -500,20 +500,10 @@ Cuando un jugador entra a un match:
 
 < *Nota 2:* > en el estado actual del proyecto, la persistencia del `Banco` de la partida no se encuentra implementada. Es un feature a implementar en el futuro.
 
-### Métodos destacados
 
-- `Server::run()`: arranque, threads principales y apagado
-- `Server::snapshot()`: extrae un modelo persistible del estado del juego
-- `Server::save_state()`: controla el autosave y los errores de IO
-- `ReceiverThread::run()`: dispatcher de opcodes segun estado de sesión
-- `ReceiverThread::handle_join_match()`: join, envío de mapa y posible restauración
-- `BasicMatch::tick()`: ejecuta comandos y distribuye updates
-- `GameLoopThread::run()`: actualiza el mundo, emite snapshots y dispara autosave
-- `Persister::try_load()`: carga inicial
-- `Persister::save()`: escritura atómica del save
-- `RestorePlayerCommand::execute()`: restaura jugadores persistidos
+## Diagramas relevantes del servidor
 
-### Diagrama de la arquitectura del servidor
+### Diagrama de la arquitectura principal
 
 ![alt text](<diagrams/Diagrama arquitectura del server.jpg>)
 
