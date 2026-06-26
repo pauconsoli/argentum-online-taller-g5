@@ -44,7 +44,7 @@ El control de versiones se manejó con Git en GitHub, usando ramas por feature (
 
 ## Documentación usada
 
-Para **SDL2** ... 
+Para **SDL2** usamos la página oficial https://www.libsdl.org/ y distintos tutoriales de YouTube, la mayoría de los siguientes canales: https://www.youtube.com/@MikeShah y https://www.youtube.com/@ThepowerupsLearning   
 
 Para **Qt5** consultamos la documentación oficial en https://doc.qt.io/archives/qt-5.15/
 

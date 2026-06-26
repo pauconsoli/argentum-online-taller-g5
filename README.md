@@ -172,7 +172,7 @@ del match (que es estable).
 A continuación, se incluyen enlaces a la documentación del proyecto. También podes encontrar los archivos en la carpeta `docs` del repositorio
 
 - [Manual de Usuario](https://drive.google.com/file/d/1HA_kMJd8HVcvrmLafm_gUsA2qt70PIC_/view?usp=sharing)
-- [Manual del Proyecto](https://drive.google.com/file/d/1SaWLO-5NguFP9atgPi3JufmEQvKSOHv-/view?usp=drive_link)
+- [Manual de Proyecto](https://drive.google.com/file/d/1ZH_RnKX2uRycTr-s3qA6atPRRE1vic1w/view?usp=drive_link)
 - [Documentación Técnica](https://direccion-del-sitio.com)
 
 ## Video Promocional
