@@ -51,6 +51,11 @@ Para levantar Server con Valgrind:
 ```bash
 valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/argentum_server 8080
 ```
+### Comandos de cierre:
+
+- **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
+- **Servidor:** para matar el servidor de forma segura, escribir la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
+
 
 ## Tests
 
@@ -80,12 +85,6 @@ Los tests del protocolo cubren round-trip de los mensajes principales
 (login, chat, attack con tipo de arma, snapshot, match_joined con restore,
 inventory con uint64 grandes, etc.) usando `socketpair()` para simular un
 par cliente-servidor sin abrir red real.
-
-
-### Comandos de cierre:
-
-- **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
-- **Servidor:** para matar el servidor de forma segura, escribir la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
 
 ---
 
