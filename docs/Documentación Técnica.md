@@ -10,11 +10,11 @@
 
 ## Objetivo
 
-Este documento resume la arquitectura técnica de nuestro proyecto de TP final. La documentacion prioriza los componentes mas importantes del sistema, con el objetivo de ser entendida por otro desarrollador que busque conocer nuestra implementación.
+Este documento resume la arquitectura técnica de nuestro proyecto de TP final. La documentación prioriza los componentes más importantes del sistema, con el objetivo de ser entendida por otro desarrollador que busque conocer nuestra implementación.
 
 ## General
 
-El proyecto esta implementado en C++20 y se organiza con tres areas principales:
+El proyecto está implementado en C++20 y se organiza con tres áreas principales:
 
 - `common/`: infraestructura, contratos, archivos compartidos entre cliente y servidor
 - `client/`: cliente de juego, con interfaz SDL y una capa Qt para lobby/menú
@@ -22,9 +22,9 @@ El proyecto esta implementado en C++20 y se organiza con tres areas principales:
 
 La arquitectura sigue un modelo de servidor **autoritativo**:
 
-- El cliente solo envia intenciones o acciones
+- El cliente solo envía intenciones o acciones
 - El servidor valida esas acciones y actualiza el estado real
-- El servidor envia snapshots y updates a los clientes
+- El servidor envía snapshots y updates a los clientes
 - El cliente renderiza el estado recibido
 
 ## Módulos Principales
@@ -65,10 +65,16 @@ La UI no decide el estado real del juego: muestra lo que el servidor confirma. E
 
 Es el núcleo del juego. Sus componentes más importantes son:
 
-- Gestión de conexiones y sesiones de clientes
-- Lógica del juego, modelo del mundo y entidades
-- Sistema de partidas y ciclo de vida del gameloop
-- Persistencia y restauración del estado
+- `Server`: coordina clientes, matches, ids, ciclo de vida y persistencia
+- `AcceptorThread`: acepta conexiones entrantes
+- `ClientHandler`: encapsula la atencion de un cliente
+- `ReceiverThread`: lee el socket del cliente y transforma bytes en operaciones del dominio.
+- `SenderThread`: toma updates desde una cola y los envia por red.
+- `GameLoopThread`: ejecuta ticks periodicos, procesa comandos y genera snapshots.
+- `Match` / `BasicMatch`: representa una partida y su cola de comandos.
+- `World`: modelo del mundo de juego para una partida.
+- `Persister`: guarda y restaura el estado persistente.
+
 
 ## Arquitectura del Servidor
 
@@ -493,20 +499,6 @@ Cuando un jugador entra a un match:
 < *Nota 1:* > los items persistidos se reconstruyen por nombre usando `ItemRegistry`. Si un item ya no existe en el registry, se saltea.
 
 < *Nota 2:* > en el estado actual del proyecto, la persistencia del `Banco` de la partida no se encuentra implementada. Es un feature a implementar en el futuro.
-
-## Métodos y Clases más importantes
-
-### Clases del lado servidor
-
-- `Server`: orquestacion general.
-- `BasicMatch`: partida activa y cola de comandos.
-- `World`: estado del mundo y reglas principales.
-- `PlayerConnection`: estado de sesion y cola de salida por jugador.
-- `ReceiverThread`: frontera entre socket y comandos del dominio.
-- `SenderThread`: frontera entre updates del dominio y socket.
-- `GameLoopThread`: reloj del servidor y generacion de snapshots.
-- `Persister`: carga/guardado y cache del save.
-- `WorldSerializer`: conversion entre `WorldSnapshot` y JSON
 
 ### Métodos destacados
 
