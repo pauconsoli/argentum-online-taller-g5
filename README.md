@@ -179,7 +179,7 @@ A continuación, se incluyen enlaces a la documentación del proyecto. También 
 
 [Link al video en YouTube](https://www.youtube.com/watch?v=oLn4zWYuGpo&t=47s)
 
-[También disponible acá!](linkaldrive)
+[También disponible acá!](https://drive.google.com/file/d/1j2pIexjP3FRx3dYaIUsY8g5DhD8In5ug/view?usp=drive_link)
 
 
 ## Licencias
