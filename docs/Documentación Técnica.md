@@ -136,7 +136,7 @@ Esta separación es importante porque evita ejecutar lógica de juego directamen
 
 ### Diagrama de secuencia: comunicación
 
-![alt text](<Secuencia - Comunicación de threads.jpg>)
+![alt text](<diagrams/Secuencia - Comunicación de threads.jpg>)
 
 ### Estado de sesión de un jugador
 
@@ -410,7 +410,7 @@ La persistencia runtime usa JSON. El server:
 
 #### *Diagrama de secuencia: guardado*
 
-![alt text](<Secuencia - Guardado y persistencia.jpg>)
+![alt text](<diagrams/Secuencia - Guardado y persistencia.jpg>)
 
 #### *Estructura del archivo*
 
@@ -488,7 +488,7 @@ Cuando un jugador entra a un match:
 #### *Diagrama de secuencia: join y restauración*
 
 
-![alt text](<Secuencia - REstauración.jpg>)
+![alt text](<diagrams/Secuencia - REstauración.jpg>)
 
 < *Nota 1:* > los items persistidos se reconstruyen por nombre usando `ItemRegistry`. Si un item ya no existe en el registry, se saltea.
 
@@ -523,11 +523,11 @@ Cuando un jugador entra a un match:
 
 ### Diagrama de la arquitectura del servidor
 
-![alt text](<Diagrama arquiectura del server-2.jpg>)
+![alt text](<diagrams/Diagrama arquiectura del server-2.jpg>)
 
 ### Diagrama del modelo y sus relaciones principales
 
-![alt text](<Modelo - Relaciones principales.jpg>)
+![alt text](<diagrams/Modelo - Relaciones principales.jpg>)
 
 ## Decisiones de Diseño Relevantes
 
