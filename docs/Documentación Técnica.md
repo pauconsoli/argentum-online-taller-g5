@@ -523,7 +523,7 @@ Cuando un jugador entra a un match:
 
 ### Diagrama de la arquitectura del servidor
 
-![alt text](<diagrams/Diagrama arquiectura del server-2.jpg>)
+![alt text](<diagrams/Diagrama arquitectura del server.jpg>)
 
 ### Diagrama del modelo y sus relaciones principales
 
