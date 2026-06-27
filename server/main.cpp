@@ -34,7 +34,6 @@ int main(int argc, char* argv[]) {
         std::string npcs_config_filepath;
 
         if (game_config_path_from_env) {
-            // Entorno de producción (instalado): derivamos las rutas desde la variable de entorno.
             game_config_filepath = game_config_path_from_env;
             std::string config_dir = game_config_filepath;
             size_t last_slash = config_dir.find_last_of('/');
@@ -53,6 +52,10 @@ int main(int argc, char* argv[]) {
             npcs_config_filepath = DEFAULT_NPCS_CONFIG_PATH;
         }
 
+        const char* save_path_env =
+            std::getenv("ARGENTUM_SAVE_FILE");  // fix para la persistencia en el installer
+        std::string save_path = save_path_env ? save_path_env : "save.json";
+
         GameConfigLoader::load(game_config_filepath);
         ItemRegistryLoader::load(items_config_filepath);
         NPCRegistryLoader::load(npcs_config_filepath);
@@ -61,7 +64,7 @@ int main(int argc, char* argv[]) {
             WorldItemLoader::load_ground_items(*w, map_config_filepath);
             return w;
         };
-        Server server(port, world_factory);
+        Server server(port, world_factory, save_path);
         server.run();
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
