@@ -177,6 +177,9 @@ fi
 print_step "Creando directorios de instalación..."
 mkdir -p "$CONFIG_DIR"
 mkdir -p "$DATA_DIR"
+if [[ -n "$SUDO_USER" ]]; then
+    chown "$SUDO_USER:$SUDO_USER" "$DATA_DIR"
+fi
 if [[ ! -d "$DESKTOP_DIR" ]]; then
     mkdir -p "$DESKTOP_DIR"
     if [[ -n "$SUDO_USER" ]]; then

@@ -328,7 +328,6 @@ y = 62
 [[ground_items]]
 type = "item"
 name = "Báculo nudoso"
-quantity = 8
 x = 69
 y = 21
 

@@ -39,6 +39,25 @@ Para compilar localmente en modo Debug, podes utilizar el `Makefile` incluido:
 ```bash
 make compile-debug
 ```
+Para levantar Server y Client (en la raíz, después de compilar):
+
+```bash
+./build/argentum_server 8080
+
+./build/argentum_client_qt
+```
+Para levantar Server con Valgrind:
+
+```bash
+valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/argentum_server 8080
+```
+### Comandos de cierre:
+
+- **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
+- **Servidor:** para matar el servidor de forma segura, escribir la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
+
+
+## Tests
 
 Para correr los tests unitarios:
 
@@ -66,23 +85,6 @@ Los tests del protocolo cubren round-trip de los mensajes principales
 (login, chat, attack con tipo de arma, snapshot, match_joined con restore,
 inventory con uint64 grandes, etc.) usando `socketpair()` para simular un
 par cliente-servidor sin abrir red real.
-Para levantar Server y Client (en la raíz):
-
-```bash
-./build/argentum_server 8080
-
-./build/argentum_client_qt
-```
-Para levantar Server con Valgrind:
-
-```bash
-valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/argentum_server 8080
-```
-
-### Comandos de cierre:
-
-- **Cliente:** para salir del juego y desconectarte, simplemente cerrar la ventana gráfica.
-- **Servidor:** para matar el servidor de forma segura, escribir la letra `q` (y luego presiona Enter) en la terminal donde se está ejecutando.
 
 ---
 
@@ -122,15 +124,15 @@ valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./build/arg
 | Comando de NPC de ciudad | Descripción |
 |------------------|-------------|
 | **Click izquierdo** sobre NPC | Selecciona al NPC para dirigirle comandos
-| `/curar` | Te restaura HP y maná al máximo. Debe estár dirigido a un sacerdote 
-| `/resucitar` | Te devuelve a la vida. Debe estár dirigido a un sacerdote 
-| `/comprar <objeto>` | Comprar un item (pociones, armas, armaduras, etc). Debe estár dirigido a un sacerdote o a un comerciante 
+| `/curar` | Te restaura HP y maná al máximo. Debe estar dirigido a un sacerdote 
+| `/resucitar` | Te devuelve a la vida. Debe estar dirigido a un sacerdote 
+| `/comprar <objeto>` | Comprar un item (pociones, armas, armaduras, etc). Debe estar dirigido a un sacerdote o a un comerciante 
 | `/vender <objeto>` | Vende un objeto de tu inventario. Debe estar dirigido a un comerciante 
 | `/listar` | Muestra el catálogo de objetos que tienen para vender sacerdote/comerciante o la bóveda del jugador (si se selecciona el banquero)
-| `/depositar <objeto>` | Guarda un objeto de tu inventario en el banco. Debe estár dirigido a un banquero
-| `/depositar oro <cantidad>` | Guarda oro en el banco. Debe estár dirigido a un banquero
-| `/retirar <objeto>` | Recupera un objeto del banco a tu inventario. Debe estár dirigido a un banquero
-| `/retirar oro <cantidad>` | Retira oro del banco. Debe estár dirigido a un banquero
+| `/depositar <objeto>` | Guarda un objeto de tu inventario en el banco. Debe estar dirigido a un banquero
+| `/depositar oro <cantidad>` | Guarda oro en el banco. Debe estar dirigido a un banquero
+| `/retirar <objeto>` | Recupera un objeto del banco a tu inventario. Debe estar dirigido a un banquero
+| `/retirar oro <cantidad>` | Retira oro del banco. Debe estar dirigido a un banquero
 
 ### Cheats útiles 😉
 
@@ -166,12 +168,18 @@ del match (que es estable).
 
 ## Documentación
 
-A continuación, se incluyen enlaces a la documentación del proyecto
+A continuación, se incluyen enlaces a la documentación del proyecto. También podes encontrar los archivos en la carpeta `docs` del repositorio
 
-- [Manual de Usuario](https://direccion-del-sitio.com)
-- [Manual del Proyecto](https://direccion-del-sitio.com)
-- [Documentación Técnica](https://direccion-del-sitio.com)
-- [Video Promocional](https://direccion-del-sitio.com)
+- [Manual de Usuario](https://drive.google.com/file/d/1HA_kMJd8HVcvrmLafm_gUsA2qt70PIC_/view?usp=sharing)
+- [Manual de Proyecto](https://drive.google.com/file/d/1ZH_RnKX2uRycTr-s3qA6atPRRE1vic1w/view?usp=drive_link)
+- [Documentación Técnica](https://drive.google.com/file/d/1n6HwyeQsRFMRUQbgROLcM_1G0btojaEH/view?usp=drive_link)
+
+## Video Promocional
+
+[Link al video en YouTube](https://youtu.be/9OeWmpTY00o) 
+
+[También disponible acá!](https://drive.google.com/file/d/1j2pIexjP3FRx3dYaIUsY8g5DhD8In5ug/view?usp=drive_link)
+
 
 ## Licencias
 
