@@ -35,6 +35,13 @@ class NPCRenderer {
         NPCVisualType sprite_type = NPCVisualType::UNKNOWN;
         uint8_t direction = 0;
         bool is_moving = false;
+
+        float render_x = 0.0f;
+        float render_y = 0.0f;
+        float target_x = 0.0f;
+        float target_y = 0.0f;
+        bool position_initialized = false;
+        Uint32 last_render_time = 0;
     };
 
     static NPCSpriteInfo npc_sprite_info(NPCVisualType t);

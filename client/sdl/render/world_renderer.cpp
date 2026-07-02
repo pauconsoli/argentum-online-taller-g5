@@ -132,7 +132,8 @@ void WorldRenderer::draw_fringe(const std::vector<FringeEntry>& fringe, const Ga
             case FringeType::PLAYER:
                 player_renderer.render_single(e.id, *e.ps, state.player_id(), state.clan_id(),
                                               direction, current_frame, state.inventory_slots(),
-                                              config.tile_width, config.tile_height);
+                                              config.tile_width, config.tile_height,
+                                              config.frame_delay_ms, 6);
                 break;
             case FringeType::NPC:
                 npc_renderer.render_single(e.id, *e.ns, config.tile_width, config.tile_height);
