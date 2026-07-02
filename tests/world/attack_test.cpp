@@ -74,10 +74,10 @@ TEST_F(AttackTest, NewbieCannotAttackOrBeAttacked) {
     test_add_player(2, 10, 11, 20);
 
     AttackResult res1 = world.attack(1, 2);  // newbie atacando
-    EXPECT_EQ(res1.status, AttackStatus::INVALID_TARGET);
+    EXPECT_EQ(res1.status, AttackStatus::NEWBIE_PROTECTION);
 
     AttackResult res2 = world.attack(2, 1);  // atacando al newbie
-    EXPECT_EQ(res2.status, AttackStatus::INVALID_TARGET);
+    EXPECT_EQ(res2.status, AttackStatus::NEWBIE_PROTECTION);
 }
 
 TEST_F(AttackTest, MaxLevelDifference) {
@@ -85,7 +85,7 @@ TEST_F(AttackTest, MaxLevelDifference) {
     test_add_player(2, 10, 11, 40);  // diferencia de 20 niveles (> 10)
 
     AttackResult res = world.attack(1, 2);
-    EXPECT_EQ(res.status, AttackStatus::INVALID_TARGET);
+    EXPECT_EQ(res.status, AttackStatus::LEVEL_DIFFERENCE);
 }
 
 TEST_F(AttackTest, DeadTargetCannotBeAttacked) {
