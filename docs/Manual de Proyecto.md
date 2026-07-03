@@ -64,13 +64,14 @@ Para **GoogleTest** se consultó https://google.github.io/googletest/
 
 ## Errores conocidos 
 
-La mayoría de los errores (que identificamos post-entrega) se deben a falta de tiempo y de chequeos de cambios que hicimos o integramos a último momento.
+La mayoría de los errores (que identificamos post-entrega) se deben a falta de tiempo y de chequeos de cambios que hicimos o integramos a último momento. Estos errores ya se encuentran corregidos en la branch estable `main`:
 
-1. **Persistencia del banco no implementada**: actualmente el banco del jugador (oro y objetos depositados) no se persiste junto al resto del estado del personaje. Queda planteado como mejora para una próxima iteración.
-2. **Persistencia en instalación limpia**: al instalar con el installer, el servidor intentaba escribir save.json en /usr/bin/ (su directorio de trabajo), donde el usuario no tiene permisos de escritura, fallando con "no se pudo abrir save.json.tmp". Se resolvería leyendo la ruta de guardado desde la variable de entorno ARGENTUM_SAVE_FILE, que server.sh configura apuntando a /var/argentum/save.json, y dando los permisos de escritura correspondientes.
-3. **Tests de ataque rotos por actualización de status**: en desarrollo, los códigos de error al chequear fair play y diferencias de nivel entre jugadores para el ataque fueron ignorados, ya que esos valores de pusieron en el game_config.toml de manera que no sean un inconveniente para poder probar el ataque. Cuando antes de la entrega se cambiaron los valores para coincidir con el enunciado y los outcomes requeridos (no poder atacar/ser atacado si nivel <= 12 o diferencia de niveles >10), tuvimos que agregar nuevos STATUS (para el "error" del ataque se identifique correctamente en la interfaz) a último momento, olvidando cambiar esos status en dos tests. Estos fallan porque siguen esperando el código genérico INVALID_TARGET, cuando ya se distingue NEWBIE_PROTECTION y LEVEL_DIFFERENCE.
+1. **Persistencia en instalación limpia**: al instalar con el installer, el servidor intentaba escribir save.json en /usr/bin/ (su directorio de trabajo), donde el usuario no tiene permisos de escritura, fallando con "no se pudo abrir save.json.tmp". Se resolvería leyendo la ruta de guardado desde la variable de entorno ARGENTUM_SAVE_FILE, que server.sh configura apuntando a /var/argentum/save.json, y dando los permisos de escritura correspondientes.
+2. **Tests de ataque rotos por actualización de status**: en desarrollo, los códigos de error al chequear fair play y diferencias de nivel entre jugadores para el ataque fueron ignorados, ya que esos valores de pusieron en el game_config.toml de manera que no sean un inconveniente para poder probar el ataque. Cuando antes de la entrega se cambiaron los valores para coincidir con el enunciado y los outcomes requeridos (no poder atacar/ser atacado si nivel <= 12 o diferencia de niveles >10), tuvimos que agregar nuevos STATUS (para el "error" del ataque se identifique correctamente en la interfaz) a último momento, olvidando cambiar esos status en dos tests. Estos fallan porque siguen esperando el código genérico INVALID_TARGET, cuando ya se distingue NEWBIE_PROTECTION y LEVEL_DIFFERENCE.
 
-Los errores 2 y 3 mencionados se corrigieron en la branch `develop`, aunque se los identificó y corrigió post-entrega (la branch estable usada para la entrega es `main`).
+Una limitación de nuestra implementación es la siguiente:
+
+3. **Persistencia del banco no implementada**: actualmente el banco del jugador (oro y objetos depositados) no se persiste junto al resto del estado del personaje. Queda planteado como mejora para una próxima iteración.
 
 ## ¿Qué cambiaríamos?
 A nivel *código*:
